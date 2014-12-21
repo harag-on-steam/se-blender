@@ -10,11 +10,13 @@ bl_info = {
 }
 
 import bpy
+import re
 
 from mathutils import Vector, Matrix
 from math import sqrt
 from collections import namedtuple
 from enum import IntEnum
+
 
 # just give proper axis names to the matrix indices
 X = 0
@@ -152,6 +154,9 @@ def mount_point_definitions(block_box, block_size, mount_point_objects):
     
     return mount_points
 
+NEGATIVE_ZERO = re.compile(r"-0\.00")
+POSITIVE_ZERO = '0.00'
+	
 def mount_points_xml(mount_points):
     str = '<MountPoints>\n'
 
@@ -159,7 +164,7 @@ def mount_points_xml(mount_points):
         str += '\t<MountPoint Side="%s" StartX="%.2f" StartY="%.2f" EndX="%.2f" EndY="%.2f" />\n' % mp
 
     str += '</MountPoints>\n'
-    return str
+    return NEGATIVE_ZERO.sub(POSITIVE_ZERO, str)
 
 
 # useful Display settings while editing Mount Points
