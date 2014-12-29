@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from . import se_types
+from . import types
 
 def _clone_fbx_module():
     import sys
@@ -116,8 +116,8 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
         
     # ----------------------- CUSTOM PART BEGINS HERE ----------------------- #
 
-    if obj_type == b"Null" and se_types.data(ob_obj.bdata):
-        se = se_types.data(ob_obj.bdata)
+    if obj_type == b"Null" and types.data(ob_obj.bdata):
+        se = types.data(ob_obj.bdata)
         if se.file:
             _fbx.elem_props_template_set(tmpl, props, "p_string", b"file", se.file)
 
