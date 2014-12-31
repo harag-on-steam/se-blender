@@ -1,4 +1,7 @@
 import bpy
+from mathutils import Vector
+from .utils import BoundingBox, layers, bitset
+
 
 PROP_GROUP = "space_engineers"
 
@@ -6,27 +9,17 @@ def data(obj):
     # avoids AttributeError
     return getattr(obj, PROP_GROUP, None)    
 
-def layers(bitset):
-    """
-    Takes 20 bit bitset and turns it into sequence of 20 booleans.
-    The first element in the sequence is the most significant bit of the bitset.
-    """
-    layers = [False] * 20    
-    for bit in range(20):
-        layers[19-bit] = (bitset & (1 << bit) != 0)
-    return layers
+def some_layers_visible(layer_mask):
+    scene_layers = bitset(bpy.context.scene.layers)
+    mask = bitset(layer_mask)
+    return (scene_layers & mask) != 0
 
-def bitset(layers):
-    """
-    Takes a sequence of 20 booleans and turns them into a bitset.
-    The first element in the sequence is the most significant bit of the bitset.
-    """
-    bitset = 0x0
-    for i, layer in enumerate(layers):
-        if layer:
-            bitset = bitset | (1 << (19 - i))
-    return bitset
-    
+def all_layers_visible(layer_mask):
+    scene_layers = bitset(bpy.context.scene.layers)
+    mask = bitset(layer_mask)
+    return (scene_layers & mask) == mask
+
+
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
 
@@ -69,6 +62,8 @@ class SESceneProperties(bpy.types.PropertyGroup):
         description="Is this scene automatically exported to Space Engineers as a block according to the rules defined in this panel?")
     
     block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
+    block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
+
     block_specular_power = bpy.props.FloatProperty( min=0.0, description="per block specular power", )
     block_specular_shininess = bpy.props.FloatProperty( min=0.0, description="per block specular shininess", )
 
@@ -99,7 +94,16 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         spceng = data(context.scene)
 
         layout.active = spceng.is_block
-        layout.prop(spceng, "block_size")
+        layout.enabled = spceng.is_block
+
+        split = layout.split()
+        col = split.column()
+        col.label(text="Block Size")
+        col.prop(spceng, "block_size", text="")
+
+        col = split.column()
+        col.label()
+        col.row().prop(spceng, "block_dimensions", text="")
 
         layout.separator()
 
@@ -120,6 +124,39 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split = layout.split()
         split.column().prop(spceng, "physics_layers")
         split.column().prop(spceng, "mount_points_layers")
+
+def block_bounds():
+    """
+    The bounding-box of the scene's block.
+    """
+    scale = Vector((1.25, 1.25, 1.25))
+
+    d = data(bpy.context.scene)
+    if d:
+        dim = d.block_dimensions
+        scale = Vector((scale.x*dim[0], scale.y*dim[1], scale.x*dim[2]))
+        if 'SMALL' == d.block_size:
+            scale *= 0.2
+
+    return BoundingBox(
+        Vector((-scale.x, -scale.y, -scale.z)), #FBL
+        Vector((-scale.x, -scale.y,  scale.z)), #FTL
+        Vector((-scale.x,  scale.y,  scale.z)), #BTL
+        Vector((-scale.x,  scale.y, -scale.z)), #BBL
+        Vector(( scale.x, -scale.y, -scale.z)), #FBR
+        Vector(( scale.x, -scale.y,  scale.z)), #FTR
+        Vector(( scale.x,  scale.y,  scale.z)), #BTR
+        Vector(( scale.x,  scale.y, -scale.z)), #BBR
+    )
+
+def is_small_block():
+    d = data(bpy.context.scene)
+    return d and 'SMALL' == d.block_size
+
+def is_mount_points_visible():
+    scene = bpy.context.scene
+    d = data(scene)
+    return d and d.is_block and some_layers_visible(d.mount_points_layers)
 
          
 # -----------------------------------------  Object Data ----------------------------------------- #

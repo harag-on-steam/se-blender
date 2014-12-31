@@ -1,4 +1,5 @@
 .project
 .pydevproject
 .settings
+.idea
 __pycache__
