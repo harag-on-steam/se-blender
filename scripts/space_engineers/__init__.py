@@ -25,6 +25,7 @@ if not reload('utils'): from . import utils
 if not reload('types'): from . import types
 if not reload('mount_points'): from . import mount_points
 if not reload('fbx'): from . import fbx
+if not reload('export'): from . import export
 
 del modules
 

@@ -1,6 +1,6 @@
 import bpy
 from mathutils import Vector
-from .utils import BoundingBox, layers, bitset
+from .utils import BoundingBox, layers, layer_bits
 
 
 PROP_GROUP = "space_engineers"
@@ -10,13 +10,13 @@ def data(obj):
     return getattr(obj, PROP_GROUP, None)    
 
 def some_layers_visible(layer_mask):
-    scene_layers = bitset(bpy.context.scene.layers)
-    mask = bitset(layer_mask)
+    scene_layers = layer_bits(bpy.context.scene.layers)
+    mask = layer_bits(layer_mask)
     return (scene_layers & mask) != 0
 
 def all_layers_visible(layer_mask):
-    scene_layers = bitset(bpy.context.scene.layers)
-    mask = bitset(layer_mask)
+    scene_layers = layer_bits(bpy.context.scene.layers)
+    mask = layer_bits(layer_mask)
     return (scene_layers & mask) == mask
 
 
@@ -201,7 +201,7 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     
     technique = bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='MESH', name="Technique")
     
-    # the material might be a node material and have no diffuse color
+    # the material might be a node material and have no diffuse color, so define our own
     diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
     specular_power = bpy.props.FloatProperty( min=0.0, name="Specular Power", description="per material specular power", )
     specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )

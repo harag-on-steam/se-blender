@@ -2,7 +2,7 @@ from collections import namedtuple
 from bgl import glEnable, glDisable, glColor3f, glVertex3f, glLineWidth, glBegin, glEnd, glLineStipple, GL_LINE_STRIP, GL_LINES, GL_LINE_STIPPLE
 from mathutils import Matrix, Vector
 from math import sqrt
-from .utils import BoxCorner, bounds, sparse, X, Y, Z, transX, transY, transZ, rot, mirror, flip, layers, bitset
+from .utils import BoxCorner, bounds, sparse, X, Y, Z, transX, transY, transZ, rot, mirror, flip, layers, layer_bits
 from .types import is_mount_points_visible, block_bounds, is_small_block, data
 
 import bpy
@@ -176,7 +176,7 @@ class AddMountPointSkeleton(bpy.types.Operator):
         s.objects.link(ob)
         ob.layers = d.mount_points_layers
 
-        s.layers = layers(bitset(s.layers) | bitset(d.mount_points_layers))
+        s.layers = layers(layer_bits(s.layers) | layer_bits(d.mount_points_layers))
 
         return {'FINISHED'}
 

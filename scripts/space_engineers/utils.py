@@ -21,6 +21,32 @@ def sparse(values):
 
 # shorter but still understandable factory methods
 
+def scaleX(x):
+    return Matrix.Scale(x, 4, 'X')
+
+def scaleY(y):
+    return Matrix.Scale(y, 4, 'Y')
+
+def scaleZ(z):
+    return Matrix.Scale(z, 4, 'Z')
+
+def scale(vector):
+    x, y, z = vector
+    return Matrix((
+        (  x, 0.0, 0.0, 0.0),
+        (0.0,   y, 0.0, 0.0),
+        (0.0, 0.0,   z, 0.0),
+        (0.0, 0.0, 0.0, 1.0),
+    ))
+
+def scaleUni(s):
+    return Matrix((
+        (  s, 0.0, 0.0, 0.0),
+        (0.0,   s, 0.0, 0.0),
+        (0.0, 0.0,   s, 0.0),
+        (0.0, 0.0, 0.0, 1.0),
+    ))
+
 def transX(x):
     return Matrix.Translation((x, 0, 0))
 
@@ -252,8 +278,14 @@ def layers(bitset):
         layers[19-bit] = (bitset & (1 << bit) != 0)
     return layers
 
+def layer_bit(layer):
+    """
+    Takes the index of a single layer and turns it into a 20 bit bitset with a single bit set.
+    Index 0 is the most significant bit.
+    """
+    return 1 << (19-layer)
 
-def bitset(layers):
+def layer_bits(layers):
     """
     Takes a sequence of 20 booleans and turns them into a bitset.
     The first element in the sequence is the most significant bit of the bitset.
@@ -263,3 +295,6 @@ def bitset(layers):
         if layer:
             bitset = bitset | (1 << (19 - i))
     return bitset
+
+def first(iterable):
+    return next(iterable, None)
