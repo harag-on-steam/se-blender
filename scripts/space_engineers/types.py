@@ -60,7 +60,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
     
     is_block = bpy.props.BoolProperty( default=False, name="Export as Block", 
         description="Is this scene automatically exported to Space Engineers as a block according to the rules defined in this panel?")
-    
+
     block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
     block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
 
@@ -73,7 +73,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
                                 name="Collision", description="All meshes on these layers that have rigid bodies will contribute to the Havok collision model.")
     mount_points_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00100000000000000000), 
                                 name="Mount Points", description="")
-    construction_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001111100000), 
+    construction_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001110000000),
                                 name="Construction Stages", description="Each layer in this set represents one construction stage. Only meshes and empties are included.")
 
 class DATA_PT_spceng_scene(bpy.types.Panel):
@@ -114,7 +114,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
         
         layout.separator()        
-        layout.operator("wm.splash", text="Export block", icon="EXPORT") # TODO
+        layout.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
         layout.separator()
 
         split = layout.split()
@@ -175,16 +175,15 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object and context.object.type == 'EMPTY')
+        ob = context.active_object
+        return (ob and ob.type == 'EMPTY' and data(ob))
 
     def draw(self, context):
+        d = data(context.active_object)
+
         layout = self.layout
 
-        spceng = getattr(context.active_object, PROP_GROUP, None)
-        if not spceng: return
-        
-#        layout.prop_search(spceng, "file", bpy.data, "scenes", text="Link to File", icon='LIBRARY_DATA_DIRECT')
-        layout.prop(spceng, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
+        layout.prop(d, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
 
 
 # -----------------------------------------  Material Data ----------------------------------------- #
@@ -226,32 +225,34 @@ class DATA_PT_spceng_material(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.material)
+        return (context.material and data(context.material))
 
     def draw(self, context):
         layout = self.layout
 
-        spceng = getattr(context.material, PROP_GROUP, None)
-        if not spceng: return
+        mat = context.material
+        d = data(mat)
 
-        layout.prop(spceng, "technique")
+        layout.prop(d, "technique")
 
         col = layout.column()
-        if 'MESH' == spceng.technique:
-            split = col.split()
-            split.column().prop(spceng, "diffuse_color")
-            split.column()
+
+        # TODO decide if diffuse_color is needed or should always stay white
+        # if 'MESH' == d.technique:
+        #     split = col.split()
+        #     split.column().prop(d, "diffuse_color")
+        #     split.column()
             
         col.label(text="Specular")
         split = col.split()
-        split.column().prop(spceng, "specular_intensity", text="Intensity")
-        split.column().prop(spceng, "specular_power", text="Power")
+        split.column().prop(d, "specular_intensity", text="Intensity")
+        split.column().prop(d, "specular_power", text="Power")
 
-        if 'GLASS' == spceng.technique:
+        if 'GLASS' == d.technique:
             layout.separator()
-            layout.prop(spceng, "glass_smooth")
+            layout.prop(d, "glass_smooth")
             
             col = layout.column()
             # col.label(text="Glass settings")
-            col.prop(spceng, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
-            col.prop(spceng, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
+            col.prop(d, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
+            col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")

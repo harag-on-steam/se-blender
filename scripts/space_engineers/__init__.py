@@ -2,7 +2,7 @@ bl_info = {
     "name": "Test Addon",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 1, 0),
+	"version": (0, 2, 0),
 	"location": "Properties > Scene / Material / Empty",
 	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
 	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
@@ -24,7 +24,9 @@ def reload(module_name):
 if not reload('utils'): from . import utils
 if not reload('types'): from . import types
 if not reload('mount_points'): from . import mount_points
+if not reload('mwmbuilder_xml'): from . import mwmbuilder
 if not reload('fbx'): from . import fbx
+if not reload('havok_options'): from . import havok_options
 if not reload('export'): from . import export
 
 del modules
@@ -92,7 +94,7 @@ def register():
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
 
-    register_class(TestOperator)
+    register_class(export.ExportSceneAsBlock)
     register_class(mount_points.AddMountPointSkeleton)
     register_class(mount_points.SetupGrid)
 
@@ -110,7 +112,7 @@ def unregister():
 
     unregister_class(mount_points.SetupGrid)
     unregister_class(mount_points.AddMountPointSkeleton)
-    unregister_class(TestOperator)
+    unregister_class(export.ExportSceneAsBlock)
 
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)

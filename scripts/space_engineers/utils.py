@@ -267,7 +267,6 @@ def bounds(vertices):
         Vector((maxX, maxY, minZ)), #BBR
     )
 
-
 def layers(bitset):
     """
     Takes a 20 bit bitset and turns it into sequence of 20 booleans.
@@ -277,6 +276,14 @@ def layers(bitset):
     for bit in range(20):
         layers[19-bit] = (bitset & (1 << bit) != 0)
     return layers
+
+def layers_overlap(layers1, layers2):
+    """Checks if there is at least one layer that is active in both given layer sets"""
+    return any(a and b for a, b in zip(layers1, layers2))
+
+def layers_split(layers1):
+    """For each active layer in the given layer set creates a layer sets with only that active layer."""
+    return [layers(1 << (19-i)) for i, layer in enumerate(layers1) if layer]
 
 def layer_bit(layer):
     """

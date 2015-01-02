@@ -1,4 +1,5 @@
 from collections import namedtuple
+from xml.etree import ElementTree
 from bgl import glEnable, glDisable, glColor3f, glVertex3f, glLineWidth, glBegin, glEnd, glLineStipple, GL_LINE_STRIP, GL_LINES, GL_LINE_STIPPLE
 from mathutils import Matrix, Vector
 from math import sqrt
@@ -9,7 +10,6 @@ import bpy
 
 MOUNT_POINT_MATERIAL = 'MountPoint'
 MOUNT_POINT_COLOR = (0.317, 1, 0.032)
-
 
 Side = namedtuple('Side', (
     'normal', # direction a polygon must be roughly facing to be considered on this side
@@ -88,14 +88,22 @@ def mount_point_definitions(mount_point_objects):
 
     return mount_points
 
+def _floatstr(f):
+    return ("%.2f" % (f)).replace('-0.00', '0.00')
+
 def mount_points_xml(mount_points):
-    str = "<MountPoints>\n"
+    e = ElementTree.Element("MountPoints")
 
-    for mp in mount_points:
-        str += "\t<MountPoint Side=\"%s\" StartX=\"%.2f\" StartY=\"%.2f\" EndX=\"%.2f\" EndY=\"%.2f\" />\n" % mp
+    for side, startx, starty, endx, endy in mount_points:
+        ElementTree.SubElement(e, "MountPoint",
+            Side=side,
+            StartX=_floatstr(startx),
+            StartY=_floatstr(starty),
+            EndX=_floatstr(endx),
+            EndY=_floatstr(endy),
+        )
 
-    str += "</MountPoints>\n"
-    return str.replace('-0.00', '0.00')
+    return e
 
 def create_mount_point_skeleton():
     quad = [
@@ -149,11 +157,6 @@ def create_mount_point_skeleton():
     # bpy.context.space_data.grid_subdivisions = 5
     # bpy.context.space_data.grid_lines = 21
 
-    # ob.location = (0, 0, 0)
-    # ob.lock_location = (True, True, True)
-    # ob.lock_rotation = (True, True, True)
-    # ob.lock_scale = (True, True, True)
-
     return ob
 
 class AddMountPointSkeleton(bpy.types.Operator):
@@ -167,8 +170,14 @@ class AddMountPointSkeleton(bpy.types.Operator):
     def execute(self, context):
         s = context.scene
         d = data(s)
+
+        if (layer_bits(d.mount_points_layers) == 0):
+            self.report({'ERROR'}, "No layer is marked as a mount-point layer")
+            return {'FINISHED'}
+
         ob = create_mount_point_skeleton()
 
+        ob.location = (0, 0, 0)
         ob.lock_location = (True, True, True)
         ob.lock_rotation = (True, True, True)
         ob.lock_scale = (True, True, True)
