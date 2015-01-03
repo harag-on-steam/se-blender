@@ -1,5 +1,7 @@
 from collections import namedtuple
 from enum import IntEnum
+from functools import partial
+import hashlib
 from mathutils import Matrix, Vector
 
 # just give proper axis names to the matrix indices
@@ -305,3 +307,10 @@ def layer_bits(layers):
 
 def first(iterable):
     return next(iterable, None)
+
+def md5sum(filepath):
+    md5 = hashlib.md5()
+    with open(filepath, mode='rb') as f:
+        for buf in iter(partial(f.read, 4096), b''):
+            md5.update(buf)
+    return md5.hexdigest()

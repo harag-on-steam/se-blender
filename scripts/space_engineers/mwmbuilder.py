@@ -75,7 +75,7 @@ def derive_texture_paths(material):
 def _floatstr(f):
     return str(round(f, 2))
 
-def material_xml(mat):
+def material_xml(settings, mat):
     d = data(mat)
     e = ElementTree.Element("Material", Name=mat.name)
 
@@ -115,16 +115,20 @@ def material_xml(mat):
 
     return e
 
-def mwmbuilder_xml(scene, material_elements, rescale_factor=1.0):
-    d = data(scene)
-    e = ElementTree.Element("Model", Name=scene.name)
+def mwmbuilder_xml(settings, material_elements):
+    d = data(settings.scene)
+    e = ElementTree.Element("Model", Name=settings.blockname)
 
     def param(name, value):
         se = ElementTree.SubElement(e, 'Parameter', Name=name)
         if value:
             se.text = value
 
-    param("RescaleFactor", "%.3f" % rescale_factor)
+    rescalefactor = '1.0'
+    if settings.isOldMwmbuilder:
+        rescalefactor = '0.002' if settings.scaleDown else '0.01'
+
+    param("RescaleFactor", rescalefactor)
     param("RescaleToLengthInMeters", "false")
     param("Centered", "false")
     param("SpecularPower", _floatstr(d.block_specular_power))

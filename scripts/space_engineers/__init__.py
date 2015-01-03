@@ -24,7 +24,7 @@ def reload(module_name):
 if not reload('utils'): from . import utils
 if not reload('types'): from . import types
 if not reload('mount_points'): from . import mount_points
-if not reload('mwmbuilder_xml'): from . import mwmbuilder
+if not reload('mwmbuilder'): from . import mwmbuilder
 if not reload('fbx'): from . import fbx
 if not reload('havok_options'): from . import havok_options
 if not reload('export'): from . import export
