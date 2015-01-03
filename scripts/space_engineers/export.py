@@ -73,9 +73,16 @@ def hkt_filter(srcfile, dstfile, options=HAVOK_OPTION_FILE_CONTENT):
         with hko.file as f:
             f.write(options)
 
-        return subprocess.check_output(
-            [filter_manager, '-t', '-s', hko.name, '-p', dstfile, srcfile],
-            stderr=subprocess.STDOUT)
+        try:
+            return subprocess.check_output(
+                [filter_manager, '-t', '-s', hko.name, '-p', dstfile, srcfile],
+                stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            # according to the Havok documentation 1 means 'success with warnings'
+            if e.returncode == 1:
+                return e.output
+            else:
+                raise
     finally:
         os.remove(hko.name)
 
@@ -101,8 +108,8 @@ def mwmbuilder(srcfile, dstfile):
     if not os.path.isfile(mwmbuilder):
         raise FileNotFoundError("MWMBuilder: no such file %s" % (mwmbuilder))
 
-    cmdline = [mwmbuilder, '/s:'+srcfile] #, '/o:'+os.path.dirname(dstfile)]
-    return subprocess.check_output(cmdline, stderr=subprocess.STDOUT)
+    cmdline = [mwmbuilder, '/m:'+os.path.basename(srcfile)] #, '/o:'+os.path.dirname(dstfile)]
+    return subprocess.check_output(cmdline, cwd=os.path.dirname(srcfile), stderr=subprocess.STDOUT)
 
 class Names:
     subtypeid = '${blockname}_${blocksize}'
@@ -132,7 +139,8 @@ class MwmSet(ExportSet):
         super().collect(ob)
         self.materials |= {slot.material for slot in ob.material_slots if slot.material}
 
-    def export(self, output_dir, scene, block_name, block_size, scale_down, havok_file=None, run_mwmbuilder=True):
+    def export(self, output_dir, scene, block_name, block_size, scale_down, havok_file=None,
+               run_mwmbuilder=True, rescale_factor=1.0):
         basename = Template(self.filename_template).substitute(blockname = block_name, blocksize = block_size)
 
         fbxfile = basename + '.fbx'
@@ -144,7 +152,7 @@ class MwmSet(ExportSet):
             if havok_file != havokfile:
                 shutil.copy2(join(output_dir, havok_file), join(output_dir, havokfile))
 
-        paramsxml = mwmbuilder_xml(scene, (material_xml(mat) for mat in self.materials))
+        paramsxml = mwmbuilder_xml(scene, (material_xml(mat) for mat in self.materials), rescale_factor)
         write_pretty_xml(paramsxml, join(output_dir, paramsfile))
 
         export_fbx(scene, join(output_dir, fbxfile), self.objects, scale_down)
@@ -263,22 +271,23 @@ class BlockExport:
                 if set.test(ob):
                     set.collect(ob)
 
-    def export(self, scene, output_dir, block_name=None, run_mwmbuilder=True):
+    def export(self, scene, output_dir, block_name=None, run_mwmbuilder=True, rescale_factor=1.0):
         d = data(scene)
         outDir = os.path.normpath(bpy.path.abspath(output_dir))
         blockName = block_name if block_name else scene.name
 
         for blockSize, scaleDown in SIZES[d.block_size]:
             havokfile = self.havok.export(outDir, scene, blockName, blockSize, scaleDown)
-            modelFile = self.main.export(outDir, scene, blockName, blockSize, scaleDown, havokfile, run_mwmbuilder)
+            modelFile = self.main.export(outDir, scene, blockName, blockSize, scaleDown, havokfile,
+                                         run_mwmbuilder, rescale_factor)
             constrFiles = [
                 c.export(outDir, scene, blockName, blockSize, scaleDown, havokfile, run_mwmbuilder)
                     for c in self.constr
             ]
             deffile = self.mp.export(outDir, scene, blockName, blockSize, modelFile, constrFiles)
 
-def export_block(scene, output_dir, block_name=None, run_mwmbuilder=True):
-    BlockExport(scene).export(scene, output_dir, block_name, run_mwmbuilder)
+def export_block(scene, output_dir, block_name=None, run_mwmbuilder=True, rescale_factor=1.0):
+    BlockExport(scene).export(scene, output_dir, block_name, run_mwmbuilder, rescale_factor)
 
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
@@ -293,6 +302,10 @@ class ExportSceneAsBlock(bpy.types.Operator):
     skip_mwmbuilder = bpy.props.BoolProperty(
         name="Skip mwmbuilder",
         description="Export intermediary files but do not run them through mwmbuilder")
+    rescale_factor = bpy.props.FloatProperty(default=1.0, min=0.001, max=1000,
+        name="Rescale Factor",
+        description="Older versions of mwmbuilder get the scaling wrong. Set it to 0.01 in those cases"
+    )
 
     @classmethod
     def poll(self, context):
@@ -315,6 +328,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
         col = lay.column()
         col.prop(self, "all_scenes")
         col.prop(self, "skip_mwmbuilder")
+        col.prop(self, "rescale_factor")
 
     def execute(self, context):
         try:
@@ -327,7 +341,9 @@ class ExportSceneAsBlock(bpy.types.Operator):
             wm.progress_begin(0, len(scenes))
             try:
                 for i, scene in enumerate(scenes):
-                    export_block(scene, self.directory, scene.name, run_mwmbuilder=not self.skip_mwmbuilder)
+                    export_block(scene, self.directory, scene.name,
+                                 run_mwmbuilder=not self.skip_mwmbuilder,
+                                 rescale_factor=self.rescale_factor)
                     wm.progress_update(i)
             finally:
                  wm.progress_end()

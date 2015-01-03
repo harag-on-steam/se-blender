@@ -115,7 +115,7 @@ def material_xml(mat):
 
     return e
 
-def mwmbuilder_xml(scene, material_elements):
+def mwmbuilder_xml(scene, material_elements, rescale_factor=1.0):
     d = data(scene)
     e = ElementTree.Element("Model", Name=scene.name)
 
@@ -124,7 +124,7 @@ def mwmbuilder_xml(scene, material_elements):
         if value:
             se.text = value
 
-    param("RescaleFactor", "1.0")
+    param("RescaleFactor", "%.3f" % rescale_factor)
     param("RescaleToLengthInMeters", "false")
     param("Centered", "false")
     param("SpecularPower", _floatstr(d.block_specular_power))
