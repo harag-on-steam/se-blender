@@ -101,9 +101,8 @@ def mwmbuilder(srcfile, dstfile):
     if not os.path.isfile(mwmbuilder):
         raise FileNotFoundError("MWMBuilder: no such file %s" % (mwmbuilder))
 
-    return subprocess.check_output(
-        [mwmbuilder, '/s:'+srcfile, '/o:'+os.path.dirname(dstfile)],
-        stderr=subprocess.STDOUT)
+    cmdline = [mwmbuilder, '/s:'+srcfile] #, '/o:'+os.path.dirname(dstfile)]
+    return subprocess.check_output(cmdline, stderr=subprocess.STDOUT)
 
 class Names:
     subtypeid = '${blockname}_${blocksize}'
@@ -133,7 +132,7 @@ class MwmSet(ExportSet):
         super().collect(ob)
         self.materials |= {slot.material for slot in ob.material_slots if slot.material}
 
-    def export(self, output_dir, scene, block_name, block_size, scale_down, havok_file=None):
+    def export(self, output_dir, scene, block_name, block_size, scale_down, havok_file=None, run_mwmbuilder=True):
         basename = Template(self.filename_template).substitute(blockname = block_name, blocksize = block_size)
 
         fbxfile = basename + '.fbx'
@@ -151,8 +150,9 @@ class MwmSet(ExportSet):
         export_fbx(scene, join(output_dir, fbxfile), self.objects, scale_down)
 
         try:
-            out = mwmbuilder(join(output_dir, fbxfile), join(output_dir, mwmfile))
-            write_to_log(join(output_dir, mwmfile) + '.log', out)
+            if (run_mwmbuilder):
+                out = mwmbuilder(join(output_dir, fbxfile), join(output_dir, mwmfile))
+                write_to_log(join(output_dir, mwmfile) + '.log', out)
         except subprocess.CalledProcessError as e:
             write_to_log(join(output_dir, mwmfile) + '.log', e.output)
             raise
@@ -263,32 +263,36 @@ class BlockExport:
                 if set.test(ob):
                     set.collect(ob)
 
-    def export(self, scene, output_dir, block_name=None):
+    def export(self, scene, output_dir, block_name=None, run_mwmbuilder=True):
         d = data(scene)
         outDir = os.path.normpath(bpy.path.abspath(output_dir))
         blockName = block_name if block_name else scene.name
 
         for blockSize, scaleDown in SIZES[d.block_size]:
             havokfile = self.havok.export(outDir, scene, blockName, blockSize, scaleDown)
-            modelFile = self.main.export(outDir, scene, blockName, blockSize, scaleDown, havokfile)
+            modelFile = self.main.export(outDir, scene, blockName, blockSize, scaleDown, havokfile, run_mwmbuilder)
             constrFiles = [
-                c.export(outDir, scene, blockName, blockSize, scaleDown, havokfile)
+                c.export(outDir, scene, blockName, blockSize, scaleDown, havokfile, run_mwmbuilder)
                     for c in self.constr
             ]
             deffile = self.mp.export(outDir, scene, blockName, blockSize, modelFile, constrFiles)
 
-def export_block(scene, output_dir, block_name=None):
-    BlockExport(scene).export(scene, output_dir, block_name)
+def export_block(scene, output_dir, block_name=None, run_mwmbuilder=True):
+    BlockExport(scene).export(scene, output_dir, block_name, run_mwmbuilder)
 
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
     bl_label = "Export Space Engineers Block"
     bl_description = "Exports the current scene as a block."
 
-    filename = bpy.props.StringProperty(subtype='FILE_NAME')
     directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
-    all_scenes = bpy.props.BoolProperty(name="All Scenes", description="Export all scenes that are marked as blocks.")
+    all_scenes = bpy.props.BoolProperty(
+        name="All Scenes",
+        description="Export all scenes that are marked as blocks.")
+    skip_mwmbuilder = bpy.props.BoolProperty(
+        name="Skip mwmbuilder",
+        description="Export intermediary files but do not run them through mwmbuilder")
 
     @classmethod
     def poll(self, context):
@@ -299,12 +303,8 @@ class ExportSceneAsBlock(bpy.types.Operator):
         return d and d.is_block
 
     def invoke(self, context, event):
-        d = data(context.scene)
-
         if not self.directory:
             self.directory = os.path.dirname(context.blend_data.filepath)
-
-        self.filename = context.scene.name
 
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
@@ -312,14 +312,9 @@ class ExportSceneAsBlock(bpy.types.Operator):
     def draw(self, context):
         lay = self.layout
 
-        lay.prop(self, "all_scenes")
-
-    def check(self, context):
-        if self.filename != context.scene.name:
-            self.filename = context.scene.name
-            return True
-
-        return False
+        col = lay.column()
+        col.prop(self, "all_scenes")
+        col.prop(self, "skip_mwmbuilder")
 
     def execute(self, context):
         try:
@@ -332,7 +327,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
             wm.progress_begin(0, len(scenes))
             try:
                 for i, scene in enumerate(scenes):
-                    export_block(scene, self.directory, scene.name)
+                    export_block(scene, self.directory, scene.name, run_mwmbuilder=not self.skip_mwmbuilder)
                     wm.progress_update(i)
             finally:
                  wm.progress_end()
