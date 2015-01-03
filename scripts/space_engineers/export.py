@@ -295,7 +295,7 @@ class MountPointSet(ExportSet):
         blockPairName = ElementTree.SubElement(block, 'BlockPairName')
         blockPairName.text = settings.template(Names.blockpairname)
 
-        blockdeffile = join(settings.outputDir, settings.template(Names.blockpairname) + '.blockdef.xml')
+        blockdeffile = join(settings.outputDir, settings.template(Names.main) + '.blockdef.xml')
         write_pretty_xml(block, blockdeffile)
 
         return blockdeffile
