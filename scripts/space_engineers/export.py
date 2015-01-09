@@ -16,7 +16,7 @@ import shutil
 from .mwmbuilder import mwmbuilder_xml, material_xml
 from space_engineers.mount_points import mount_point_definitions, mount_points_xml
 from .utils import scaleUni, layer_bits, layer_bit, md5sum
-from .types import data
+from .types import data, prefs
 from .fbx import save_single
 
 from bpy_extras.io_utils import axis_conversion, ExportHelper
@@ -77,6 +77,7 @@ class ExportSettings:
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
         self.isRunMwmbuilder = True
+        self.isFixDirBug = prefs().fix_dir_bug
         self.modeldir = 'Models\\'
 
         # set multiple times on export
@@ -180,17 +181,21 @@ def write_pretty_xml(etree_root_element, filepath):
     with open(filepath, mode='wb') as file:
         file.write(prettyXml)
 
-def mwmbuilder(settings: ExportSettings, srcfile, dstfile):
+def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
     if not settings.isRunMwmbuilder:
         if settings.isLogToolOutput:
             write_to_log(dstfile+'.log', b"mwmbuilder skipped.")
         return
 
-    settings.callTool(
-        [settings.mwmbuilder, '/m:'+os.path.basename(srcfile)], #, '/o:'+os.path.dirname(dstfile)]
-        cwd=os.path.dirname(srcfile),
-        logfile=dstfile+'.log'
-    )
+    cmdline = [settings.mwmbuilder, '/m:'+os.path.basename(srcfile)]
+
+    if settings.isFixDirBug:
+        # the bug cuts the first 6 characters from the source directory
+        # this prepends them again
+        fix = "/o:" + os.path.dirname(srcfile)[:6]
+        cmdline.append(fix)
+
+    settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log')
 
 class ExportSet:
     def __init__(self, layer_mask_bits, filename):

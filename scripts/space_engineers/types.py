@@ -22,13 +22,20 @@ def all_layers_visible(layer_mask):
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
+def prefs() -> SEAddonPreferences:
+    return bpy.context.user_preferences.addons[__package__].preferences
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     seDir = bpy.props.StringProperty( name="Game Directory", subtype='DIR_PATH', )
     mwmbuilder = bpy.props.StringProperty( name="MWM Builder", subtype='FILE_PATH', )
-    
+    fix_dir_bug = bpy.props.BoolProperty(
+        name="workaround for output-directory bug",
+        description="Without the /o option mwmbuilder has been crashing since game version 01.059. "
+                    "The option itself has a bug that outputs files in the wrong directory. "
+                    "Only enable this for the broken version of mwmbuilder.",)
+
     havokFbxImporter = bpy.props.StringProperty( name="FBX Importer", subtype='FILE_PATH', )
     havokFilterMgr = bpy.props.StringProperty( name="Standalone Filter Manager", subtype='FILE_PATH', )
 
@@ -39,6 +46,13 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.label(text="Space Engineers", icon="GAME")
         col.prop(self, 'seDir')
         col.prop(self, 'mwmbuilder')
+
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.prop(self, 'fix_dir_bug')
+
+        op = row.operator('wm.url_open', icon="URL", text="more details", emboss=False)
+        op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")

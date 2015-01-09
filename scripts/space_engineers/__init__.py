@@ -2,7 +2,7 @@ bl_info = {
     "name": "Test Addon",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 2, 3),
+	"version": (0, 2, 4),
 	"location": "Properties > Scene / Material / Empty",
 	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
 	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
