@@ -22,8 +22,6 @@ def all_layers_visible(layer_mask):
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
-def prefs() -> SEAddonPreferences:
-    return bpy.context.user_preferences.addons[__package__].preferences
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
@@ -58,6 +56,9 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.label(text="Havok Content Tools", icon="PHYSICS")
         col.prop(self, 'havokFbxImporter')
         col.prop(self, 'havokFilterMgr')
+
+def prefs() -> SEAddonPreferences:
+    return bpy.context.user_preferences.addons[__package__].preferences
 
 
 # -----------------------------------------  Scene Data ----------------------------------------- #
