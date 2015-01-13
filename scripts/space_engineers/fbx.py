@@ -6,18 +6,19 @@ _experimental = (bpy.app.version[0] == 2 and bpy.app.version[1] == 72)
 
 def _clone_fbx_module():
     import sys
-    import importlib
+    from importlib.util import find_spec
 
     NAME = 'io_scene_fbx_experimental.export_fbx_bin' if _experimental else 'io_scene_fbx.export_fbx_bin'
     saved_module = sys.modules.pop(NAME, None)
     try:
-        spec = importlib.util.find_spec(NAME)
+        spec = find_spec(NAME)
         return spec.loader.load_module()
     finally:
         if saved_module:
             sys.modules[NAME] = saved_module
         else:
-            del sys.modules[NAME]
+            if sys.modules.get(NAME, None):
+                del sys.modules[NAME]
 
 _fbx = _clone_fbx_module()
 
