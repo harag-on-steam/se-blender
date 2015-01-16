@@ -83,6 +83,7 @@ class ExportSettings:
         # set multiple times on export
         self.blocksize = None
         self.scaleDown = None
+        self.isUseTangentSpace = False
 
         # set on first access, see properties below
         self._isOldMwmbuilder = None
@@ -149,6 +150,7 @@ def export_fbx(settings: ExportSettings, filepath, objects):
         bake_space_transform=True,
         use_mesh_modifiers=True,
         mesh_smooth_type='OFF',
+        use_tspace=settings.isUseTangentSpace,
     )
 
 def fbx_to_hkt(settings: ExportSettings, srcfile, dstfile):
@@ -365,6 +367,11 @@ class ExportSceneAsBlock(bpy.types.Operator):
     skip_mwmbuilder = bpy.props.BoolProperty(
         name="Skip mwmbuilder",
         description="Export intermediary files but do not run them through mwmbuilder")
+    use_tspace = bpy.props.BoolProperty(
+        name="Tangent Space",
+        description="Add binormal and tangent vectors, together with normal they form the tangent space "
+                    "(will only work correctly with tris/quads only meshes!)",
+        default=False)
 
     @classmethod
     def poll(self, context):
@@ -387,7 +394,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
         col = lay.column()
         col.prop(self, "all_scenes")
         col.prop(self, "skip_mwmbuilder")
-        col.prop(self, "rescale_factor")
+        col.prop(self, "use_tspace")
 
     def execute(self, context):
         try:
@@ -403,6 +410,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
                     settings = ExportSettings(scene, self.directory)
                     settings.operator = self
                     settings.isRunMwmbuilder = not self.skip_mwmbuilder
+                    settings.isUseTangentSpace = self.use_tspace
 
                     BlockExport(settings).export()
 
