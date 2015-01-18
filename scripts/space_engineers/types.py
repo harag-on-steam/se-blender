@@ -1,6 +1,7 @@
 import bpy
+import os
 from mathutils import Vector
-from .utils import BoundingBox, layers, layer_bits
+from .utils import BoundingBox, layers, layer_bits, check_path
 
 
 PROP_GROUP = "space_engineers"
@@ -26,24 +27,51 @@ def all_layers_visible(layer_mask):
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    seDir = bpy.props.StringProperty( name="Game Directory", subtype='DIR_PATH', )
-    mwmbuilder = bpy.props.StringProperty( name="MWM Builder", subtype='FILE_PATH', )
+    seDir = bpy.props.StringProperty(
+        name="Game Directory",
+        subtype='DIR_PATH',
+        description='The base directory of the game. Probably <Steam>\\SteamApps\\Common\\Space Engineers',
+    )
+    mwmbuilder = bpy.props.StringProperty(
+        name="MWM Builder",
+        subtype='FILE_PATH',
+        description='Locate MwmBuilder.exe. Probably in <Game Directory>\\Tools\\MwmBuilder\\'
+    )
     fix_dir_bug = bpy.props.BoolProperty(
         name="workaround for output-directory bug",
         description="Without the /o option mwmbuilder has been crashing since game version 01.059. "
                     "The option itself has a bug that outputs files in the wrong directory. "
-                    "Only enable this for the broken version of mwmbuilder.",)
+                    "Only enable this for the broken version of mwmbuilder.",
+    )
 
-    havokFbxImporter = bpy.props.StringProperty( name="FBX Importer", subtype='FILE_PATH', )
-    havokFilterMgr = bpy.props.StringProperty( name="Standalone Filter Manager", subtype='FILE_PATH', )
+    havokFbxImporter = bpy.props.StringProperty(
+        name="FBX Importer",
+        subtype='FILE_PATH',
+        description='Locate FBXImporter.exe',
+    )
+    havokFilterMgr = bpy.props.StringProperty(
+        name="Standalone Filter Manager",
+        subtype='FILE_PATH',
+        description='Locate hctStandAloneFilterManager.exe. Probably in C:\\Program Files\\Havok\\HavokContentTools\\',
+    )
 
     def draw(self, context):
         layout = self.layout
         
         col = layout.column()
         col.label(text="Space Engineers", icon="GAME")
+        col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/SpaceEngineers.exe')
         col.prop(self, 'seDir')
+
+        if not self.mwmbuilder and self.seDir:
+            seDir = os.path.normpath(bpy.path.abspath(self.seDir))
+            possibleMwmBuilder = os.path.join(seDir, 'Tools', 'MwmBuilder', 'MwmBuilder.exe')
+            if (check_path(possibleMwmBuilder)):
+                self.mwmbuilder = possibleMwmBuilder
+
+        col.alert = not check_path(self.mwmbuilder, expectedBaseName='MwmBuilder.exe')
         col.prop(self, 'mwmbuilder')
+        col.alert = False
 
         row = col.row()
         row.alignment = 'RIGHT'
@@ -54,8 +82,11 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")
+        col.alert = not check_path(self.havokFbxImporter, expectedBaseName='FBXImporter.exe')
         col.prop(self, 'havokFbxImporter')
+        col.alert = not check_path(self.havokFilterMgr, expectedBaseName='hctStandAloneFilterManager.exe')
         col.prop(self, 'havokFilterMgr')
+        col.alert = False
 
 def prefs() -> SEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences

@@ -1,8 +1,11 @@
+from cmath import exp
 from collections import namedtuple
 from enum import IntEnum
 from functools import partial
 import hashlib
 from mathutils import Matrix, Vector
+import bpy
+import os
 
 # just give proper axis names to the matrix indices
 X = 0
@@ -314,3 +317,19 @@ def md5sum(filepath):
         for buf in iter(partial(f.read, 4096), b''):
             md5.update(buf)
     return md5.hexdigest()
+
+def check_path(path, isDirectory=False, expectedBaseName=None, subpathExists=None, emptyOk=True):
+    if not path:
+        return emptyOk
+
+    path = os.path.normpath(bpy.path.abspath(path))
+
+    result = os.path.isdir(path) if isDirectory else os.path.isfile(path)
+
+    if expectedBaseName:
+        result = result and expectedBaseName == os.path.basename(path)
+
+    if subpathExists:
+        result = result and os.path.exists(os.path.join(path, subpathExists))
+
+    return result
