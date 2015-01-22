@@ -46,13 +46,19 @@ def derive_texture_path(filepath):
 
     image_path = os.path.normpath(bpy.path.abspath(filepath))
 
-    relative_to_se = os.path.relpath(image_path, se_content_dir())
-    if is_in_subpath(relative_to_se):
-        return relative_to_se
+    try:
+        relative_to_se = os.path.relpath(image_path, se_content_dir())
+        if is_in_subpath(relative_to_se):
+            return relative_to_se
+    except ValueError:
+        pass
 
-    relative_to_basedir = os.path.relpath(image_path, texture_basedir())
-    if is_in_subpath(relative_to_basedir):
-        return relative_to_basedir
+    try:
+        relative_to_basedir = os.path.relpath(image_path, texture_basedir())
+        if is_in_subpath(relative_to_basedir):
+            return relative_to_basedir
+    except ValueError:
+        pass
 
     return image_path
 
