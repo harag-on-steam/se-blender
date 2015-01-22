@@ -2,7 +2,8 @@ import bpy
 import os
 from mathutils import Vector
 from .utils import BoundingBox, layers, layer_bits, check_path
-
+import requests
+import re
 
 PROP_GROUP = "space_engineers"
 
@@ -19,6 +20,11 @@ def all_layers_visible(layer_mask):
     scene_layers = layer_bits(bpy.context.scene.layers)
     mask = layer_bits(layer_mask)
     return (scene_layers & mask) == mask
+
+VERSION_URL = "https://api.github.com/repos/harag-on-steam/se-blender/tags"
+online_version = None
+is_current_version = None
+version_pattern = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
@@ -57,7 +63,7 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        
+
         col = layout.column()
         col.label(text="Space Engineers", icon="GAME")
         col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/SpaceEngineers.exe')
@@ -77,7 +83,7 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         row.alignment = 'RIGHT'
         row.prop(self, 'fix_dir_bug')
 
-        op = row.operator('wm.url_open', icon="URL", text="more details", emboss=False)
+        op = row.operator('wm.url_open', icon="URL", text="more details")
         op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
 
         col = layout.column()
@@ -88,8 +94,71 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.prop(self, 'havokFilterMgr')
         col.alert = False
 
+        layout.separator()
+
+        row = layout.row()
+        row.alignment = 'LEFT'
+        if online_version:
+            if is_current_version:
+                from space_engineers import bl_info
+                row.operator('wm.space_engineers_check_version', icon="URL")
+                row.label(icon='FILE_TICK', text="%d.%d.%d is the current version" % bl_info['version'])
+            else:
+                op = row.operator('wm.url_open', icon="URL", text="Open forum thread")
+                op.url = 'http://forums.keenswh.com/post/?id=7090652&trail=81#81'
+                row.label(icon='ERROR', text="There is a newer version %d.%d.%d" % online_version)
+        else:
+            row.operator('wm.space_engineers_check_version', icon="URL")
+            row.label(icon='QUESTION', text="online version not known, yet")
+
 def prefs() -> SEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences
+
+class CheckVersionOnline(bpy.types.Operator):
+    bl_idname = "wm.space_engineers_check_version"
+    bl_label = "Check version online"
+    bl_description = "Retrieves the current version of this addon online and compares it against the running version."
+
+    def execute(self, context):
+        global online_version
+        global is_current_version
+
+        try:
+            tags = requests.get(VERSION_URL, verify=False)
+            json = tags.json()
+        except (requests.RequestException, ValueError):
+            self.report({'ERROR'}, "Failed to load version information from GitHub")
+            return {'FINISHED'}
+
+        for tag in json:
+            match = version_pattern.match(tag['name'])
+            if match:
+                online_version = (
+                    int(match.group(1)),
+                    int(match.group(2)),
+                    int(match.group(3)),
+                )
+                break
+
+        if not online_version:
+            self.report({'WARN'}, "No version information available")
+            return {'FINISHED'}
+
+        is_current_version = True
+
+        from space_engineers import bl_info
+
+        for x, y in zip(bl_info['version'], online_version):
+            if x < y:
+                is_current_version = False
+                break
+
+        if is_current_version:
+            self.report({'INFO'}, "%d.%d.%d is the current version" % bl_info['version'])
+        else:
+            self.report({'WARN'}, "There is a newer version %d.%d.%d" % online_version)
+
+        return {'FINISHED'}
 
 
 # -----------------------------------------  Scene Data ----------------------------------------- #
