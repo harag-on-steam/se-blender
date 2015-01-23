@@ -187,9 +187,18 @@ class SESceneProperties(bpy.types.PropertyGroup):
     physics_layers =      bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b01000000000000000000), 
                                 name="Collision", description="All meshes on these layers that have rigid bodies will contribute to the Havok collision model.")
     mount_points_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00100000000000000000), 
-                                name="Mount Points", description="")
+                                name="Mount Points", description="Meshes on these layers are searched for MountPoint polygons. "
+                                                                 "Also, if one of these layers is visible the block-dimension box is shown.")
     construction_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001110000000),
                                 name="Construction Stages", description="Each layer in this set represents one construction stage. Only meshes and empties are included.")
+
+    use_custom_subtypeids = bpy.props.BoolProperty( default=False, name="Use custom SubtypeIds",
+        description="This is only useful if you have to keep a specific block SubetypeId to remain backwards-compatible.")
+    large_subtypeid = bpy.props.StringProperty( name="Large Block SubtypeId",
+        description="Provide the SubtypeId of the large size block or leave empty to use the default naming-scheme")
+    small_subtypeid = bpy.props.StringProperty( name="Small Block SubtypeId",
+        description="Provide the SubtypeId of the small size block or leave empty to use the default naming-scheme")
+
 
 class DATA_PT_spceng_scene(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
@@ -220,7 +229,22 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         col.label()
         col.row().prop(spceng, "block_dimensions", text="")
 
-        layout.separator()
+        row = layout.row()
+        row.alignment = 'RIGHT'
+        row.prop(spceng, 'use_custom_subtypeids')
+
+        if spceng.use_custom_subtypeids:
+            split = layout.split()
+
+            col = split.column()
+            col.enabled = spceng.block_size == 'LARGE' or spceng.block_size == 'SCALE_DOWN'
+            col.label(text="Large SubtypeId")
+            col.prop(spceng, 'large_subtypeid', text="")
+
+            col = split.column()
+            col.enabled =  spceng.block_size == 'SMALL' or spceng.block_size == 'SCALE_DOWN'
+            col.label(text="Small SubtypeId")
+            col.prop(spceng, 'small_subtypeid', text="")
 
         col = layout.column()
         col.label(text="Block Specular")

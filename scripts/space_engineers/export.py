@@ -15,6 +15,7 @@ import shutil
 
 from .mwmbuilder import mwmbuilder_xml, material_xml
 from space_engineers.mount_points import mount_point_definitions, mount_points_xml
+from space_engineers.types import SESceneProperties
 from .utils import scaleUni, layer_bits, layer_bit, md5sum
 from .types import data, prefs
 from .fbx import save_single
@@ -264,14 +265,22 @@ class HavokSet(ExportSet):
         return havokfile
 
 class MountPointSet(ExportSet):
-    def export(self, settings: ExportSettings, modelFile, constrModelFiles):
+    def generateXml(self, settings: ExportSettings, modelFile, constrModelFiles):
         d = data(settings.scene)
 
         block = ElementTree.Element('Definition')
 
         id = ElementTree.SubElement(block, 'Id')
         subtypeId = ElementTree.SubElement(id, 'SubtypeId')
-        subtypeId.text = settings.template(Names.subtypeid)
+
+        if d.use_custom_subtypeids:
+            if settings.blocksize == 'Large' and d.large_subtypeid:
+                subtypeId.text = d.large_subtypeid
+            elif settings.blocksize == 'Small' and d.small_subtypeid:
+                subtypeId.text = d.small_subtypeid
+
+        if not subtypeId.text:
+            subtypeId.text = settings.template(Names.subtypeid)
 
         icon = ElementTree.SubElement(block, 'Icon')
         icon.text = settings.template(Names.icon)
@@ -302,6 +311,10 @@ class MountPointSet(ExportSet):
         blockPairName = ElementTree.SubElement(block, 'BlockPairName')
         blockPairName.text = settings.template(Names.blockpairname)
 
+        return block
+
+    def export(self, settings: ExportSettings, modelFile, constrModelFiles):
+        block = self.generateXml(settings, modelFile, constrModelFiles)
         blockdeffile = join(settings.outputDir, settings.template(Names.main) + '.blockdef.xml')
         write_pretty_xml(block, blockdeffile)
 
