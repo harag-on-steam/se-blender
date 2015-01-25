@@ -70,9 +70,11 @@ class Names:
 
 class ExportSettings:
     def __init__(self, scene, outputDir):
-        d = data(scene)
+        def typeCast(data) -> SESceneProperties:
+            return data
 
         self.scene = scene
+        self.sceneData = typeCast(data(scene))
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
         self.blockname = scene.name
         self.operator = STDOUT_OPERATOR
@@ -80,6 +82,7 @@ class ExportSettings:
         self.isRunMwmbuilder = True
         self.isFixDirBug = prefs().fix_dir_bug
         self.modeldir = 'Models\\'
+        self.names = Names()
 
         # set multiple times on export
         self.blocksize = None
@@ -212,6 +215,9 @@ class ExportSet:
     def collect(self, ob):
         self.objects.append(ob)
 
+    def filenames(self, settings: ExportSettings):
+        self.basepath = join(settings.outputDir, settings.template(self.filename_template))
+
 class MwmSet(ExportSet):
     def __init__(self, layer_mask_bits, filename):
         super().__init__(layer_mask_bits, filename)
@@ -221,51 +227,56 @@ class MwmSet(ExportSet):
         super().collect(ob)
         self.materials |= {slot.material for slot in ob.material_slots if slot.material}
 
-    def export(self, settings: ExportSettings, havokFile=None):
-        basepath = join(settings.outputDir, settings.template(self.filename_template))
+    def filenames(self, settings: ExportSettings):
+        super().filenames(settings)
+        self.fbxfile = self.basepath + '.fbx'
+        self.paramsfile = self.basepath + '.xml'
+        self.havokfile = self.basepath + '.hkt'
+        self.mwmfile = self.basepath + '.mwm'
 
-        fbxfile = basepath + '.fbx'
-        paramsfile = basepath + '.xml'
-        havokfile = basepath + '.hkt'
-        mwmfile = basepath + '.mwm'
+    def export(self, settings: ExportSettings, havokFile: string = None):
+        self.filenames(settings)
 
         if havokFile:
-            if havokFile != havokfile:
-                shutil.copy2(havokFile, havokfile)
+            if havokFile != self.havokfile:
+                shutil.copy2(havokFile, self.havokfile)
 
         paramsxml = mwmbuilder_xml(settings, (material_xml(settings, mat) for mat in self.materials))
-        write_pretty_xml(paramsxml, paramsfile)
+        write_pretty_xml(paramsxml, self.paramsfile)
         if (settings.isOldMwmbuilder):
-            write_to_log(paramsfile + '.log', b"Old version of mwmbuilder detected. Using different RescaleFactor.")
+            write_to_log(self.paramsfile + '.log', b"Old version of mwmbuilder detected. Using different RescaleFactor.")
 
-        export_fbx(settings, fbxfile, self.objects)
+        export_fbx(settings, self.fbxfile, self.objects)
 
-        mwmbuilder(settings, fbxfile, mwmfile)
+        mwmbuilder(settings, self.fbxfile, self.mwmfile)
 
-        return mwmfile
+        return self.mwmfile
 
 class HavokSet(ExportSet):
     def test(self, ob):
         return super().test(ob) and ob.rigid_body
 
+    def filenames(self, settings: ExportSettings):
+        super().filenames(settings)
+        self.havokfile = self.basepath + '.hkt'
+
     def export(self, settings: ExportSettings):
-        basepath = join(settings.outputDir, settings.template(self.filename_template))
-        havokfile = basepath + '.hkt'
+        self.filenames(settings)
 
         if settings.isLogToolOutput and len(self.objects) == 0:
-            write_to_log(havokfile + '.convert.log', b"no collision available for export")
+            write_to_log(self.havokfile + '.convert.log', b"no collision available for export")
             return None
 
-        fbxfile = basepath + '.fbx'
+        fbxfile = self.havokfile + '.fbx'
         export_fbx(settings, fbxfile, self.objects)
 
-        fbx_to_hkt(settings, fbxfile, havokfile)
-        hkt_filter(settings, havokfile, havokfile)
+        fbx_to_hkt(settings, fbxfile, self.havokfile)
+        hkt_filter(settings, self.havokfile, self.havokfile)
 
-        return havokfile
+        return self.havokfile
 
 class MountPointSet(ExportSet):
-    def generateXml(self, settings: ExportSettings, modelFile, constrModelFiles):
+    def generateXml(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
         d = data(settings.scene)
 
         block = ElementTree.Element('Definition')
@@ -280,10 +291,10 @@ class MountPointSet(ExportSet):
                 subtypeId.text = d.small_subtypeid
 
         if not subtypeId.text:
-            subtypeId.text = settings.template(Names.subtypeid)
+            subtypeId.text = settings.template(settings.names.subtypeid)
 
         icon = ElementTree.SubElement(block, 'Icon')
-        icon.text = settings.template(Names.icon)
+        icon.text = settings.template(settings.names.icon)
 
         ElementTree.SubElement(block, 'CubeSize').text = settings.blocksize
         ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'
@@ -293,7 +304,7 @@ class MountPointSet(ExportSet):
 
         ElementTree.SubElement(block, 'ModelOffset', x='0', y='0', z='0')
 
-        modelpath = settings.template(Names.modelpath, modelfile=os.path.basename(modelFile))
+        modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
         ElementTree.SubElement(block, 'Model').text = modelpath
 
         numConstr = len(constrModelFiles)
@@ -301,7 +312,7 @@ class MountPointSet(ExportSet):
             constr = ElementTree.SubElement(block, 'BuildProgressModels')
             for i, constrModelFile in enumerate(constrModelFiles):
                 upperBound = "%.2f" % (1.0 * (i+1) / numConstr)
-                constrModelpath = settings.template(Names.modelpath, modelfile=os.path.basename(constrModelFile))
+                constrModelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(constrModelFile))
                 ElementTree.SubElement(constr, 'Model', BuildPercentUpperBound=upperBound, File=constrModelpath)
 
         mountpoints = mount_point_definitions(self.objects)
@@ -309,16 +320,21 @@ class MountPointSet(ExportSet):
             block.append(mount_points_xml(mountpoints))
 
         blockPairName = ElementTree.SubElement(block, 'BlockPairName')
-        blockPairName.text = settings.template(Names.blockpairname)
+        blockPairName.text = settings.template(settings.names.blockpairname)
 
         return block
 
-    def export(self, settings: ExportSettings, modelFile, constrModelFiles):
-        block = self.generateXml(settings, modelFile, constrModelFiles)
-        blockdeffile = join(settings.outputDir, settings.template(Names.main) + '.blockdef.xml')
-        write_pretty_xml(block, blockdeffile)
+    def filenames(self, settings: ExportSettings):
+        super().filenames(settings)
+        self.blockdeffile = self.basepath + '.blockdef.xml'
 
-        return blockdeffile
+    def export(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
+        block = self.generateXml(settings, modelFile, constrModelFiles)
+
+        self.filenames(settings)
+        write_pretty_xml(block, self.blockdeffile)
+
+        return self.blockdeffile
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
 SIZES = {
@@ -331,35 +347,52 @@ class BlockExport:
     def __init__(self, settings: ExportSettings):
         self.settings = settings
 
-    def collectObjects(self):
         d = data(self.settings.scene)
 
-        self.havok = HavokSet(layer_bits(d.physics_layers), Names.main)
-        self.mp = MountPointSet(layer_bits(d.mount_points_layers), Names.main)
+        self.havok = HavokSet(layer_bits(d.physics_layers), settings.names.main)
+        self.mp = MountPointSet(layer_bits(d.mount_points_layers), settings.names.main)
 
-        self.main = MwmSet(layer_bits(d.main_layers), Names.main)
+        self.main = MwmSet(layer_bits(d.main_layers), settings.names.main)
 
         constr_bits = [layer_bit(i) for i, layer in enumerate(d.construction_layers) if layer]
-        self.constr = [MwmSet( bits, Template(Names.construction).safe_substitute(n = i+1))
-            for i, bits in enumerate(constr_bits)]
+        self.constr = [MwmSet( bits, Template(settings.names.construction).safe_substitute(n = i+1))
+                       for i, bits in enumerate(constr_bits)]
 
-        sets = [self.havok, self.mp, self.main] + self.constr
+        self.sets = [self.havok, self.mp, self.main] + self.constr
 
+    def collectObjects(self):
         for ob in self.settings.scene.objects:
-            for set in sets:
+            for set in self.sets:
                 if set.test(ob):
                     set.collect(ob)
 
+    def blockdefs(self, cubeBlocksSbc: string):
+        def mwmfile(artifact: MwmSet, settings: ExportSettings):
+            artifact.filenames(settings)
+            return artifact.mwmfile
+
+        settings = self.settings
+        blockdefs = []
+
+        for settings.blocksize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+            xml = self.mp.generateXml(
+                settings,
+                mwmfile(self.main, settings),
+                [mwmfile(c, settings) for c in self.constr],
+            )
+            blockdefs.append(xml)
+
+        return blockdefs
+
     def exportFiles(self):
         settings = self.settings
-        d = data(settings.scene)
 
-        for settings.blocksize, settings.scaleDown in SIZES[d.block_size]:
+        for settings.blocksize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
             havokfile = self.havok.export(settings)
             modelFile = self.main.export(settings, havokfile)
             constrFiles = [
                 c.export(settings, havokfile)
-                    for c in self.constr
+                for c in self.constr
             ]
             blockdeffile = self.mp.export(settings, modelFile, constrFiles)
 
