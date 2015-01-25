@@ -156,7 +156,7 @@ class CheckVersionOnline(bpy.types.Operator):
         if is_current_version:
             self.report({'INFO'}, "%d.%d.%d is the current version" % bl_info['version'])
         else:
-            self.report({'WARN'}, "There is a newer version %d.%d.%d" % online_version)
+            self.report({'WARNING'}, "There is a newer version %d.%d.%d" % online_version)
 
         return {'FINISHED'}
 
