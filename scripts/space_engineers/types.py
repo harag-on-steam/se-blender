@@ -252,8 +252,11 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split.column().prop(spceng, "block_specular_power", text="Power")
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
         
-        layout.separator()        
-        layout.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        layout.separator()
+        layout.separator()
+        col = layout.column(align=True)
+        col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         layout.separator()
 
         split = layout.split()

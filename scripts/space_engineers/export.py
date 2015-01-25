@@ -14,6 +14,7 @@ import bpy
 import shutil
 
 from .mwmbuilder import mwmbuilder_xml, material_xml
+from space_engineers.merge_xml import CubeBlocksMerger, MergeResult
 from space_engineers.mount_points import mount_point_definitions, mount_points_xml
 from space_engineers.types import SESceneProperties
 from .utils import scaleUni, layer_bits, layer_bit, md5sum
@@ -97,7 +98,7 @@ class ExportSettings:
 
     @property
     def isOldMwmbuilder(self):
-        if self._isOldMwmbuilder == None:
+        if self._isOldMwmbuilder is None:
             self._isOldMwmbuilder = (OLD_MWMBUILDER_MD5 == md5sum(self.mwmbuilder))
         return self._isOldMwmbuilder
 
@@ -366,13 +367,13 @@ class BlockExport:
                 if set.test(ob):
                     set.collect(ob)
 
-    def blockdefs(self, cubeBlocksSbc: string):
+    def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
         def mwmfile(artifact: MwmSet, settings: ExportSettings):
             artifact.filenames(settings)
             return artifact.mwmfile
 
         settings = self.settings
-        blockdefs = []
+        failed = False
 
         for settings.blocksize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
             xml = self.mp.generateXml(
@@ -380,9 +381,16 @@ class BlockExport:
                 mwmfile(self.main, settings),
                 [mwmfile(c, settings) for c in self.constr],
             )
-            blockdefs.append(xml)
 
-        return blockdefs
+            result = cubeBlocks.merge(xml)
+            if MergeResult.NOT_FOUND in result:
+                failed = True
+                settings.operator.report({'WARNING'}, "CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (
+                    xml.findtext("./Id/SubtypeId")))
+            elif MergeResult.MERGED in result:
+                settings.operator.report({'WARNING'}, "Updated SubtypeId [%s]" % (xml.findtext("./Id/SubtypeId")))
+
+        return not failed
 
     def exportFiles(self):
         settings = self.settings
@@ -469,5 +477,72 @@ class ExportSceneAsBlock(bpy.types.Operator):
 
         except subprocess.CalledProcessError as e:
             self.report({'ERROR'}, "An external tool failed, check generated logs: %s" % e)
+
+        return {'FINISHED'}
+
+class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
+    bl_idname = "export_scene.space_engineers_update_definitions"
+    bl_label = "Update Block Definitions"
+    bl_description = "Update the block-definitions in CubeBlocks.sbc."
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH')
+
+    all_scenes = bpy.props.BoolProperty(
+        name="All Scenes",
+        description="Update with data from all scenes that are marked as blocks.")
+    create_backup = bpy.props.BoolProperty(
+        name="Backup Target File",
+        description="Creates a backup of the target file before updating.")
+    allow_renames = bpy.props.BoolProperty(
+        name="Update SubtypeIds",
+        description="Renames the SubtypeId if a definition matches by BlockPairName and CubeSize. "
+                    "Be aware that this is not backwards-compatible for players!")
+
+    @classmethod
+    def poll(self, context):
+        if not context.scene:
+            return False
+
+        d = data(context.scene)
+        return d and d.is_block
+
+    def invoke(self, context, event):
+        if not self.filepath:
+            self.filepath = os.path.dirname(context.blend_data.filepath)
+
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def draw(self, context):
+        lay = self.layout
+
+        col = lay.column()
+        col.prop(self, "all_scenes")
+        col.prop(self, "create_backup")
+
+    def execute(self, context):
+        path = bpy.path.abspath(self.filepath)
+        dir = os.path.dirname(path)
+        merger = CubeBlocksMerger(cubeBlocksPath=path, backup=self.create_backup)
+
+        if self.all_scenes:
+            scenes = [scene for scene in bpy.data.scenes if data(scene).is_block]
+        else:
+            scenes = [context.scene]
+
+        wm = context.window_manager
+        wm.progress_begin(0, len(scenes))
+        try:
+            for i, scene in enumerate(scenes):
+                settings = ExportSettings(scene, dir)
+                settings.operator = self
+
+                BlockExport(settings).mergeBlockDefs(merger)
+
+                wm.progress_update(i)
+
+            merger.write()
+        finally:
+            wm.progress_end()
 
         return {'FINISHED'}

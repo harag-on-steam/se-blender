@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 2, 9),
+	"version": (0, 3, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene | Material | Empty , Tools > Create",
 	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
@@ -28,6 +28,7 @@ if not reload('mount_points'): from . import mount_points
 if not reload('mwmbuilder'): from . import mwmbuilder
 if not reload('fbx'): from . import fbx
 if not reload('havok_options'): from . import havok_options
+if not reload('merge_xml'): from . import merge_xml
 if not reload('export'): from . import export
 
 del modules
@@ -96,6 +97,7 @@ def register():
     register_class(types.DATA_PT_spceng_material)
 
     register_class(export.ExportSceneAsBlock)
+    register_class(export.UpdateDefinitionsFromBlockScene)
     register_class(types.CheckVersionOnline)
     register_class(mount_points.AddMountPointSkeleton)
     register_class(mount_points.SetupGrid)
@@ -115,6 +117,7 @@ def unregister():
     unregister_class(mount_points.SetupGrid)
     unregister_class(mount_points.AddMountPointSkeleton)
     unregister_class(types.CheckVersionOnline)
+    unregister_class(export.UpdateDefinitionsFromBlockScene)
     unregister_class(export.ExportSceneAsBlock)
 
     unregister_class(types.DATA_PT_spceng_material)
