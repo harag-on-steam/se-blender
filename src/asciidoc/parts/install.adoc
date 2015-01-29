@@ -1,0 +1,50 @@
+== Installation
+
+=== Getting the tools
+
+The first thing you need to do to get started is to download and install all the required parts.
+
+Blender::
+version http://www.blender.org/download/[2.72 or later] (90MB), 2.73 is current at the time of this writing
+
+The Havok "Content Tools for Game Artists and Designers"::
+Get version https://software.intel.com/sites/havok/en/[2013.1.0]
+(https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe[64bi]
+or https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe[32bit], 330MB)
+This contains the filter manager `hctStandAloneFilterManager` that's used to create rigid-body physics data.
+The default install location is `C:\Program Files\Havok`
+
+WARNING: You need to get Havok 2013.1. Space Engineers is currently unable to use files created with Havok 2014.
+
+The Havok FBX Importer::
+This is a https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1[seperate download] (3,5MB)
+because I had to https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b...master[fix a view things]
+in the sourcesand compile it against Havok 2013.1 (the
+http://www.projectanarchy.com/download[official download] is compiled against Havok 2014).
+The .zip contains just one executable file. It's probably a good idea to put it into the Havok Tools directory.
+
+MwmBuilder::
+This one comes with Space Engineers and is located in the game's directory under `Tools\\MwmBuilder`.
+
+=== Installing the Addon for SE
+
+--
+[.thumb]
+image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
+
+Once you got the https://github.com/harag-on-steam/se-blender/releases/latest[current version] (30kb)
+install it in Blender like any other third-party addon by going to the user preferences,
+switch to the "Add-Ons" tab,
+click on "Install from File..." and
+point Blender to the downloaded .zip.
+
+Like any addon you need to enable it after you've installed it.
+You can find the addon by using the search box or going to the Category "Space Engineers".
+After you've enabled the addon open its settings by clicking the arrow on the left.
+You need to provide all the paths in the list.
+--
+
+IMPORTANT: Use the "workaround" option for MwmBuilder only if that specific bug is still present.
+You can get more information by opening the bug-thread with the button next to the option.
+
+TIP: Don't forget to "Save User Settings".

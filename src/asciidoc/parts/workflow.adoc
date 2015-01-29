@@ -1,0 +1,119 @@
+== Using the addon
+
+=== File layout
+
+The addon makes a few assumptions about filenames and the folder layout of your mod:
+
+* The .blend file(s) are assumed to be at to root of your mod folder.
+* Models are in a subdirectory `Models\`. They are not sorted into further subdirectories.
+* Icons are in `Textures\Icons\` and have the same name as the corresponding block-pair name.
+
+NOTE: This layout currently cannot be changed.
+
+=== Scene Layout
+
+[.thumb]
+image::blender-scene.png[width=450,float=right,link=images/blender-scene.png]
+
+Inside Blender the addon uses one scene per block.
+That's why the block-settings are on the scene tab of the properties-panel.
+
+On this panel you define if the block is a large or a small block and if the export should automatically
+create a small version of your block if it is a large one.
+You also define the size of your block in grid units here.
+
+The layers of the scene contain the different components of a block.
+If you don't like the default layout you can change it with the corresponding layer masks on the scene panel.
+
+==== Main Layer
+
+By default you have one layer that contains the model of the fully-built block.
+You don't need to restrict yourself to only one mesh object.
+If it's useful to split your block into several objects (probably to apply modifiers to some parts) by all means do so.
+
+==== Collision Layer
+
+[.thumb]
+image::blender-physics.png[width=450,float=right,link=images/blender-physics.png]
+
+Next you have a layer that contains the simplified meshes used that represent the block's collision shape.
+If you don't provide any collision meshes or unmark the layer the resulting .mwm file
+will not contain collision data and SE will default to a simple collision box that encompasses the whole block.
+
+SE's physics engine (Havok) requires a few settings.
+You provide those on Blender's Physics tab by enabling Rigid Bodies for your collision meshes.
+Only the settings `Shape`, `Mass`, `Friction` and `Bouncyness` (Restitution) are exported to Havok.
+Of those `Shape` is the most important because it has a significant performance impact.
+Whenever possible try to only approximate the shape of your block.
+Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessary. Avoid `Mesh` collisions.
+
+NOTE: Keep in mind SE has an upper limit of 5 collision shapes per block.
+
+WARNING: Blender offers a `Cone` primitive shape but Havok has no support for that.
+If you use a Cone shape it will be silently converted to a Convex Hull on export.
+
+==== Mount Points
+
+[.thumb]
+image::blender-mp-setup.png[width=450,float=right,link=images/blender-mp-setup.png]
+
+[.thumb]
+image::blender-mp-ortho.png[width=450,float=right,link=images/blender-mp-ortho.png]
+
+[.thumb]
+image::blender-mp-mirror.png[width=450,float=right,link=images/blender-mp-mirror.png]
+
+The third layer defines the mount points of your block.
+The meshes on this layer are not directly exported but are used instead to calculate the mount point definitions.
+
+This works by creating rectangular faces that use the material `MountPoint` and are aligned to one of
+six sides of the block. To quickly create the material and an object that has one mount point face for each
+of the six sides use the corresponding button on the Tools panel of the 3D view.
+Duplicate, resize and move those faces in edit mode to create more mount points for a side of the block.
+You can also split out faces to several objects if you want to apply modifiers like 'mirror' or 'array'
+to some of the mount point faces.
+
+For mount point editing it is a good idea to switch to ortho-view (`Numpad 5`) and turn on 'snap to grid'.
+Also, if the mount point layer is visible the addon will show a box with dashed, orange lines.
+The lines represents the in-game size of the block as it is defined on the scene tab.
+This should help you to position the mount points correctly.
+
+If you don't provide mount points or unmark the layer none will be calculated.
+The game defaults to full moint points on all sides of the block in that case.
+
+==== Construction Layers
+
+Lastly there are several layers for the construction phases of the block.
+There is one layer for each phase of construction, from earliest to latest.
+If you change the number of construction layers you increase or decrease the number of construction phases.
+A block is allowed to have no construction phases at all.
+If you don't have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
+
+The construction phases reuse the same collision shape your main block model uses.
+There is currently no way to define seperate collision models for the construction phases
+but it would probably be unwise to have those, anyway.
+A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.
+
+=== Materials
+
+[.thumb]
+image::blender-material.png[width=450,float=right,link=images/blender-material.png]
+
+[.thumb]
+image::blender-material-node-cycles.png[width=450,float=right,link=images/blender-material-node-cycles.png]
+
+[.thumb]
+image::blender-material-simple.png[width=450,float=right,link=images/blender-material-simple.png]
+
+=== Textures
+
+[.thumb]
+image::blender-texture.png[width=450,float=right,link=images/blender-texture.png]
+
+=== Empties
+
+== Exporting
+
+=== Exporting .mwm files
+
+=== Updating CubeBlocks.sbc

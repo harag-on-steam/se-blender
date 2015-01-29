@@ -1,0 +1,16 @@
+= SE Block Tools Addon for Blender
+
+Modeling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
+This addon eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer's own .mwm mesh-format.
+To do that it provides property panels for all the special data Space Engineers stores inside an .mwm file
+directly in Blender.
+In addition it is able to automatically configure and run the conversion-tools you would normally run by hand.
+
+NOTE: The addon (and this documentation) expect you to know how to work with Blender.
+So if you are new to 3D modeling you should probably learn how to do that properly before you continue.
+
+TODO Having said that, there is an adendum that should help you to get on the right track.
+
+include::parts/install.adoc[]
+
+include::parts/workflow.adoc[]
