@@ -9,8 +9,10 @@ In addition it is able to automatically configure and run the conversion-tools y
 NOTE: The addon (and this documentation) expect you to know how to work with Blender.
 So if you are new to 3D modeling you should probably learn how to do that properly before you continue.
 
-TODO Having said that, there is an adendum that should help you to get on the right track.
+// TODO Having said that, there is an adendum that should help you to get on the right track.
 
 include::parts/install.adoc[]
 
 include::parts/workflow.adoc[]
+
+include::parts/export.adoc[]
