@@ -1,9 +1,87 @@
 == Exporting
 
-=== Exporting .mwm files
+=== Naming Conventions
 
-TODO
+All names that are used during export are derived from the scene name:
+
+[cols="2,4"]
+|===
+| BlockPairName
+| `+++{Scene-Name}+++`
+
+| SubtypeId
+| `+++{BlockPairName}_{Large\|Small}+++`
+
+| Model
+| `+++Models\{SubtypeId}.mwm+++`
+
+| Construction Model
+| `+++Models\{SubtypeId}_Construction{n}.mwm+++`
+
+| Icon
+| `+++Textures\Icons\{BlockPairName}.dds+++`
+
+|===
+
+WARNING: The BlockPairName and the SubtypeId are globally visibile in the game.
+So it's important that you choose a sufficently unique name for the scene to avoid naming-collisions with other blocks.
+
+Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
+This is primarily meant for mod authors that want to use the add but need their existing blocks to be keep their names
+to remain backward-compatibile. Otherwise there is hardly a good reason to change them.
+
+=== .mwm files
+
+The export itself runs through theses steps once you have chosen an output directory:
+
+ . Export collision-meshes to `.fbx`
+ . Convert `.fbx` to `.hkt` via Havok's FBX-importer
+ . Run `.hkt` through Havok's filter-manager* to calculate and add rigid body data
+ . Repeat for the main model and construction models
+ .. Export meshes to `.fbx`
+ .. Export material-info to `.xml` with parameters for MwmBuilder
+ .. Convert the `.fbx` and `.xml` and `.hkt` to `.mwm` via MwmBuilder
+
+NOTE: Every external conversion step is logged to a seperate log file which all start with the name of the block.
+If the export fails for any reason a first step should be to consult these log-files.
+
+=== Block Definitions
+
+When you export .mwm files the addon automatically creates a corresponding .blockdef.xml for each exported block.
+This file contains all the information that is available in Blender and that is relevant
+for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
+
+```xml
+<Definition>
+  <Id>
+    <SubtypeId>ExampleBlock</SubtypeId>
+  </Id>
+  <Icon>Textures\Icons\ExampleBlock.dds</Icon>
+  <CubeSize>Large</CubeSize>
+  <BlockTopology>TriangleMesh</BlockTopology>
+  <Size x="1" y="1" z="1"/>
+  <ModelOffset x="0" y="0" z="0"/>
+  <Model>Models\ExampleBlock_Large.mwm</Model>
+  <BuildProgressModels>
+    <Model BuildPercentUpperBound="0.33" File="Models\ExampleBlock_Large_Construction1.mwm"/>
+    <Model BuildPercentUpperBound="0.67" File="Models\ExampleBlock_Large_Construction2.mwm"/>
+    <Model BuildPercentUpperBound="1.00" File="Models\ExampleBlock_Large_Construction3.mwm"/>
+  </BuildProgressModels>
+  <MountPoints>
+    <MountPoint EndX="1.00" EndY="0.40" Side="Left" StartX="0.30" StartY="0.00"/>
+    <MountPoint EndX="0.30" EndY="0.10" Side="Left" StartX="0.00" StartY="0.00"/>
+    ...
+  </MountPoints>
+  <BlockPairName>ExampleBlock</BlockPairName>
+</Definition>
+```
 
 === Updating CubeBlocks.sbc
 
-TODO
+You can also tell the addon to take the XML data it outputs to a .blockdef.xml file and
+merge it with matching `<Definition>` sections of your mod's `CubeBlocks.sbc`.
+That saves you the trouble to do this by hand.
+
+NOTE: Updating `CubeBlocks.sbc` will only work for blocks that are already present in the file.
+The addon searches for them by their `<SubtypeId>`.
+You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.

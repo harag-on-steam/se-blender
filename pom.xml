@@ -50,6 +50,7 @@
 								<idprefix /> <!-- set the idprefix to blank -->
 								<idseparator>-</idseparator>
 								<docinfo1>true</docinfo1>
+								<toclevels>3</toclevels>
 							</attributes>
 						</configuration>
 					</execution>

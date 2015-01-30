@@ -26,7 +26,7 @@ The .zip contains just one executable file. It's probably a good idea to put it 
 MwmBuilder::
 This one comes with Space Engineers and is located in the game's directory under `Tools\MwmBuilder`.
 
-=== Installing the Addon for SE
+=== Installing the Addon
 
 [.thumb]
 image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
@@ -42,6 +42,7 @@ You can find the addon by using the search box or going to the Category "Space E
 After you've enabled the addon open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.
 
+[.clearfix]
 IMPORTANT: Use the "workaround" option for MwmBuilder only if that specific bug is still present.
 You can get more information by opening the bug-thread with the button next to the option.
 

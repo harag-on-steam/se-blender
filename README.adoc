@@ -6,13 +6,7 @@ To do that it provides property panels for all the special data Space Engineers 
 directly in Blender.
 In addition it is able to automatically configure and run the conversion-tools you would normally run by hand.
 
-NOTE: The addon (and this documentation) expect you to know how to work with Blender.
-So if you are new to 3D modeling you should probably learn how to do that properly before you continue.
+The most current version is available in the
+https://github.com/harag-on-steam/se-blender/releases/latest[release section] on GitHub.
 
-// TODO Having said that, there is an adendum that should help you to get on the right track.
-
-include::parts/install.adoc[]
-
-include::parts/workflow.adoc[]
-
-include::parts/export.adoc[]
+The documentation is published to the project's http://harag-on-steam.github.io/se-blender/[Github pages].
