@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.2">
-<title>SE Block Tools Addon for Blender</title>
+<title>SE Block Tools for Blender</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -294,8 +294,7 @@ td.hdlist1,td.hdlist2{vertical-align:top}
 .literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
 .colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
 .colist>table tr>td:last-of-type{padding:.25em 0}
-.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd; clear: both;}
-.admonitionblock {clear: both;}
+.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
 .imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
 .imageblock.right,.imageblock[style*="float: right"]{margin:.25em 0 1.25em .625em}
 .imageblock>.title{margin-bottom:0}
@@ -504,28 +503,49 @@ table.CodeRay td.code>pre{padding:0}
 </head>
 <body class="article toc2 toc-left">
 <div id="header">
-<h1>SE Block Tools Addon for Blender</h1>
+<h1>SE Block Tools for Blender</h1>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#installation">Installation</a>
 <ul class="sectlevel2">
 <li><a href="#getting-the-tools">Getting the tools</a></li>
-<li><a href="#installing-the-addon-for-se">Installing the Addon for SE</a></li>
+<li><a href="#installing-the-addon">Installing the Addon</a></li>
 </ul>
 </li>
 <li><a href="#using-the-addon">Using the addon</a>
 <ul class="sectlevel2">
 <li><a href="#file-layout">File layout</a></li>
-<li><a href="#scene-layout">Scene Layout</a></li>
-<li><a href="#textures">Textures</a></li>
-<li><a href="#materials">Materials</a></li>
+<li><a href="#scene-layout">Scene Layout</a>
+<ul class="sectlevel3">
+<li><a href="#main-layer">Main Layer</a></li>
+<li><a href="#collision-layer">Collision Layer</a></li>
+<li><a href="#mount-points">Mount Points</a></li>
+<li><a href="#construction-layers">Construction Layers</a></li>
+</ul>
+</li>
+<li><a href="#textures">Textures</a>
+<ul class="sectlevel3">
+<li><a href="#diffuse-emissive">Diffuse/Emissive</a></li>
+<li><a href="#normal-specular">Normal/Specular</a></li>
+</ul>
+</li>
+<li><a href="#materials">Materials</a>
+<ul class="sectlevel3">
+<li><a href="#texturing">Texturing</a></li>
+<li><a href="#specularity">Specularity</a></li>
+<li><a href="#glass-materials">Glass materials</a></li>
+<li><a href="#special-material-names">Special Material Names</a></li>
+</ul>
+</li>
 <li><a href="#empties">Empties</a></li>
 </ul>
 </li>
 <li><a href="#exporting">Exporting</a>
 <ul class="sectlevel2">
-<li><a href="#exporting-mwm-files">Exporting .mwm files</a></li>
+<li><a href="#naming-conventions">Naming Conventions</a></li>
+<li><a href="#mwm-files">.mwm files</a></li>
+<li><a href="#block-definitions">Block Definitions</a></li>
 <li><a href="#updating-cubeblocks-sbc">Updating CubeBlocks.sbc</a></li>
 </ul>
 </li>
@@ -611,7 +631,7 @@ The .zip contains just one executable file. It&#8217;s probably a good idea to p
 </div>
 </div>
 <div class="sect2">
-<h3 id="installing-the-addon-for-se"><a class="anchor" href="#installing-the-addon-for-se"></a>Installing the Addon for SE</h3>
+<h3 id="installing-the-addon"><a class="anchor" href="#installing-the-addon"></a>Installing the Addon</h3>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
 <a class="image" href="images/blender-setup.png"><img src="./images/blender-setup.png" alt="blender setup" width="450"></a>
@@ -630,7 +650,7 @@ You can find the addon by using the search box or going to the Category "Space E
 After you&#8217;ve enabled the addon open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.</p>
 </div>
-<div class="admonitionblock important">
+<div class="admonitionblock important clearfix">
 <table>
 <tr>
 <td class="icon">
@@ -672,10 +692,10 @@ Don&#8217;t forget to "Save User Settings".
 <p>The .blend file(s) are assumed to be at the root of your mod folder.</p>
 </li>
 <li>
-<p>Models are in a subdirectory <code>Models\</code>. They are not sorted into further subdirectories.</p>
+<p>Models are in a subfolder <code>Models\</code>. They are not sorted into further subfolders.</p>
 </li>
 <li>
-<p>Icons are in <code>Textures\Icons\</code> and have the same name as the corresponding block-pair.</p>
+<p>Icons are in <code>Textures\Icons\</code>.</p>
 </li>
 </ul>
 </div>
@@ -740,6 +760,22 @@ Of those <code>Shape</code> is the most important because it has a significant p
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>Convex Hull</code> only if necessary. Avoid <code>Mesh</code> collisions.</p>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Make sure you
+<a href="http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations">apply object transformations</a>
+to all collision objects before export.
+As a rule of thumb the addon never modifies your objects on its own so you have to do this yourself.
+If you don&#8217;t the collison shapes will most probably be rotated or positioned wrong.
+</td>
+</tr>
+</table>
+</div>
 <div class="admonitionblock warning">
 <table>
 <tr>
@@ -770,17 +806,7 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 <h4 id="mount-points"><a class="anchor" href="#mount-points"></a>Mount Points</h4>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
-<a class="image" href="images/blender-mp-setup.png"><img src="./images/blender-mp-setup.png" alt="blender mp setup" width="250"></a>
-</div>
-</div>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-mp-ortho.png"><img src="./images/blender-mp-ortho.png" alt="blender mp ortho" width="250"></a>
-</div>
-</div>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-mp-mirror.png"><img src="./images/blender-mp-mirror.png" alt="blender mp mirror" width="250"></a>
+<a class="image" href="images/blender-mp-setup.png"><img src="./images/blender-mp-setup.png" alt="blender mp setup" width="450"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -792,12 +818,13 @@ The meshes on this layer are not directly exported but are used instead to calcu
 six sides of the block. To quickly create the material and an object that has one mount point face for each
 of the six sides use the corresponding button on the Tools panel of the 3D view.
 Duplicate, resize and move those faces in edit mode to create more mount points for a side of the block.
-You can also split out faces to several objects if you want to apply modifiers like 'mirror' or 'array'
+You can also split out faces to several objects if you want to apply
+<a href="images/blender-mp-mirror.png">modifiers like 'mirror' or 'array'</a>
 to some of the mount point faces.</p>
 </div>
 <div class="paragraph">
-<p>For mount point editing it is a good idea to switch to ortho-view (<code>Numpad 5</code>) and turn on 'snap to grid'.
-Also, if the mount point layer is visible the addon will show a box with dashed, orange lines.
+<p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> (<code>Numpad 5</code>) and
+turn on 'snap to grid'. Also, if the mount point layer is visible the addon will show a box with dashed, orange lines.
 The lines represents the in-game size of the block as it is defined on the scene tab.
 This should help you to position the mount points correctly.</p>
 </div>
@@ -821,6 +848,20 @@ There is currently no way to define seperate collision models for the constructi
 but it would probably be unwise to have those, anyway.
 A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.</p>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+A Blender object can be assigned to several layers.
+So if your construction models gets more and more detailed you can start with the inital frame as one object that
+is visibile on all construction layers and then progressively add more objects towards the final construction layer.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -831,18 +872,18 @@ SE currently uses a maximum of two textures per face of a mesh.
 Both of them have four channels (RGBA).</p>
 </div>
 <div class="sect3">
-<h4 id="diffuse-emissive-textures"><a class="anchor" href="#diffuse-emissive-textures"></a>Diffuse/Emissive Textures</h4>
+<h4 id="diffuse-emissive"><a class="anchor" href="#diffuse-emissive"></a>Diffuse/Emissive</h4>
 <div class="paragraph">
-<p>By convention Keen names this kind of texture-files with a <code>_de.dds</code> at the end
+<p>By convention Keen names this kind of texture-files with <code>_de.dds</code> at the end
 but you are allowed to ignore the convention.
-The RGB channels of this texture represent the diffuse color of each pixel of a face&#8201;&#8212;&#8201;just like with any regular digital picture.</p>
+The RGB-channels of this texture represent the diffuse color of each pixel of a face&#8201;&#8212;&#8201;just like with any regular digital picture.</p>
 </div>
 <div class="paragraph">
-<p>The A channel of this texture does not represent the transparency of the pixels, though.
+<p>The A-channel of this texture does not represent the transparency of the pixels, though.
 Instead it tells SE how much emissive light a pixel gives off in the dark.
 Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
 Theoretically the light given off could be different from the diffuse color of the pixel but in SE
-it is always the same as the diffuse color so there are no extra channels for that.</p>
+it is always the same as the diffuse color so there are no extrA-channels for that.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -860,7 +901,7 @@ named <code>Emissive</code>.
 <div class="sect4">
 <h5 id="recolorable-blocks"><a class="anchor" href="#recolorable-blocks"></a>Recolorable Blocks</h5>
 <div class="paragraph">
-<p>If the texture-filename ends in <code>_me.dds</code> instead the A channel serves a double purpose.
+<p>If the texture-filename ends in <code>_me.dds</code> instead the A-channel serves a double purpose.
 Here the values in the range 115 to 140 serve as a mask&#8201;&#8212;&#8201;so you can&#8217;t have Emissivity at these levels.
 The mask tells the game how much of the color the user has chosen for the block it should mix in.
 A value of 140 means "only the user&#8217;s color", a value of 115 means "only the block&#8217;s color".</p>
@@ -868,11 +909,11 @@ A value of 140 means "only the user&#8217;s color", a value of 115 means "only t
 </div>
 </div>
 <div class="sect3">
-<h4 id="normal-specular-textures"><a class="anchor" href="#normal-specular-textures"></a>Normal/Specular Textures</h4>
+<h4 id="normal-specular"><a class="anchor" href="#normal-specular"></a>Normal/Specular</h4>
 <div class="paragraph">
 <p>This kind of texture is named with <code>_ns.dds</code> at the end and contains no color information at all.
-The RGB channels contain a standard DirectX normal-map.
-The A channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
+The RGB-channels contain a standard DirectX normal-map.
+The A-channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
 A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "apply full specularity".</p>
 </div>
 <div class="admonitionblock tip">
@@ -882,9 +923,9 @@ A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "ap
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-The A channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
+The A-channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
 to edit SE&#8217;s textures. It&#8217;s therefor a good idea to seperate the channels in those tools.
-For example, in Gimp you can convert the A channel into a layer mask and edit and view that separately.
+For example, in Gimp you can convert the A-channel into a layer mask and edit and view that separately.
 </td>
 </tr>
 </table>
@@ -940,7 +981,7 @@ in viewing the normal map or specularity in Blender.
 <p>The game resolves texture-paths relative to two different base folders.
 The first is the game&#8217;s <code>Content/</code> folder (so you are able to reuse the game&#8217;s textures),
 the second is the root-folder of the mod. This is why the addon expects the .blend file to be in the root-folder
-because it then automatically knows the location of that root-folder without you telling it.</p>
+because it then automatically knows the location of that folder without you telling it.</p>
 </div>
 <div class="paragraph">
 <p>When exporting .mwm files the addon derives the correct relative texture-paths by comparing each texture&#8217;s absolute path
@@ -980,7 +1021,7 @@ But it&#8217;s easy to spot missing texture-files when you configure the 3D view
 <p>Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
 The values you set there are the maximum values for that material.
 How much of those maximum values are actually applied to the pixel of a face
-is determined by the A channel of the normal/specular texture.</p>
+is determined by the A-channel of the normal/specular texture.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -1012,7 +1053,7 @@ It makes no sense for this addon to support editing the content of this file
 because the settings cannot be viewed in Blender, anyway.</p>
 </div>
 <div class="paragraph">
-<p>So what you get if you change a material from <code>Normal</code> to <code>Glass</code> are the settings that <em>are</em> stored in the
+<p>What you get if you change a material from <code>Normal</code> to <code>Glass</code> are the settings that <em>are</em> stored in the
 .mwm file on export. For the meaning of these settings please refer to Keen&#8217;s
 <a href="http://steamcommunity.com/sharedfiles/filedetails/?id=300427203&amp;searchtext=transparent">tutorial</a>
 on transparent materials.</p>
@@ -1039,6 +1080,11 @@ Landing Gear displays the lock state,
 several other blocks show if they are powered,
 conveyors show if the conveyor-line is etablished or broken, etc.</p>
 </div>
+<div class="paragraph">
+<p>Because all these are some form of lights Keen chose to also use the <code>Emissive</code> material name for this.
+If a block has more than one status the materials are addionaly numbered, starting with zero
+(so <code>Emissive0</code> through <code>Emissive3</code> for batteries, for example).</p>
+</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -1051,11 +1097,6 @@ The game uses hard-coded values to override the color with the typical black, ye
 </td>
 </tr>
 </table>
-</div>
-<div class="paragraph">
-<p>Because all these are some form of status-lights Keen chose to also use the <code>Emissive</code> material name for this.
-If a block has more than one status the materials are addionaly numbered, starting with zero
-(so <code>Emissive0</code> through <code>Emissive3</code> for batteries, for example).</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1076,7 +1117,26 @@ if you named the material "Emmisive".
 <div class="sect2">
 <h3 id="empties"><a class="anchor" href="#empties"></a>Empties</h3>
 <div class="paragraph">
-<p>TODO</p>
+<p>SE uses empties to represent predefined points of interest on a model like terminal keypads, cargo ports or
+the location of the thruster flame. The empty&#8217;s function is determined by its name.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+For those empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
+<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to 0.5. This way you can preview the exact size in Blender.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>There are some empty types that require linking to other model files that contain attached parts.
+Currently these are doors, rotors and pistons.
+For those there is the <code>file</code> property on the data tab for empties.</p>
 </div>
 </div>
 </div>
@@ -1085,15 +1145,159 @@ if you named the material "Emmisive".
 <h2 id="exporting"><a class="anchor" href="#exporting"></a>Exporting</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="exporting-mwm-files"><a class="anchor" href="#exporting-mwm-files"></a>Exporting .mwm files</h3>
+<h3 id="naming-conventions"><a class="anchor" href="#naming-conventions"></a>Naming Conventions</h3>
 <div class="paragraph">
-<p>TODO</p>
+<p>All names that are used during export are derived from the scene name:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 66%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BlockPairName</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{Scene-Name}</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SubtypeId</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{BlockPairName}_{Large|Small}</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Model</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}.mwm</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Construction Model</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_Construction{n}.mwm</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Icon</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Textures\Icons\{BlockPairName}.dds</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+The BlockPairName and the SubtypeId are globally visibile in the game.
+So it&#8217;s important that you choose a sufficently unique name for the scene to avoid naming-collisions with other blocks.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
+This is primarily meant for mod authors that want to use the add but need their existing blocks to be keep their names
+to remain backward-compatibile. Otherwise there is hardly a good reason to change them.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mwm-files"><a class="anchor" href="#mwm-files"></a>.mwm files</h3>
+<div class="paragraph">
+<p>The export itself runs through theses steps once you have chosen an output directory:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Export collision-meshes to <code>.fbx</code></p>
+</li>
+<li>
+<p>Convert <code>.fbx</code> to <code>.hkt</code> via Havok&#8217;s FBX-importer</p>
+</li>
+<li>
+<p>Run <code>.hkt</code> through Havok&#8217;s filter-manager* to calculate and add rigid body data</p>
+</li>
+<li>
+<p>Repeat for the main model and construction models</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Export meshes to <code>.fbx</code></p>
+</li>
+<li>
+<p>Export material-info to <code>.xml</code> with parameters for MwmBuilder</p>
+</li>
+<li>
+<p>Convert the <code>.fbx</code> and <code>.xml</code> and <code>.hkt</code> to <code>.mwm</code> via MwmBuilder</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Every external conversion step is logged to a seperate log file which all start with the name of the block.
+If the export fails for any reason a first step should be to consult these log-files.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="block-definitions"><a class="anchor" href="#block-definitions"></a>Block Definitions</h3>
+<div class="paragraph">
+<p>When you export .mwm files the addon automatically creates a corresponding .blockdef.xml for each exported block.
+This file contains all the information that is available in Blender and that is relevant
+for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <code>CubeBlocks.sbc</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;Definition&gt;</span>
+  <span class="tag">&lt;Id&gt;</span>
+    <span class="tag">&lt;SubtypeId&gt;</span>ExampleBlock<span class="tag">&lt;/SubtypeId&gt;</span>
+  <span class="tag">&lt;/Id&gt;</span>
+  <span class="tag">&lt;Icon&gt;</span>Textures\Icons\ExampleBlock.dds<span class="tag">&lt;/Icon&gt;</span>
+  <span class="tag">&lt;CubeSize&gt;</span>Large<span class="tag">&lt;/CubeSize&gt;</span>
+  <span class="tag">&lt;BlockTopology&gt;</span>TriangleMesh<span class="tag">&lt;/BlockTopology&gt;</span>
+  <span class="tag">&lt;Size</span> <span class="attribute-name">x</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">y</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">z</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+  <span class="tag">&lt;ModelOffset</span> <span class="attribute-name">x</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">y</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">z</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+  <span class="tag">&lt;Model&gt;</span>Models\ExampleBlock_Large.mwm<span class="tag">&lt;/Model&gt;</span>
+  <span class="tag">&lt;BuildProgressModels&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.33</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction1.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.67</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction2.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction3.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+  <span class="tag">&lt;/BuildProgressModels&gt;</span>
+  <span class="tag">&lt;MountPoints&gt;</span>
+    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.40</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.10</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    ...
+  <span class="tag">&lt;/MountPoints&gt;</span>
+  <span class="tag">&lt;BlockPairName&gt;</span>ExampleBlock<span class="tag">&lt;/BlockPairName&gt;</span>
+<span class="tag">&lt;/Definition&gt;</span></code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="updating-cubeblocks-sbc"><a class="anchor" href="#updating-cubeblocks-sbc"></a>Updating CubeBlocks.sbc</h3>
 <div class="paragraph">
-<p>TODO</p>
+<p>You can also tell the addon to take the XML data it outputs to a .blockdef.xml file and
+merge it with matching <code>&lt;Definition&gt;</code> sections of your mod&#8217;s <code>CubeBlocks.sbc</code>.
+That saves you the trouble to do this by hand.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Updating <code>CubeBlocks.sbc</code> will only work for blocks that are already present in the file.
+The addon searches for them by their <code>&lt;SubtypeId&gt;</code>.
+You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -1101,7 +1305,7 @@ if you named the material "Emmisive".
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-01-30 01:37:36 CET
+Last updated 2015-01-30 20:52:39 CET
 </div>
 </div>
 </body>
