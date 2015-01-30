@@ -294,7 +294,8 @@ td.hdlist1,td.hdlist2{vertical-align:top}
 .literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
 .colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
 .colist>table tr>td:last-of-type{padding:.25em 0}
-.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
+.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd; clear: both;}
+.admonitionblock {clear: both;}
 .imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
 .imageblock.right,.imageblock[style*="float: right"]{margin:.25em 0 1.25em .625em}
 .imageblock>.title{margin-bottom:0}
@@ -517,8 +518,8 @@ table.CodeRay td.code>pre{padding:0}
 <ul class="sectlevel2">
 <li><a href="#file-layout">File layout</a></li>
 <li><a href="#scene-layout">Scene Layout</a></li>
-<li><a href="#materials">Materials</a></li>
 <li><a href="#textures">Textures</a></li>
+<li><a href="#materials">Materials</a></li>
 <li><a href="#empties">Empties</a></li>
 </ul>
 </li>
@@ -554,9 +555,6 @@ So if you are new to 3D modeling you should probably learn how to do that proper
 </tr>
 </table>
 </div>
-<div class="paragraph">
-<p>TODO Having said that, there is an adendum that should help you to get on the right track.</p>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -571,15 +569,15 @@ So if you are new to 3D modeling you should probably learn how to do that proper
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>version <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing</p>
+<p>Get version <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
 <p>Get version <a href="https://software.intel.com/sites/havok/en/">2013.1.0</a>
-(<a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe">64bi</a>
+(<a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe">64bit</a>
 or <a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe">32bit</a>, 330MB)
-This contains the filter manager <code>hctStandAloneFilterManager</code> that&#8217;s used to create rigid-body physics data.
-The default install location is <code>C:\Program Files\Havok</code></p>
+This contains the filter manager <code>hctStandAloneFilterManager.exe</code> that&#8217;s used to create rigid-body physics data.
+The default install location is <code>C:\Program Files\Havok\HavokContentTools</code></p>
 </dd>
 </dl>
 </div>
@@ -599,23 +597,21 @@ You need to get Havok 2013.1. Space Engineers is currently unable to use files c
 <dl>
 <dt class="hdlist1">The Havok FBX Importer</dt>
 <dd>
-<p>This is a <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">seperate download</a> (3,5MB)
+<p>This is a <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">separate download</a> (3,5MB)
 because I had to <a href="https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b&#8230;&#8203;master">fix a view things</a>
-in the sourcesand compile it against Havok 2013.1 (the
-<a href="http://www.projectanarchy.com/download">official download</a> is compiled against Havok 2014).
+in the sources and compile it against Havok 2013.1
+(the <a href="http://www.projectanarchy.com/download">official download</a> is compiled against Havok 2014).
 The .zip contains just one executable file. It&#8217;s probably a good idea to put it into the Havok Tools directory.</p>
 </dd>
 <dt class="hdlist1">MwmBuilder</dt>
 <dd>
-<p>This one comes with Space Engineers and is located in the game&#8217;s directory under <code>Tools\\MwmBuilder</code>.</p>
+<p>This one comes with Space Engineers and is located in the game&#8217;s directory under <code>Tools\MwmBuilder</code>.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
 <h3 id="installing-the-addon-for-se"><a class="anchor" href="#installing-the-addon-for-se"></a>Installing the Addon for SE</h3>
-<div class="openblock">
-<div class="content">
 <div class="imageblock thumb" style="float: right">
 <div class="content">
 <a class="image" href="images/blender-setup.png"><img src="./images/blender-setup.png" alt="blender setup" width="450"></a>
@@ -633,8 +629,6 @@ point Blender to the downloaded .zip.</p>
 You can find the addon by using the search box or going to the Category "Space Engineers".
 After you&#8217;ve enabled the addon open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.</p>
-</div>
-</div>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -675,13 +669,13 @@ Don&#8217;t forget to "Save User Settings".
 <div class="ulist">
 <ul>
 <li>
-<p>The .blend file(s) are assumed to be at to root of your mod folder.</p>
+<p>The .blend file(s) are assumed to be at the root of your mod folder.</p>
 </li>
 <li>
 <p>Models are in a subdirectory <code>Models\</code>. They are not sorted into further subdirectories.</p>
 </li>
 <li>
-<p>Icons are in <code>Textures\Icons\</code> and have the same name as the corresponding block-pair name.</p>
+<p>Icons are in <code>Textures\Icons\</code> and have the same name as the corresponding block-pair.</p>
 </li>
 </ul>
 </div>
@@ -712,7 +706,7 @@ That&#8217;s why the block-settings are on the scene tab of the properties-panel
 <div class="paragraph">
 <p>On this panel you define if the block is a large or a small block and if the export should automatically
 create a small version of your block if it is a large one.
-You also define the size of your block in grid units here.</p>
+You also define the size of your block in in-game grid units here.</p>
 </div>
 <div class="paragraph">
 <p>The layers of the scene contain the different components of a block.
@@ -734,23 +728,23 @@ If it&#8217;s useful to split your block into several objects (probably to apply
 </div>
 </div>
 <div class="paragraph">
-<p>Next you have a layer that contains the simplified meshes used that represent the block&#8217;s collision shape.
+<p>Next you have a layer that contains the simplified meshes that represent the block&#8217;s collision shape.
 If you don&#8217;t provide any collision meshes or unmark the layer the resulting .mwm file
 will not contain collision data and SE will default to a simple collision box that encompasses the whole block.</p>
 </div>
 <div class="paragraph">
-<p>SE&#8217;s physics engine (Havok) requires a few settings.
+<p>Havok, the physics engine of SE, requires some settings do its work.
 You provide those on Blender&#8217;s Physics tab by enabling Rigid Bodies for your collision meshes.
-Only the settings <code>Shape</code>, <code>Mass</code>, <code>Friction</code> and <code>Bouncyness</code> (Restitution) are exported to Havok.
+Only the settings <code>Shape</code>, <code>Mass</code>, <code>Friction</code> and <code>Bounciness</code> (Restitution) are exported to Havok.
 Of those <code>Shape</code> is the most important because it has a significant performance impact.
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>Convex Hull</code> only if necessary. Avoid <code>Mesh</code> collisions.</p>
 </div>
-<div class="admonitionblock note">
+<div class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-note" title="Note"></i>
+<i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
 Keep in mind SE has an upper limit of 5 collision shapes per block.
@@ -758,11 +752,11 @@ Keep in mind SE has an upper limit of 5 collision shapes per block.
 </tr>
 </table>
 </div>
-<div class="admonitionblock warning">
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 Blender offers a <code>Cone</code> primitive shape but Havok has no support for that.
@@ -776,17 +770,17 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 <h4 id="mount-points"><a class="anchor" href="#mount-points"></a>Mount Points</h4>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
-<a class="image" href="images/blender-mp-setup.png"><img src="./images/blender-mp-setup.png" alt="blender mp setup" width="450"></a>
+<a class="image" href="images/blender-mp-setup.png"><img src="./images/blender-mp-setup.png" alt="blender mp setup" width="250"></a>
 </div>
 </div>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
-<a class="image" href="images/blender-mp-ortho.png"><img src="./images/blender-mp-ortho.png" alt="blender mp ortho" width="450"></a>
+<a class="image" href="images/blender-mp-ortho.png"><img src="./images/blender-mp-ortho.png" alt="blender mp ortho" width="250"></a>
 </div>
 </div>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
-<a class="image" href="images/blender-mp-mirror.png"><img src="./images/blender-mp-mirror.png" alt="blender mp mirror" width="450"></a>
+<a class="image" href="images/blender-mp-mirror.png"><img src="./images/blender-mp-mirror.png" alt="blender mp mirror" width="250"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -830,34 +824,260 @@ A block model that changes its physical dimensions while the player is welding r
 </div>
 </div>
 <div class="sect2">
+<h3 id="textures"><a class="anchor" href="#textures"></a>Textures</h3>
+<div class="paragraph">
+<p>This is a small excursion into how SE textures as block.
+SE currently uses a maximum of two textures per face of a mesh.
+Both of them have four channels (RGBA).</p>
+</div>
+<div class="sect3">
+<h4 id="diffuse-emissive-textures"><a class="anchor" href="#diffuse-emissive-textures"></a>Diffuse/Emissive Textures</h4>
+<div class="paragraph">
+<p>By convention Keen names this kind of texture-files with a <code>_de.dds</code> at the end
+but you are allowed to ignore the convention.
+The RGB channels of this texture represent the diffuse color of each pixel of a face&#8201;&#8212;&#8201;just like with any regular digital picture.</p>
+</div>
+<div class="paragraph">
+<p>The A channel of this texture does not represent the transparency of the pixels, though.
+Instead it tells SE how much emissive light a pixel gives off in the dark.
+Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
+Theoretically the light given off could be different from the diffuse color of the pixel but in SE
+it is always the same as the diffuse color so there are no extra channels for that.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The emissivity channel is only considered if the material (see next section) that uses the texture is
+named <code>Emissive</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="recolorable-blocks"><a class="anchor" href="#recolorable-blocks"></a>Recolorable Blocks</h5>
+<div class="paragraph">
+<p>If the texture-filename ends in <code>_me.dds</code> instead the A channel serves a double purpose.
+Here the values in the range 115 to 140 serve as a mask&#8201;&#8212;&#8201;so you can&#8217;t have Emissivity at these levels.
+The mask tells the game how much of the color the user has chosen for the block it should mix in.
+A value of 140 means "only the user&#8217;s color", a value of 115 means "only the block&#8217;s color".</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="normal-specular-textures"><a class="anchor" href="#normal-specular-textures"></a>Normal/Specular Textures</h4>
+<div class="paragraph">
+<p>This kind of texture is named with <code>_ns.dds</code> at the end and contains no color information at all.
+The RGB channels contain a standard DirectX normal-map.
+The A channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
+A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "apply full specularity".</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The A channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
+to edit SE&#8217;s textures. It&#8217;s therefor a good idea to seperate the channels in those tools.
+For example, in Gimp you can convert the A channel into a layer mask and edit and view that separately.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="materials"><a class="anchor" href="#materials"></a>Materials</h3>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-material.png"><img src="./images/blender-material.png" alt="blender material" width="450"></a>
-</div>
-</div>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-material-node-cycles.png"><img src="./images/blender-material-node-cycles.png" alt="blender material node cycles" width="450"></a>
-</div>
-</div>
+<div class="sect3">
+<h4 id="texturing"><a class="anchor" href="#texturing"></a>Texturing</h4>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
 <a class="image" href="images/blender-material-simple.png"><img src="./images/blender-material-simple.png" alt="blender material simple" width="450"></a>
 </div>
 </div>
+<div class="paragraph">
+<p>Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
+<a href="http://wiki.blender.org/index.php/Doc:2.6/Manual/Textures/Mapping/UV/Unwrapping">UV-mapping</a>
+to tell the game which <em>part</em> of a texture to use for a face).</p>
 </div>
-<div class="sect2">
-<h3 id="textures"><a class="anchor" href="#textures"></a>Textures</h3>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-texture.png"><img src="./images/blender-texture.png" alt="blender texture" width="450"></a>
+<div class="paragraph">
+<p>In Blender there are several types of materials depending on the renderer you have chosen.
+If you choose <code>Blender Render</code> as the renderer you can switch between simple and node-based materials.
+If you choose <code>Cycles</code> as the renderer you are forced to use node-based materials.</p>
+</div>
+<div class="paragraph">
+<p>This addon needs you to use simple materials because these are the only ones where it can reliably know
+it can find the texture-files in the slots on the Texture property tab.</p>
+</div>
+<div class="paragraph">
+<p>It distinguishes between the diffuse/emissive and the normal/specular textures by looking at the influence levels
+of the textures. If the 'Diffuse' influence is above 0.0 the texture is considered to be the diffuse/emissive texture.
+If the 'Normal' influence level is above 0.0 it is considered to be the normal/specular texture.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you configure no normal/specular texture and your diffuse/emissive texture&#8217;s filename uses Keen&#8217;s convention
+to end in <code>_de.dds</code> or <code>_me.dds</code> the addon assumes there is a normal/specular texture-file that ends with <code>_ns.dds</code>
+and will export that to SE automatically. So following the convention saves you some work if you are not interested
+in viewing the normal map or specularity in Blender.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="texture-paths"><a class="anchor" href="#texture-paths"></a>Texture Paths</h5>
+<div class="paragraph">
+<p>The game resolves texture-paths relative to two different base folders.
+The first is the game&#8217;s <code>Content/</code> folder (so you are able to reuse the game&#8217;s textures),
+the second is the root-folder of the mod. This is why the addon expects the .blend file to be in the root-folder
+because it then automatically knows the location of that root-folder without you telling it.</p>
+</div>
+<div class="paragraph">
+<p>When exporting .mwm files the addon derives the correct relative texture-paths by comparing each texture&#8217;s absolute path
+against the root-folder of your mod and addionally to the game&#8217;s location (as configured in the addon preferences).</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Don&#8217;t use texture-files that are not inside the mod folder.
+Neither Blender nor the addon will prevent you from doing so but this will not work when exporting .mwm files.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The addon does not check if the path of a texture actually points to an exisiting file.
+But it&#8217;s easy to spot missing texture-files when you configure the 3D view to display meshes with their materials.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="specularity"><a class="anchor" href="#specularity"></a>Specularity</h4>
+<div class="paragraph">
+<p>Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
+The values you set there are the maximum values for that material.
+How much of those maximum values are actually applied to the pixel of a face
+is determined by the A channel of the normal/specular texture.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+There is also a "Specular" panel. This is the wrong panel.
+With that you control specularity as it is rendered by Blender.
+The algorithm Blender uses is similiar to the one SE uses but the values have different meanings.
+So the addon cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The effect of the two values <code>Intensity</code> and <code>Power</code> are hard to describe so it is best if you play with them
+and watch the results in-game. Just know that at high values (30.0 / 30.0) the game&#8217;s specularity shader
+also starts to mirror the environment like smooth metal would do.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="glass-materials"><a class="anchor" href="#glass-materials"></a>Glass materials</h4>
+<div class="paragraph">
+<p>Glass materials have some extra settings that are not contained in an .mwm file
+but are instead stored in a file called <code>TransparentMaterials.sbc</code>.
+It makes no sense for this addon to support editing the content of this file
+because the settings cannot be viewed in Blender, anyway.</p>
+</div>
+<div class="paragraph">
+<p>So what you get if you change a material from <code>Normal</code> to <code>Glass</code> are the settings that <em>are</em> stored in the
+.mwm file on export. For the meaning of these settings please refer to Keen&#8217;s
+<a href="http://steamcommunity.com/sharedfiles/filedetails/?id=300427203&amp;searchtext=transparent">tutorial</a>
+on transparent materials.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="special-material-names"><a class="anchor" href="#special-material-names"></a>Special Material Names</h4>
+<div class="paragraph">
+<p>Normally you are free to choose the name of a material.
+But there are some visuals in SE that are only enabled if the material of the face has a special name</p>
+</div>
+<div class="sect4">
+<h5 id="emissivity"><a class="anchor" href="#emissivity"></a>Emissivity</h5>
+<div class="paragraph">
+<p>Emissivity is generally only enabled if the material is named <code>Emissive</code>.
+Otherwise the emissive intensity from the diffuse/emissive texture is ignored.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="status-lights"><a class="anchor" href="#status-lights"></a>Status lights</h5>
+<div class="paragraph">
+<p>A lot of block types have some type of status indicator.
+Landing Gear displays the lock state,
+several other blocks show if they are powered,
+conveyors show if the conveyor-line is etablished or broken, etc.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+For status-lights you have basically no control over the color of the face.
+The game uses hard-coded values to override the color with the typical black, yellow, green or red.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Because all these are some form of status-lights Keen chose to also use the <code>Emissive</code> material name for this.
+If a block has more than one status the materials are addionaly numbered, starting with zero
+(so <code>Emissive0</code> through <code>Emissive3</code> for batteries, for example).</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+It&#8217;s easy to spell "Emissive" wrong. If status lights don&#8217;t work the first thing you should check is
+if you named the material "Emmisive".
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="empties"><a class="anchor" href="#empties"></a>Empties</h3>
-
+<div class="paragraph">
+<p>TODO</p>
+</div>
 </div>
 </div>
 </div>
@@ -866,18 +1086,22 @@ A block model that changes its physical dimensions while the player is welding r
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="exporting-mwm-files"><a class="anchor" href="#exporting-mwm-files"></a>Exporting .mwm files</h3>
-
+<div class="paragraph">
+<p>TODO</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="updating-cubeblocks-sbc"><a class="anchor" href="#updating-cubeblocks-sbc"></a>Updating CubeBlocks.sbc</h3>
-
+<div class="paragraph">
+<p>TODO</p>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-01-29 01:41:55 CET
+Last updated 2015-01-30 01:37:36 CET
 </div>
 </div>
 </body>
