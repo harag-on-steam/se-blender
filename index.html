@@ -534,7 +534,7 @@ table.CodeRay td.code>pre{padding:0}
 <ul class="sectlevel3">
 <li><a href="#texturing">Texturing</a></li>
 <li><a href="#specularity">Specularity</a></li>
-<li><a href="#glass-materials">Glass materials</a></li>
+<li><a href="#transparent-materials">Transparent Materials</a></li>
 <li><a href="#special-material-names">Special Material Names</a></li>
 </ul>
 </li>
@@ -544,7 +544,7 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#exporting">Exporting</a>
 <ul class="sectlevel2">
 <li><a href="#naming-conventions">Naming Conventions</a></li>
-<li><a href="#mwm-files">.mwm files</a></li>
+<li><a href="#exporting-mwm-files">Exporting .mwm files</a></li>
 <li><a href="#block-definitions">Block Definitions</a></li>
 <li><a href="#updating-cubeblocks-sbc">Updating CubeBlocks.sbc</a></li>
 </ul>
@@ -699,17 +699,8 @@ Don&#8217;t forget to "Save User Settings".
 </li>
 </ul>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-This layout currently cannot be changed.
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>This layout currently cannot be changed.</p>
 </div>
 </div>
 <div class="sect2">
@@ -736,8 +727,8 @@ If you don&#8217;t like the default layout you can change it with the correspond
 <h4 id="main-layer"><a class="anchor" href="#main-layer"></a>Main Layer</h4>
 <div class="paragraph">
 <p>By default you have one layer that contains the model of the fully-built block.
-You don&#8217;t need to restrict yourself to only one mesh object.
-If it&#8217;s useful to split your block into several objects (probably to apply modifiers to some parts) by all means do so.</p>
+You don&#8217;t need to restrict yourself to only one mesh-object.
+If it&#8217;s useful to split your block into several objects (probably to apply modifiers to some of them) by all means do so.</p>
 </div>
 </div>
 <div class="sect3">
@@ -753,10 +744,10 @@ If you don&#8217;t provide any collision meshes or unmark the layer the resultin
 will not contain collision data and SE will default to a simple collision box that encompasses the whole block.</p>
 </div>
 <div class="paragraph">
-<p>Havok, the physics engine of SE, requires some settings do its work.
-You provide those on Blender&#8217;s Physics tab by enabling Rigid Bodies for your collision meshes.
+<p>Havok, the physics engine of SE, requires some settings to do its work.
+You provide those on Blender&#8217;s Physics tab by enabling <code>Rigid Bodies</code> for your collision meshes.
 Only the settings <code>Shape</code>, <code>Mass</code>, <code>Friction</code> and <code>Bounciness</code> (Restitution) are exported to Havok.
-Of those <code>Shape</code> is the most important because it has a significant performance impact.
+Of those <code>Shape</code> is the most important one because it has a significant performance impact.
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>Convex Hull</code> only if necessary. Avoid <code>Mesh</code> collisions.</p>
 </div>
@@ -811,7 +802,8 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 </div>
 <div class="paragraph">
 <p>The third layer defines the mount points of your block.
-The meshes on this layer are not directly exported but are used instead to calculate the mount point definitions.</p>
+The meshes on this layer are not directly exported but are used instead to calculate the
+<a href="#blockdef">mount point definitions</a>.</p>
 </div>
 <div class="paragraph">
 <p>This works by creating rectangular faces that use the material <code>MountPoint</code> and are aligned to one of
@@ -839,8 +831,19 @@ The game defaults to full moint points on all sides of the block in that case.</
 <p>Lastly there are several layers for the construction phases of the block.
 There is one layer for each phase of construction, from earliest to latest.
 If you change the number of construction layers you increase or decrease the number of construction phases.
-A block is allowed to have no construction phases at all.
-If you don&#8217;t have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.</p>
+A block is allowed to have no construction phases at all.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+If you don&#8217;t have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>The construction phases reuse the same collision shape your main block model uses.
@@ -855,7 +858,7 @@ A block model that changes its physical dimensions while the player is welding r
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-A Blender object can be assigned to several layers.
+A Blender mesh-object can be assigned to several layers.
 So if your construction models gets more and more detailed you can start with the inital frame as one object that
 is visibile on all construction layers and then progressively add more objects towards the final construction layer.
 </td>
@@ -867,8 +870,8 @@ is visibile on all construction layers and then progressively add more objects t
 <div class="sect2">
 <h3 id="textures"><a class="anchor" href="#textures"></a>Textures</h3>
 <div class="paragraph">
-<p>This is a small excursion into how SE textures as block.
-SE currently uses a maximum of two textures per face of a mesh.
+<p>This is a small excursion into how SE textures a block.
+The game currently uses a maximum of two textures per face of a mesh.
 Both of them have four channels (RGBA).</p>
 </div>
 <div class="sect3">
@@ -879,11 +882,11 @@ but you are allowed to ignore the convention.
 The RGB-channels of this texture represent the diffuse color of each pixel of a face&#8201;&#8212;&#8201;just like with any regular digital picture.</p>
 </div>
 <div class="paragraph">
-<p>The A-channel of this texture does not represent the transparency of the pixels, though.
+<p>The A-channel of the texture does not represent the transparency of the pixels, though.
 Instead it tells SE how much emissive light a pixel gives off in the dark.
 Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
 Theoretically the light given off could be different from the diffuse color of the pixel but in SE
-it is always the same as the diffuse color so there are no extrA-channels for that.</p>
+it is always the same as the diffuse color so there are no extra channels for that.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -903,7 +906,7 @@ named <code>Emissive</code>.
 <div class="paragraph">
 <p>If the texture-filename ends in <code>_me.dds</code> instead the A-channel serves a double purpose.
 Here the values in the range 115 to 140 serve as a mask&#8201;&#8212;&#8201;so you can&#8217;t have Emissivity at these levels.
-The mask tells the game how much of the color the user has chosen for the block it should mix in.
+The mask tells the game how much of the color the user has chosen for the block should be mixed in.
 A value of 140 means "only the user&#8217;s color", a value of 115 means "only the block&#8217;s color".</p>
 </div>
 </div>
@@ -994,7 +997,7 @@ against the root-folder of your mod and addionally to the game&#8217;s location 
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-Don&#8217;t use texture-files that are not inside the mod folder.
+Don&#8217;t use texture-files that are not inside the mod folder or the game&#8217;s <code>Content\</code> folder.
 Neither Blender nor the addon will prevent you from doing so but this will not work when exporting .mwm files.
 </td>
 </tr>
@@ -1020,7 +1023,7 @@ But it&#8217;s easy to spot missing texture-files when you configure the 3D view
 <div class="paragraph">
 <p>Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
 The values you set there are the maximum values for that material.
-How much of those maximum values are actually applied to the pixel of a face
+How much of those maximum values are actually applied to a pixel of a face
 is determined by the A-channel of the normal/specular texture.</p>
 </div>
 <div class="admonitionblock warning">
@@ -1033,7 +1036,7 @@ is determined by the A-channel of the normal/specular texture.</p>
 There is also a "Specular" panel. This is the wrong panel.
 With that you control specularity as it is rendered by Blender.
 The algorithm Blender uses is similiar to the one SE uses but the values have different meanings.
-So the addon cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
+Because of that the addon cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
 </td>
 </tr>
 </table>
@@ -1045,9 +1048,10 @@ also starts to mirror the environment like smooth metal would do.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="glass-materials"><a class="anchor" href="#glass-materials"></a>Glass materials</h4>
+<h4 id="transparent-materials"><a class="anchor" href="#transparent-materials"></a>Transparent Materials</h4>
 <div class="paragraph">
-<p>Glass materials have some extra settings that are not contained in an .mwm file
+<p>Transparent materials like glass are handled specially by the game.
+They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called <code>TransparentMaterials.sbc</code>.
 It makes no sense for this addon to support editing the content of this file
 because the settings cannot be viewed in Blender, anyway.</p>
@@ -1082,7 +1086,7 @@ conveyors show if the conveyor-line is etablished or broken, etc.</p>
 </div>
 <div class="paragraph">
 <p>Because all these are some form of lights Keen chose to also use the <code>Emissive</code> material name for this.
-If a block has more than one status the materials are addionaly numbered, starting with zero
+If a block has more than one status the materials are additionally numbered, starting with zero
 (so <code>Emissive0</code> through <code>Emissive3</code> for batteries, for example).</p>
 </div>
 <div class="admonitionblock note">
@@ -1128,15 +1132,15 @@ the location of the thruster flame. The empty&#8217;s function is determined by 
 </td>
 <td class="content">
 For those empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
-<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to 0.5. This way you can preview the exact size in Blender.
+<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to <code>0.5</code>. This way you can preview the exact size in Blender.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>There are some empty types that require linking to other model files that contain attached parts.
-Currently these are doors, rotors and pistons.
-For those there is the <code>file</code> property on the data tab for empties.</p>
+Currently these are doors, rotors, pistons and turrets.
+For those there is the <code>file</code> property on the Data tab of the empty.</p>
 </div>
 </div>
 </div>
@@ -1184,46 +1188,46 @@ For those there is the <code>file</code> property on the data tab for empties.</
 <i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
-The BlockPairName and the SubtypeId are globally visibile in the game.
-So it&#8217;s important that you choose a sufficently unique name for the scene to avoid naming-collisions with other blocks.
+The BlockPairName and the SubtypeId are globally visibile to all parts of the game.
+So it&#8217;s important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
-This is primarily meant for mod authors that want to use the add but need their existing blocks to be keep their names
-to remain backward-compatibile. Otherwise there is hardly a good reason to change them.</p>
+This is primarily meant for mod authors that want to use the addon but need their existing blocks to keep their ids
+to remain backwards-compatible. Otherwise there is hardly a good reason to change them.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="mwm-files"><a class="anchor" href="#mwm-files"></a>.mwm files</h3>
+<h3 id="exporting-mwm-files"><a class="anchor" href="#exporting-mwm-files"></a>Exporting .mwm files</h3>
 <div class="paragraph">
 <p>The export itself runs through theses steps once you have chosen an output directory:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Export collision-meshes to <code>.fbx</code></p>
+<p>Export the collision-meshes to one <code>.hkt.fbx</code> file</p>
 </li>
 <li>
-<p>Convert <code>.fbx</code> to <code>.hkt</code> via Havok&#8217;s FBX-importer</p>
+<p>Convert the <code>.hkt.fbx</code> file into a <code>.hkt</code> file via Havok&#8217;s FBX-importer</p>
 </li>
 <li>
-<p>Run <code>.hkt</code> through Havok&#8217;s filter-manager* to calculate and add rigid body data</p>
+<p>Run the <code>.hkt</code> file through Havok&#8217;s filter-manager to calculate and add rigid body data to it</p>
 </li>
 <li>
-<p>Repeat for the main model and construction models</p>
+<p>Repeat the following steps for the main layer and all construction layers</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
-<p>Export meshes to <code>.fbx</code></p>
+<p>Export the meshes to a <code>.fbx</code> file</p>
 </li>
 <li>
-<p>Export material-info to <code>.xml</code> with parameters for MwmBuilder</p>
+<p>Export the material-info to a <code>.xml</code> file with parameters for MwmBuilder</p>
 </li>
 <li>
-<p>Convert the <code>.fbx</code> and <code>.xml</code> and <code>.hkt</code> to <code>.mwm</code> via MwmBuilder</p>
+<p>Use the <code>.fbx</code>, <code>.xml</code> and <code>.hkt</code> files as input for MwmBuilder to produce the final .mwm file</p>
 </li>
 </ol>
 </div>
@@ -1247,11 +1251,11 @@ If the export fails for any reason a first step should be to consult these log-f
 <div class="sect2">
 <h3 id="block-definitions"><a class="anchor" href="#block-definitions"></a>Block Definitions</h3>
 <div class="paragraph">
-<p>When you export .mwm files the addon automatically creates a corresponding .blockdef.xml for each exported block.
+<p>When you export .mwm files the addon automatically creates a corresponding .blockdef.xml file for each exported block.
 This file contains all the information that is available in Blender and that is relevant
 for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <code>CubeBlocks.sbc</code>:</p>
 </div>
-<div class="listingblock">
+<div id="blockdef" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;Definition&gt;</span>
   <span class="tag">&lt;Id&gt;</span>
@@ -1305,7 +1309,7 @@ You can use the content of a .blockdef.xml file as an initial skeleton for a blo
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-01-30 20:52:39 CET
+Last updated 2015-01-30 21:11:28 CET
 </div>
 </div>
 </body>
