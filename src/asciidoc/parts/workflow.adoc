@@ -8,7 +8,7 @@ The addon makes a few assumptions about filenames and the folder layout of your 
 * Models are in a subfolder `Models\`. They are not sorted into further subfolders.
 * Icons are in `Textures\Icons\`.
 
-NOTE: This layout currently cannot be changed.
+This layout currently cannot be changed.
 
 === Scene Layout
 
@@ -28,8 +28,8 @@ If you don't like the default layout you can change it with the corresponding la
 ==== Main Layer
 
 By default you have one layer that contains the model of the fully-built block.
-You don't need to restrict yourself to only one mesh object.
-If it's useful to split your block into several objects (probably to apply modifiers to some parts) by all means do so.
+You don't need to restrict yourself to only one mesh-object.
+If it's useful to split your block into several objects (probably to apply modifiers to some of them) by all means do so.
 
 ==== Collision Layer
 
@@ -40,10 +40,10 @@ Next you have a layer that contains the simplified meshes that represent the blo
 If you don't provide any collision meshes or unmark the layer the resulting .mwm file
 will not contain collision data and SE will default to a simple collision box that encompasses the whole block.
 
-Havok, the physics engine of SE, requires some settings do its work.
-You provide those on Blender's Physics tab by enabling Rigid Bodies for your collision meshes.
+Havok, the physics engine of SE, requires some settings to do its work.
+You provide those on Blender's Physics tab by enabling `Rigid Bodies` for your collision meshes.
 Only the settings `Shape`, `Mass`, `Friction` and `Bounciness` (Restitution) are exported to Havok.
-Of those `Shape` is the most important because it has a significant performance impact.
+Of those `Shape` is the most important one because it has a significant performance impact.
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessary. Avoid `Mesh` collisions.
 
@@ -64,7 +64,8 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 image::blender-mp-setup.png[width=450,float=right,link=images/blender-mp-setup.png]
 
 The third layer defines the mount points of your block.
-The meshes on this layer are not directly exported but are used instead to calculate the mount point definitions.
+The meshes on this layer are not directly exported but are used instead to calculate the
+link:#blockdef[mount point definitions].
 
 This works by creating rectangular faces that use the material `MountPoint` and are aligned to one of
 six sides of the block. To quickly create the material and an object that has one mount point face for each
@@ -88,21 +89,22 @@ Lastly there are several layers for the construction phases of the block.
 There is one layer for each phase of construction, from earliest to latest.
 If you change the number of construction layers you increase or decrease the number of construction phases.
 A block is allowed to have no construction phases at all.
-If you don't have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
+
+WARNING: If you don't have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
 
 The construction phases reuse the same collision shape your main block model uses.
 There is currently no way to define seperate collision models for the construction phases
 but it would probably be unwise to have those, anyway.
 A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.
 
-TIP: A Blender object can be assigned to several layers.
+TIP: A Blender mesh-object can be assigned to several layers.
 So if your construction models gets more and more detailed you can start with the inital frame as one object that
 is visibile on all construction layers and then progressively add more objects towards the final construction layer.
 
 === Textures
 
-This is a small excursion into how SE textures as block.
-SE currently uses a maximum of two textures per face of a mesh.
+This is a small excursion into how SE textures a block.
+The game currently uses a maximum of two textures per face of a mesh.
 Both of them have four channels (RGBA).
 
 ==== Diffuse/Emissive
@@ -112,11 +114,11 @@ but you are allowed to ignore the convention.
 The RGB-channels of this texture represent the diffuse color of each pixel of a face --
 just like with any regular digital picture.
 
-The A-channel of this texture does not represent the transparency of the pixels, though.
+The A-channel of the texture does not represent the transparency of the pixels, though.
 Instead it tells SE how much emissive light a pixel gives off in the dark.
 Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
 Theoretically the light given off could be different from the diffuse color of the pixel but in SE
-it is always the same as the diffuse color so there are no extrA-channels for that.
+it is always the same as the diffuse color so there are no extra channels for that.
 
 NOTE: The emissivity channel is only considered if the material (see next section) that uses the texture is
 named `Emissive`.
@@ -125,7 +127,7 @@ named `Emissive`.
 
 If the texture-filename ends in `_me.dds` instead the A-channel serves a double purpose.
 Here the values in the range 115 to 140 serve as a mask -- so you can't have Emissivity at these levels.
-The mask tells the game how much of the color the user has chosen for the block it should mix in.
+The mask tells the game how much of the color the user has chosen for the block should be mixed in.
 A value of 140 means "only the user's color", a value of 115 means "only the block's color".
 
 ==== Normal/Specular
@@ -176,7 +178,7 @@ because it then automatically knows the location of that folder without you tell
 When exporting .mwm files the addon derives the correct relative texture-paths by comparing each texture's absolute path
 against the root-folder of your mod and addionally to the game's location (as configured in the addon preferences).
 
-IMPORTANT: Don't use texture-files that are not inside the mod folder.
+IMPORTANT: Don't use texture-files that are not inside the mod folder or the game's `Content\` folder.
 Neither Blender nor the addon will prevent you from doing so but this will not work when exporting .mwm files.
 
 NOTE: The addon does not check if the path of a texture actually points to an exisiting file.
@@ -186,21 +188,22 @@ But it's easy to spot missing texture-files when you configure the 3D view to di
 
 Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
 The values you set there are the maximum values for that material.
-How much of those maximum values are actually applied to the pixel of a face
+How much of those maximum values are actually applied to a pixel of a face
 is determined by the A-channel of the normal/specular texture.
 
 WARNING: There is also a "Specular" panel. This is the wrong panel.
 With that you control specularity as it is rendered by Blender.
 The algorithm Blender uses is similiar to the one SE uses but the values have different meanings.
-So the addon cannot reuse Blender's settings and you have to provide them separately for SE.
+Because of that the addon cannot reuse Blender's settings and you have to provide them separately for SE.
 
 The effect of the two values `Intensity` and `Power` are hard to describe so it is best if you play with them
 and watch the results in-game. Just know that at high values (30.0 / 30.0) the game's specularity shader
 also starts to mirror the environment like smooth metal would do.
 
-==== Glass materials
+==== Transparent Materials
 
-Glass materials have some extra settings that are not contained in an .mwm file
+Transparent materials like glass are handled specially by the game.
+They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called `TransparentMaterials.sbc`.
 It makes no sense for this addon to support editing the content of this file
 because the settings cannot be viewed in Blender, anyway.
@@ -228,7 +231,7 @@ several other blocks show if they are powered,
 conveyors show if the conveyor-line is etablished or broken, etc.
 
 Because all these are some form of lights Keen chose to also use the `Emissive` material name for this.
-If a block has more than one status the materials are addionaly numbered, starting with zero
+If a block has more than one status the materials are additionally numbered, starting with zero
 (so `Emissive0` through `Emissive3` for batteries, for example).
 
 NOTE: For status-lights you have basically no control over the color of the face.
@@ -243,8 +246,8 @@ SE uses empties to represent predefined points of interest on a model like termi
 the location of the thruster flame. The empty's function is determined by its name.
 
 TIP: For those empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
-`Display` property to `Cube` and the `Size` property to 0.5. This way you can preview the exact size in Blender.
+`Display` property to `Cube` and the `Size` property to `0.5`. This way you can preview the exact size in Blender.
 
 There are some empty types that require linking to other model files that contain attached parts.
-Currently these are doors, rotors and pistons.
-For those there is the `file` property on the data tab for empties.
+Currently these are doors, rotors, pistons and turrets.
+For those there is the `file` property on the Data tab of the empty.
