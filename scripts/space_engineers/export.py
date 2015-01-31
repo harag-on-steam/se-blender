@@ -156,6 +156,7 @@ def export_fbx(settings: ExportSettings, filepath, objects):
         use_mesh_modifiers=True,
         mesh_smooth_type='OFF',
         use_tspace=settings.isUseTangentSpace,
+        bake_anim=False,
     )
 
 def fbx_to_hkt(settings: ExportSettings, srcfile, dstfile):
