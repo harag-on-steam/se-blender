@@ -104,8 +104,9 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
                 row.operator('wm.space_engineers_check_version', icon="URL")
                 row.label(icon='FILE_TICK', text="%d.%d.%d is the current version" % bl_info['version'])
             else:
-                op = row.operator('wm.url_open', icon="URL", text="Open forum thread")
-                op.url = 'http://forums.keenswh.com/post/?id=7090652&trail=81#81'
+                op = row.operator('wm.url_open', icon="URL", text="Open GitHub Releases")
+                op.url = 'https://github.com/harag-on-steam/se-blender/releases/latest'
+                #op.url = 'http://forums.keenswh.com/post/?id=7090652&trail=81#81'
                 row.label(icon='ERROR', text="There is a newer version %d.%d.%d" % online_version)
         else:
             row.operator('wm.space_engineers_check_version', icon="URL")
