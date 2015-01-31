@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from functools import partial
 import hashlib
 import io
@@ -180,15 +180,6 @@ def hkt_filter(settings: ExportSettings, srcfile, dstfile, options=HAVOK_OPTION_
     finally:
         os.remove(hko.name)
 
-def write_pretty_xml(etree_root_element, filepath):
-    # what a hack...
-    import xml.dom.minidom as dom
-    xmlString = ElementTree.tostring(etree_root_element, 'utf-8')
-    minidom = dom.parseString(xmlString)
-    prettyXml = minidom.toprettyxml(encoding='utf-8')
-    with open(filepath, mode='wb') as file:
-        file.write(prettyXml)
-
 def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
     if not settings.isRunMwmbuilder:
         if settings.isLogToolOutput:
@@ -302,9 +293,11 @@ class MountPointSet(ExportSet):
         ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'
 
         x, z, y = d.block_dimensions # z and y switched on purpose; y is up, z is forward in SE
-        ElementTree.SubElement(block, 'Size', x=str(x), y=str(y), z=str(z))
+        eSize = ElementTree.SubElement(block, 'Size')
+        eSize.attrib = OrderedDict([('x', str(x)), ('y', str(y)), ('z', str(z)), ])
 
-        ElementTree.SubElement(block, 'ModelOffset', x='0', y='0', z='0')
+        eOffset = ElementTree.SubElement(block, 'ModelOffset', x='0', y='0', z='0')
+        eOffset.attrib = OrderedDict([('x', '0'), ('y', str(y)), ('z', str(z)), ])
 
         modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
         ElementTree.SubElement(block, 'Model').text = modelpath
@@ -315,7 +308,8 @@ class MountPointSet(ExportSet):
             for i, constrModelFile in enumerate(constrModelFiles):
                 upperBound = "%.2f" % (1.0 * (i+1) / numConstr)
                 constrModelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(constrModelFile))
-                ElementTree.SubElement(constr, 'Model', BuildPercentUpperBound=upperBound, File=constrModelpath)
+                eModel = ElementTree.SubElement(constr, 'Model')
+                eModel.attrib = OrderedDict([('BuildPercentUpperBound', upperBound), ('File', constrModelpath), ])
 
         mountpoints = mount_point_definitions(self.objects)
         if len(mountpoints) > 0:
@@ -330,12 +324,29 @@ class MountPointSet(ExportSet):
         super().filenames(settings)
         self.blockdeffile = self.basepath + '.blockdef.xml'
 
+    def indent(self, elem: ElementTree.Element, level=0, indent="\t"):
+        i = "\n" + level*indent
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + indent
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for elem in elem:
+                self.indent(elem, level+1, indent)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+
     def export(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
         block = self.generateXml(settings, modelFile, constrModelFiles)
 
+        self.indent(block, indent="\t")
         self.filenames(settings)
-        write_pretty_xml(block, self.blockdeffile)
 
+        ElementTree.ElementTree(block).write(
+            self.blockdeffile, encoding="utf-8", xml_declaration=False, method="ordered-attribs")
         return self.blockdeffile
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
@@ -369,6 +380,8 @@ class BlockExport:
                     set.collect(ob)
 
     def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
+        self.collectObjects()
+
         def mwmfile(artifact: MwmSet, settings: ExportSettings):
             artifact.filenames(settings)
             return artifact.mwmfile
@@ -389,7 +402,7 @@ class BlockExport:
                 settings.operator.report({'WARNING'}, "CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (
                     xml.findtext("./Id/SubtypeId")))
             elif MergeResult.MERGED in result:
-                settings.operator.report({'WARNING'}, "Updated SubtypeId [%s]" % (xml.findtext("./Id/SubtypeId")))
+                settings.operator.report({'INFO'}, "Updated SubtypeId [%s]" % (xml.findtext("./Id/SubtypeId")))
 
         return not failed
 
@@ -452,7 +465,13 @@ class ExportSceneAsBlock(bpy.types.Operator):
         col.prop(self, "use_tspace")
 
     def execute(self, context):
+        org_mode = None
+
         try:
+            if context.active_object and context.active_object.mode != 'OBJECT' and bpy.ops.object.mode_set.poll():
+                org_mode = context.active_object.mode
+                bpy.ops.object.mode_set(mode='OBJECT')
+
             if self.all_scenes:
                 scenes = [scene for scene in bpy.data.scenes if data(scene).is_block]
             else:
@@ -471,13 +490,17 @@ class ExportSceneAsBlock(bpy.types.Operator):
 
                     wm.progress_update(i)
             finally:
-                 wm.progress_end()
+                wm.progress_end()
 
         except FileNotFoundError as e: # raised when the addon preferences are missing some tool paths
             self.report({'ERROR'}, "Configuration error: %s" % e)
 
         except subprocess.CalledProcessError as e:
             self.report({'ERROR'}, "An external tool failed, check generated logs: %s" % e)
+
+        finally:
+            if context.active_object and org_mode and bpy.ops.object.mode_set.poll():
+                bpy.ops.object.mode_set(mode=org_mode)
 
         return {'FINISHED'}
 

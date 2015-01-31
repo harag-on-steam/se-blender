@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 3, 2),
+	"version": (0, 3, 3),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene | Material | Empty , Tools > Create",
 	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
@@ -36,31 +36,6 @@ del modules
 # register data & UI classes
 
 import bpy
-
-class TestOperator(bpy.types.Operator):
-    bl_idname = 'object.testmodule' 
-    bl_label = 'Test: Export current scene to .fbx'
-    bl_options = {'REGISTER'}
-    
-    def execute(self, context):
-        import os
-        import tempfile
-
-        print(tempfile.gettempdir())
-        testfile = os.path.join(tempfile.gettempdir(), 'test.fbx')
-
-        fbx.save_single(
-            self, 
-            context.scene, 
-            filepath=testfile, 
-            context_objects = context.scene.objects, # context.selected_objects,
-            object_types = {'EMPTY', 'MESH'},
-
-        )
-        
-        self.report({'INFO'}, 'Exported scene to %s' % (testfile))
-        
-        return {'FINISHED'}
 
 class SEView3DToolsPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'

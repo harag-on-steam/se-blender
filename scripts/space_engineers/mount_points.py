@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from xml.etree import ElementTree
 from bgl import glEnable, glDisable, glColor3f, glVertex3f, glLineWidth, glBegin, glEnd, glLineStipple, GL_LINE_STRIP, GL_LINES, GL_LINE_STIPPLE
 from mathutils import Matrix, Vector
@@ -95,13 +95,14 @@ def mount_points_xml(mount_points):
     e = ElementTree.Element("MountPoints")
 
     for side, startx, starty, endx, endy in mount_points:
-        ElementTree.SubElement(e, "MountPoint",
-            Side=side,
-            StartX=_floatstr(startx),
-            StartY=_floatstr(starty),
-            EndX=_floatstr(endx),
-            EndY=_floatstr(endy),
-        )
+        mp = ElementTree.SubElement(e, "MountPoint")
+        mp.attrib = OrderedDict([
+            ('Side', side),
+            ('StartX',_floatstr(startx)),
+            ('StartY',_floatstr(starty)),
+            ('EndX',_floatstr(endx)),
+            ('EndY',_floatstr(endy)),
+        ])
 
     return e
 
@@ -123,8 +124,6 @@ def create_mount_point_skeleton():
        transZ(-z) *  rot.halfx,
        transZ( z) * -rot.halfx,
     ]
-
-    print(transforms)
 
     verts = []
     faces = []
