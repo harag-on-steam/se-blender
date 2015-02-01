@@ -510,10 +510,10 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#installation">Installation</a>
 <ul class="sectlevel2">
 <li><a href="#getting-the-tools">Getting the tools</a></li>
-<li><a href="#installing-the-addon">Installing the Addon</a></li>
+<li><a href="#installing-the-add-on">Installing the Add-on</a></li>
 </ul>
 </li>
-<li><a href="#using-the-addon">Using the addon</a>
+<li><a href="#using-the-add-on">Using the Add-on</a>
 <ul class="sectlevel2">
 <li><a href="#file-layout">File layout</a></li>
 <li><a href="#scene-layout">Scene Layout</a>
@@ -556,8 +556,8 @@ table.CodeRay td.code>pre{padding:0}
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Modeling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
-This addon eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer&#8217;s own .mwm mesh-format.
+<p>Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
+This add-on eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer&#8217;s own .mwm mesh-format.
 To do that it provides property panels for all the special data Space Engineers stores inside an .mwm file
 directly in Blender.
 In addition it is able to automatically configure and run the conversion-tools you would normally run by hand.</p>
@@ -569,8 +569,8 @@ In addition it is able to automatically configure and run the conversion-tools y
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The addon (and this documentation) expect you to know how to work with Blender.
-So if you are new to 3D modeling you should probably learn how to do that properly before you continue.
+The add-on (and this documentation) expect you to know how to work with Blender.
+So if you are new to 3D modelling you should probably learn how to do that properly before you continue.
 </td>
 </tr>
 </table>
@@ -631,7 +631,7 @@ The .zip contains just one executable file. It&#8217;s probably a good idea to p
 </div>
 </div>
 <div class="sect2">
-<h3 id="installing-the-addon"><a class="anchor" href="#installing-the-addon"></a>Installing the Addon</h3>
+<h3 id="installing-the-add-on"><a class="anchor" href="#installing-the-add-on"></a>Installing the Add-on</h3>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
 <a class="image" href="images/blender-setup.png"><img src="./images/blender-setup.png" alt="blender setup" width="450"></a>
@@ -645,9 +645,9 @@ click on "Install from File&#8230;&#8203;" and
 point Blender to the downloaded .zip.</p>
 </div>
 <div class="paragraph">
-<p>Like any addon you need to enable it after you&#8217;ve installed it.
-You can find the addon by using the search box or going to the Category "Space Engineers".
-After you&#8217;ve enabled the addon open its settings by clicking the arrow on the left.
+<p>Like any add-on you need to enable it after you&#8217;ve installed it.
+You can find the add-on by using the search box or going to the Category "Space Engineers".
+After you&#8217;ve enabled the add-on open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.</p>
 </div>
 <div class="admonitionblock important clearfix">
@@ -679,12 +679,12 @@ Don&#8217;t forget to "Save User Settings".
 </div>
 </div>
 <div class="sect1">
-<h2 id="using-the-addon"><a class="anchor" href="#using-the-addon"></a>Using the addon</h2>
+<h2 id="using-the-add-on"><a class="anchor" href="#using-the-add-on"></a>Using the Add-on</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="file-layout"><a class="anchor" href="#file-layout"></a>File layout</h3>
 <div class="paragraph">
-<p>The addon makes a few assumptions about filenames and the folder layout of your mod:</p>
+<p>The add-on makes a few assumptions about filenames and the folder layout of your mod:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -711,7 +711,7 @@ Don&#8217;t forget to "Save User Settings".
 </div>
 </div>
 <div class="paragraph">
-<p>Inside Blender the addon uses one scene per block.
+<p>Inside Blender the add-on uses one scene per block.
 That&#8217;s why the block-settings are on the scene tab of the properties-panel.</p>
 </div>
 <div class="paragraph">
@@ -761,8 +761,8 @@ Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>C
 Make sure you
 <a href="http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations">apply object transformations</a>
 to all collision objects before export.
-As a rule of thumb the addon never modifies your objects on its own so you have to do this yourself.
-If you don&#8217;t the collison shapes will most probably be rotated or positioned wrong.
+As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
+If you don&#8217;t the collision shapes will most probably be rotated or positioned wrong.
 </td>
 </tr>
 </table>
@@ -816,13 +816,13 @@ to some of the mount point faces.</p>
 </div>
 <div class="paragraph">
 <p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> (<code>Numpad 5</code>) and
-turn on 'snap to grid'. Also, if the mount point layer is visible the addon will show a box with dashed, orange lines.
+turn on 'snap to grid'. Also, if the mount point layer is visible the add-on will show a box with dashed, orange lines.
 The lines represents the in-game size of the block as it is defined on the scene tab.
 This should help you to position the mount points correctly.</p>
 </div>
 <div class="paragraph">
 <p>If you don&#8217;t provide mount points or unmark the layer none will be calculated.
-The game defaults to full moint points on all sides of the block in that case.</p>
+The game defaults to full mount points on all sides of the block in that case.</p>
 </div>
 </div>
 <div class="sect3">
@@ -840,14 +840,14 @@ A block is allowed to have no construction phases at all.</p>
 <i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
-If you don&#8217;t have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
+If you don&#8217;t have meshes on a construction layer MwmBuilder will fail to produce a .mwm file for that phase.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>The construction phases reuse the same collision shape your main block model uses.
-There is currently no way to define seperate collision models for the construction phases
+There is currently no way to define separate collision models for the construction phases
 but it would probably be unwise to have those, anyway.
 A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.</p>
 </div>
@@ -859,8 +859,8 @@ A block model that changes its physical dimensions while the player is welding r
 </td>
 <td class="content">
 A Blender mesh-object can be assigned to several layers.
-So if your construction models gets more and more detailed you can start with the inital frame as one object that
-is visibile on all construction layers and then progressively add more objects towards the final construction layer.
+So if your construction models gets more and more detailed you can start with the initial frame as one object that
+is visible on all construction layers and then progressively add more objects towards the final construction layer.
 </td>
 </tr>
 </table>
@@ -927,7 +927,7 @@ A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "ap
 </td>
 <td class="content">
 The A-channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
-to edit SE&#8217;s textures. It&#8217;s therefor a good idea to seperate the channels in those tools.
+to edit SE&#8217;s textures. It&#8217;s therefor a good idea to separate the channels in those tools.
 For example, in Gimp you can convert the A-channel into a layer mask and edit and view that separately.
 </td>
 </tr>
@@ -983,12 +983,12 @@ in viewing the normal map or specularity in Blender.
 <div class="paragraph">
 <p>The game resolves texture-paths relative to two different base folders.
 The first is the game&#8217;s <code>Content/</code> folder (so you are able to reuse the game&#8217;s textures),
-the second is the root-folder of the mod. This is why the addon expects the .blend file to be in the root-folder
+the second is the root-folder of the mod. This is why the add-on expects the .blend file to be in the root-folder
 because it then automatically knows the location of that folder without you telling it.</p>
 </div>
 <div class="paragraph">
-<p>When exporting .mwm files the addon derives the correct relative texture-paths by comparing each texture&#8217;s absolute path
-against the root-folder of your mod and addionally to the game&#8217;s location (as configured in the addon preferences).</p>
+<p>When exporting .mwm files the add-on derives the correct relative texture-paths by comparing each texture&#8217;s absolute path
+against the root-folder of your mod and additionally to the game&#8217;s location (as configured in the add-on preferences).</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -998,7 +998,7 @@ against the root-folder of your mod and addionally to the game&#8217;s location 
 </td>
 <td class="content">
 Don&#8217;t use texture-files that are not inside the mod folder or the game&#8217;s <code>Content\</code> folder.
-Neither Blender nor the addon will prevent you from doing so but this will not work when exporting .mwm files.
+Neither Blender nor the add-on will prevent you from doing so but this will not work when exporting .mwm files.
 </td>
 </tr>
 </table>
@@ -1010,7 +1010,7 @@ Neither Blender nor the addon will prevent you from doing so but this will not w
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The addon does not check if the path of a texture actually points to an exisiting file.
+The add-on does not check if the path of a texture actually points to an existing file.
 But it&#8217;s easy to spot missing texture-files when you configure the 3D view to display meshes with their materials.
 </td>
 </tr>
@@ -1035,8 +1035,8 @@ is determined by the A-channel of the normal/specular texture.</p>
 <td class="content">
 There is also a "Specular" panel. This is the wrong panel.
 With that you control specularity as it is rendered by Blender.
-The algorithm Blender uses is similiar to the one SE uses but the values have different meanings.
-Because of that the addon cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
+The algorithm Blender uses is similar to the one SE uses but the values have different meanings.
+Because of that the add-on cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
 </td>
 </tr>
 </table>
@@ -1053,13 +1053,13 @@ also starts to mirror the environment like smooth metal would do.</p>
 <p>Transparent materials like glass are handled specially by the game.
 They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called <code>TransparentMaterials.sbc</code>.
-It makes no sense for this addon to support editing the content of this file
+It makes no sense for this add-on to support editing the content of this file
 because the settings cannot be viewed in Blender, anyway.</p>
 </div>
 <div class="paragraph">
 <p>What you get if you change a material from <code>Normal</code> to <code>Glass</code> are the settings that <em>are</em> stored in the
 .mwm file on export. For the meaning of these settings please refer to Keen&#8217;s
-<a href="http://steamcommunity.com/sharedfiles/filedetails/?id=300427203&amp;searchtext=transparent">tutorial</a>
+<a href="http://steamcommunity.com/sharedfiles/filedetails/?id=300427203">tutorial</a>
 on transparent materials.</p>
 </div>
 </div>
@@ -1082,7 +1082,7 @@ Otherwise the emissive intensity from the diffuse/emissive texture is ignored.</
 <p>A lot of block types have some type of status indicator.
 Landing Gear displays the lock state,
 several other blocks show if they are powered,
-conveyors show if the conveyor-line is etablished or broken, etc.</p>
+conveyors show if the conveyor-line is established or broken, etc.</p>
 </div>
 <div class="paragraph">
 <p>Because all these are some form of lights Keen chose to also use the <code>Emissive</code> material name for this.
@@ -1188,7 +1188,7 @@ For those there is the <code>file</code> property on the Data tab of the empty.<
 <i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
-The BlockPairName and the SubtypeId are globally visibile to all parts of the game.
+The BlockPairName and the SubtypeId are globally visible to all parts of the game.
 So it&#8217;s important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
 </td>
 </tr>
@@ -1196,7 +1196,7 @@ So it&#8217;s important that you choose a sufficiently unique name for the scene
 </div>
 <div class="paragraph">
 <p>Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
-This is primarily meant for mod authors that want to use the addon but need their existing blocks to keep their ids
+This is primarily meant for mod authors that want to use the add-on but need their existing blocks to keep their ids
 to remain backwards-compatible. Otherwise there is hardly a good reason to change them.</p>
 </div>
 </div>
@@ -1208,7 +1208,7 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Export the collision-meshes to one <code>.hkt.fbx</code> file</p>
+<p>Export the collision-meshes to a <code>.hkt.fbx</code> file</p>
 </li>
 <li>
 <p>Convert the <code>.hkt.fbx</code> file into a <code>.hkt</code> file via Havok&#8217;s FBX-importer</p>
@@ -1241,7 +1241,7 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Every external conversion step is logged to a seperate log file which all start with the name of the block.
+Every external conversion step is logged to a separate log file which all start with the name of the block.
 If the export fails for any reason a first step should be to consult these log-files.
 </td>
 </tr>
@@ -1251,7 +1251,7 @@ If the export fails for any reason a first step should be to consult these log-f
 <div class="sect2">
 <h3 id="block-definitions"><a class="anchor" href="#block-definitions"></a>Block Definitions</h3>
 <div class="paragraph">
-<p>When you export .mwm files the addon automatically creates a corresponding .blockdef.xml file for each exported block.
+<p>When you export .mwm files the add-on automatically creates a corresponding .blockdef.xml file for each exported block.
 This file contains all the information that is available in Blender and that is relevant
 for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <code>CubeBlocks.sbc</code>:</p>
 </div>
@@ -1259,7 +1259,7 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;Definition&gt;</span>
   <span class="tag">&lt;Id&gt;</span>
-    <span class="tag">&lt;SubtypeId&gt;</span>ExampleBlock<span class="tag">&lt;/SubtypeId&gt;</span>
+    <span class="tag">&lt;SubtypeId&gt;</span>ExampleBlock_Large<span class="tag">&lt;/SubtypeId&gt;</span>
   <span class="tag">&lt;/Id&gt;</span>
   <span class="tag">&lt;Icon&gt;</span>Textures\Icons\ExampleBlock.dds<span class="tag">&lt;/Icon&gt;</span>
   <span class="tag">&lt;CubeSize&gt;</span>Large<span class="tag">&lt;/CubeSize&gt;</span>
@@ -1285,7 +1285,7 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
 <div class="sect2">
 <h3 id="updating-cubeblocks-sbc"><a class="anchor" href="#updating-cubeblocks-sbc"></a>Updating CubeBlocks.sbc</h3>
 <div class="paragraph">
-<p>You can also tell the addon to take the XML data it outputs to a .blockdef.xml file and
+<p>You can also use the "Update block definitions" operation to tell the add-on to take the same XML data it writes to a .blockdef.xml file and
 merge it with matching <code>&lt;Definition&gt;</code> sections of your mod&#8217;s <code>CubeBlocks.sbc</code>.
 That saves you the trouble to do this by hand.</p>
 </div>
@@ -1297,7 +1297,7 @@ That saves you the trouble to do this by hand.</p>
 </td>
 <td class="content">
 Updating <code>CubeBlocks.sbc</code> will only work for blocks that are already present in the file.
-The addon searches for them by their <code>&lt;SubtypeId&gt;</code>.
+The add-on searches for them by their <code>&lt;SubtypeId&gt;</code>.
 You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.
 </td>
 </tr>
@@ -1309,7 +1309,7 @@ You can use the content of a .blockdef.xml file as an initial skeleton for a blo
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-01-30 21:11:28 CET
+Last updated 2015-02-01 13:30:20 CET
 </div>
 </div>
 </body>
