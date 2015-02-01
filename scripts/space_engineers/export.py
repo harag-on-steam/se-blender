@@ -61,6 +61,26 @@ def write_to_log(logfile, content, cmdline=None, cwd=None, loglines=[]):
 
         log.write(content)
 
+def pretty_xml(elem: ElementTree.Element, level=0, indent="\t"):
+    i = "\n" + level*indent
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + indent
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            pretty_xml(elem, level+1, indent)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+def write_pretty_xml(elem: ElementTree.Element, filepath: str):
+    pretty_xml(elem, indent="\t")
+    ElementTree.ElementTree(elem).write(
+        filepath, encoding="utf-8", xml_declaration=False, method="ordered-attribs")
+
 class Names:
     subtypeid = '${blockname}_${blocksize}'
     blockpairname = '${blockname}'
@@ -236,6 +256,7 @@ class MwmSet(ExportSet):
 
         paramsxml = mwmbuilder_xml(settings, (material_xml(settings, mat) for mat in self.materials))
         write_pretty_xml(paramsxml, self.paramsfile)
+
         if (settings.isOldMwmbuilder):
             write_to_log(self.paramsfile + '.log', b"Old version of mwmbuilder detected. Using different RescaleFactor.")
 
@@ -324,29 +345,13 @@ class MountPointSet(ExportSet):
         super().filenames(settings)
         self.blockdeffile = self.basepath + '.blockdef.xml'
 
-    def indent(self, elem: ElementTree.Element, level=0, indent="\t"):
-        i = "\n" + level*indent
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + indent
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for elem in elem:
-                self.indent(elem, level+1, indent)
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-
     def export(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
         block = self.generateXml(settings, modelFile, constrModelFiles)
 
-        self.indent(block, indent="\t")
         self.filenames(settings)
 
-        ElementTree.ElementTree(block).write(
-            self.blockdeffile, encoding="utf-8", xml_declaration=False, method="ordered-attribs")
+        write_pretty_xml(block, self.blockdeffile)
+
         return self.blockdeffile
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
