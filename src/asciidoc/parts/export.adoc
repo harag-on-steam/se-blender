@@ -23,18 +23,18 @@ All names that are used during export are derived from the scene name:
 
 |===
 
-WARNING: The BlockPairName and the SubtypeId are globally visibile to all parts of the game.
+WARNING: The BlockPairName and the SubtypeId are globally visible to all parts of the game.
 So it's important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
 
 Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
-This is primarily meant for mod authors that want to use the addon but need their existing blocks to keep their ids
+This is primarily meant for mod authors that want to use the add-on but need their existing blocks to keep their ids
 to remain backwards-compatible. Otherwise there is hardly a good reason to change them.
 
 === Exporting .mwm files
 
 The export itself runs through theses steps once you have chosen an output directory:
 
- . Export the collision-meshes to one `.hkt.fbx` file
+ . Export the collision-meshes to a `.hkt.fbx` file
  . Convert the `.hkt.fbx` file into a `.hkt` file via Havok's FBX-importer
  . Run the `.hkt` file through Havok's filter-manager to calculate and add rigid body data to it
  . Repeat the following steps for the main layer and all construction layers
@@ -42,12 +42,12 @@ The export itself runs through theses steps once you have chosen an output direc
  .. Export the material-info to a `.xml` file with parameters for MwmBuilder
  .. Use the `.fbx`, `.xml` and `.hkt` files as input for MwmBuilder to produce the final .mwm file
 
-NOTE: Every external conversion step is logged to a seperate log file which all start with the name of the block.
+NOTE: Every external conversion step is logged to a separate log file which all start with the name of the block.
 If the export fails for any reason a first step should be to consult these log-files.
 
 === Block Definitions
 
-When you export .mwm files the addon automatically creates a corresponding .blockdef.xml file for each exported block.
+When you export .mwm files the add-on automatically creates a corresponding .blockdef.xml file for each exported block.
 This file contains all the information that is available in Blender and that is relevant
 for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 
@@ -55,7 +55,7 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 ```xml
 <Definition>
   <Id>
-    <SubtypeId>ExampleBlock</SubtypeId>
+    <SubtypeId>ExampleBlock_Large</SubtypeId>
   </Id>
   <Icon>Textures\Icons\ExampleBlock.dds</Icon>
   <CubeSize>Large</CubeSize>
@@ -79,10 +79,10 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 
 === Updating CubeBlocks.sbc
 
-You can also tell the addon to take the XML data it outputs to a .blockdef.xml file and
+You can also use the "Update block definitions" operation to tell the add-on to take the same XML data it writes to a .blockdef.xml file and
 merge it with matching `<Definition>` sections of your mod's `CubeBlocks.sbc`.
 That saves you the trouble to do this by hand.
 
 NOTE: Updating `CubeBlocks.sbc` will only work for blocks that are already present in the file.
-The addon searches for them by their `<SubtypeId>`.
+The add-on searches for them by their `<SubtypeId>`.
 You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.

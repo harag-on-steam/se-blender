@@ -26,7 +26,7 @@ The .zip contains just one executable file. It's probably a good idea to put it 
 MwmBuilder::
 This one comes with Space Engineers and is located in the game's directory under `Tools\MwmBuilder`.
 
-=== Installing the Addon
+=== Installing the Add-on
 
 [.thumb]
 image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
@@ -37,9 +37,9 @@ switch to the "Add-Ons" tab,
 click on "Install from File..." and
 point Blender to the downloaded .zip.
 
-Like any addon you need to enable it after you've installed it.
-You can find the addon by using the search box or going to the Category "Space Engineers".
-After you've enabled the addon open its settings by clicking the arrow on the left.
+Like any add-on you need to enable it after you've installed it.
+You can find the add-on by using the search box or going to the Category "Space Engineers".
+After you've enabled the add-on open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.
 
 [.clearfix]

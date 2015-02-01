@@ -1,8 +1,8 @@
-== Using the addon
+== Using the Add-on
 
 === File layout
 
-The addon makes a few assumptions about filenames and the folder layout of your mod:
+The add-on makes a few assumptions about filenames and the folder layout of your mod:
 
 * The .blend file(s) are assumed to be at the root of your mod folder.
 * Models are in a subfolder `Models\`. They are not sorted into further subfolders.
@@ -15,7 +15,7 @@ This layout currently cannot be changed.
 [.thumb]
 image::blender-scene.png[width=450,float=right,link=images/blender-scene.png]
 
-Inside Blender the addon uses one scene per block.
+Inside Blender the add-on uses one scene per block.
 That's why the block-settings are on the scene tab of the properties-panel.
 
 On this panel you define if the block is a large or a small block and if the export should automatically
@@ -50,8 +50,8 @@ Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessa
 IMPORTANT: Make sure you
 http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations[apply object transformations]
 to all collision objects before export.
-As a rule of thumb the addon never modifies your objects on its own so you have to do this yourself.
-If you don't the collison shapes will most probably be rotated or positioned wrong.
+As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
+If you don't the collision shapes will most probably be rotated or positioned wrong.
 
 WARNING: Keep in mind SE has an upper limit of 5 collision shapes per block.
 
@@ -76,12 +76,12 @@ link:images/blender-mp-mirror.png[modifiers like 'mirror' or 'array']
 to some of the mount point faces.
 
 For mount point editing it is a good idea to switch to link:images/blender-mp-ortho.png[ortho-view] (`Numpad 5`) and
-turn on 'snap to grid'. Also, if the mount point layer is visible the addon will show a box with dashed, orange lines.
+turn on 'snap to grid'. Also, if the mount point layer is visible the add-on will show a box with dashed, orange lines.
 The lines represents the in-game size of the block as it is defined on the scene tab.
 This should help you to position the mount points correctly.
 
 If you don't provide mount points or unmark the layer none will be calculated.
-The game defaults to full moint points on all sides of the block in that case.
+The game defaults to full mount points on all sides of the block in that case.
 
 ==== Construction Layers
 
@@ -90,16 +90,16 @@ There is one layer for each phase of construction, from earliest to latest.
 If you change the number of construction layers you increase or decrease the number of construction phases.
 A block is allowed to have no construction phases at all.
 
-WARNING: If you don't have meshes on a construction layer mwmbuilder will fail to produce a .mwm file for that phase.
+WARNING: If you don't have meshes on a construction layer MwmBuilder will fail to produce a .mwm file for that phase.
 
 The construction phases reuse the same collision shape your main block model uses.
-There is currently no way to define seperate collision models for the construction phases
+There is currently no way to define separate collision models for the construction phases
 but it would probably be unwise to have those, anyway.
 A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.
 
 TIP: A Blender mesh-object can be assigned to several layers.
-So if your construction models gets more and more detailed you can start with the inital frame as one object that
-is visibile on all construction layers and then progressively add more objects towards the final construction layer.
+So if your construction models gets more and more detailed you can start with the initial frame as one object that
+is visible on all construction layers and then progressively add more objects towards the final construction layer.
 
 === Textures
 
@@ -138,7 +138,7 @@ The A-channel tells the game how much of a materials maximum specularity setting
 A value of 0 means "don't apply any specularity", a value of 255 means "apply full specularity".
 
 TIP: The A-channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
-to edit SE's textures. It's therefor a good idea to seperate the channels in those tools.
+to edit SE's textures. It's therefor a good idea to separate the channels in those tools.
 For example, in Gimp you can convert the A-channel into a layer mask and edit and view that separately.
 
 === Materials
@@ -172,16 +172,16 @@ in viewing the normal map or specularity in Blender.
 
 The game resolves texture-paths relative to two different base folders.
 The first is the game's `Content/` folder (so you are able to reuse the game's textures),
-the second is the root-folder of the mod. This is why the addon expects the .blend file to be in the root-folder
+the second is the root-folder of the mod. This is why the add-on expects the .blend file to be in the root-folder
 because it then automatically knows the location of that folder without you telling it.
 
-When exporting .mwm files the addon derives the correct relative texture-paths by comparing each texture's absolute path
-against the root-folder of your mod and addionally to the game's location (as configured in the addon preferences).
+When exporting .mwm files the add-on derives the correct relative texture-paths by comparing each texture's absolute path
+against the root-folder of your mod and additionally to the game's location (as configured in the add-on preferences).
 
 IMPORTANT: Don't use texture-files that are not inside the mod folder or the game's `Content\` folder.
-Neither Blender nor the addon will prevent you from doing so but this will not work when exporting .mwm files.
+Neither Blender nor the add-on will prevent you from doing so but this will not work when exporting .mwm files.
 
-NOTE: The addon does not check if the path of a texture actually points to an exisiting file.
+NOTE: The add-on does not check if the path of a texture actually points to an existing file.
 But it's easy to spot missing texture-files when you configure the 3D view to display meshes with their materials.
 
 ==== Specularity
@@ -193,8 +193,8 @@ is determined by the A-channel of the normal/specular texture.
 
 WARNING: There is also a "Specular" panel. This is the wrong panel.
 With that you control specularity as it is rendered by Blender.
-The algorithm Blender uses is similiar to the one SE uses but the values have different meanings.
-Because of that the addon cannot reuse Blender's settings and you have to provide them separately for SE.
+The algorithm Blender uses is similar to the one SE uses but the values have different meanings.
+Because of that the add-on cannot reuse Blender's settings and you have to provide them separately for SE.
 
 The effect of the two values `Intensity` and `Power` are hard to describe so it is best if you play with them
 and watch the results in-game. Just know that at high values (30.0 / 30.0) the game's specularity shader
@@ -205,12 +205,12 @@ also starts to mirror the environment like smooth metal would do.
 Transparent materials like glass are handled specially by the game.
 They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called `TransparentMaterials.sbc`.
-It makes no sense for this addon to support editing the content of this file
+It makes no sense for this add-on to support editing the content of this file
 because the settings cannot be viewed in Blender, anyway.
 
 What you get if you change a material from `Normal` to `Glass` are the settings that _are_ stored in the
 .mwm file on export. For the meaning of these settings please refer to Keen's
-http://steamcommunity.com/sharedfiles/filedetails/?id=300427203&searchtext=transparent[tutorial]
+http://steamcommunity.com/sharedfiles/filedetails/?id=300427203[tutorial]
 on transparent materials.
 
 ==== Special Material Names
@@ -228,7 +228,7 @@ Otherwise the emissive intensity from the diffuse/emissive texture is ignored.
 A lot of block types have some type of status indicator.
 Landing Gear displays the lock state,
 several other blocks show if they are powered,
-conveyors show if the conveyor-line is etablished or broken, etc.
+conveyors show if the conveyor-line is established or broken, etc.
 
 Because all these are some form of lights Keen chose to also use the `Emissive` material name for this.
 If a block has more than one status the materials are additionally numbered, starting with zero
