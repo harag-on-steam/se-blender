@@ -317,8 +317,8 @@ class MountPointSet(ExportSet):
         eSize = ElementTree.SubElement(block, 'Size')
         eSize.attrib = OrderedDict([('x', str(x)), ('y', str(y)), ('z', str(z)), ])
 
-        eOffset = ElementTree.SubElement(block, 'ModelOffset', x='0', y='0', z='0')
-        eOffset.attrib = OrderedDict([('x', '0'), ('y', str(y)), ('z', str(z)), ])
+        eOffset = ElementTree.SubElement(block, 'ModelOffset')
+        eOffset.attrib = OrderedDict([('x', '0'), ('y', '0'), ('z', '0'), ])
 
         modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
         ElementTree.SubElement(block, 'Model').text = modelpath
