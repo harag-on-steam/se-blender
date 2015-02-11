@@ -326,8 +326,10 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
 
         layout = self.layout
 
+        if context.active_object.name.lower().startswith("subpart_") and not d.file:
+            layout.alert = True
         layout.prop(d, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
-
+        layout.alert = False
 
 # -----------------------------------------  Material Data ----------------------------------------- #
 
