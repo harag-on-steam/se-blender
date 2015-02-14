@@ -30,6 +30,7 @@ if not reload('fbx'): from . import fbx
 if not reload('havok_options'): from . import havok_options
 if not reload('merge_xml'): from . import merge_xml
 if not reload('export'): from . import export
+if not reload('nodes'): from . import nodes
 
 del modules
 
@@ -77,6 +78,8 @@ def register():
     register_class(mount_points.AddMountPointSkeleton)
     register_class(mount_points.SetupGrid)
 
+    nodes.register()
+
     register_class(SEView3DToolsPanel)
 
     mount_points.enable_draw_callback()
@@ -88,6 +91,8 @@ def unregister():
     mount_points.disable_draw_callback()
 
     unregister_class(SEView3DToolsPanel)
+
+    nodes.unregister()
 
     unregister_class(mount_points.SetupGrid)
     unregister_class(mount_points.AddMountPointSkeleton)

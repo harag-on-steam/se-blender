@@ -199,6 +199,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
         description="Provide the SubtypeId of the large size block or leave empty to use the default naming-scheme")
     small_subtypeid = bpy.props.StringProperty( name="Small Block SubtypeId",
         description="Provide the SubtypeId of the small size block or leave empty to use the default naming-scheme")
+    export_nodes = bpy.props.StringProperty( name="Export Node Tree")
 
 
 class DATA_PT_spceng_scene(bpy.types.Panel):
@@ -267,6 +268,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split = layout.split()
         split.column().prop(spceng, "physics_layers")
         split.column().prop(spceng, "mount_points_layers")
+
 
 def block_bounds():
     """
