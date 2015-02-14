@@ -19,79 +19,123 @@ class BlockExportTree(bpy.types.NodeTree):
     bl_label = "Block Export Settings"
     bl_icon = "SCRIPTPLUGINS"
 
+
+class ObjectSource:
+    '''
+        Enumerates scene-objects for a requesting socket
+    '''
+
+    def getObjects(self, socket: bpy.types.NodeSocket):
+        return []
+
+class ParamSource:
+    '''
+        A source of string-template substitution parameters
+    '''
+
+    def getParams(self) -> dict:
+        return {}
+
+class TextSource:
+    '''
+        Provides a string that can have parameters substituted.
+    '''
+
+    def getText(self, **params) -> str:
+        return ""
+
+class Exporter:
+    '''
+        Does an export job within the given context, possibly caching the result.
+    '''
+
+    def export(self, exportContext):
+        raise NotImplementedError("No export implemented")
+
+
 # -------------------------------------------------------------------------------------------------------------------- #
 
 class SESocket:
     def draw(self, context, layout, node, text):
+        '''Do not override. Override drawChecked() instead.'''
         source = self.firstSource()
-        if not source is None and not self.isCompatibleOpposite(None, source):
+        if not source is None and not self.isCompatibleSource(source):
             layout.label(text="incompatible", icon="ERROR")
             return
 
         self.drawChecked(context, layout, node, text, source)
 
     def drawChecked(self, context, layout, node, text, source):
+        '''Only called if a linked source was already determined to be compatible.'''
         layout.label(text=text)
 
     def draw_color(self, context, node):
+        '''Draws the socket colored according to attribute bl_color or red if the linked source is incompatible.'''
         source = self.firstSource()
-        if not source is None and not self.isCompatibleOpposite(None, source):
+        if not source is None and not self.isCompatibleSource(source):
             return (1, 0, 0, 1)
 
         r, g, b, a = self.bl_color
         return (r, g, b, a if self.is_linked else a * 0.7)
 
-    def isCompatibleOpposite(self, node, socket):
+    def isCompatibleSource(self, socket):
+        '''Decide if the give socket is a compatible source for this socket.
+        By default it is checked to have the same type.'''
         return self.bl_idname == socket.bl_idname
 
-    def checkLinks(self):
-        for link in self.links:
-            if self.is_output:
-                node, socket, inout = (link.to_node, link.to_socket, "->")
-            else:
-                node, socket, inout = (link.from_node, link.from_socket, "<-")
-
-            link.is_valid = link.is_valid and self.isCompatibleOpposite(node, socket)
-            # print("%s.%s %s %s.%s : %s" %
-            #      (self.node.name, self.name, inout, node.name, socket.name, link.is_valid))
-
-    def firstSource(self, named=None):
+    def firstSource(self, named=None, type=None):
+        '''Finds the first providing socket linked to this socket with the give name and type.'''
         if self.is_linked:
             for link in self.links:
-                if link.from_socket != self and (named is None or link.from_socket.name == named):
+                if link.from_socket != self \
+                        and (named is None or link.from_socket.name == named) \
+                        and (type is None or isinstance(link.from_socket, type)):
                     return link.from_socket
         return None
 
     def firstSink(self, named=None):
+        '''Finds the first receiving socket linked to this socket with the give name and type.'''
         if self.is_linked:
             for link in self.links:
-                if link.to_socket != self and (named is None or link.from_socket.name == named):
+                if link.to_socket != self \
+                        and (named is None or link.from_socket.name == named) \
+                        and (type is None or isinstance(link.from_socket, type)):
                     return link.to_socket
         return None
 
-class TextSocket(SESocket):
+class TextSocket(SESocket, TextSource):
     type = "STRING"
 
     show_editor_if_unlinked = bpy.props.BoolProperty(default=False)
-    text = bpy.props.StringProperty() # redefine in subclasses to get separate property descriptions
+    '''Shows an editor for the sockets 'text'-property if this socket is an input socket and is not linked.'''
+
+    text = bpy.props.StringProperty()
+    '''Provides the socket's string value directly. This is the last resort.'''
     node_input = bpy.props.StringProperty()
+    '''Gets the string value from the owning node's named input-socket'''
     node_property = bpy.props.StringProperty()
+    '''Gets the string value from the owning node's named property'''
 
     def getText(self, **kwargs) -> str:
+        '''
+        Gets the string value from (in that order of precedence):
+        1. a linked TextSource
+        2. another input-socket of the node if configured,
+        3. a property of the node if configured
+        4. from the sockets 'text'-property
+        '''
         if not self.enabled:
             return ""
 
         template = None
 
-        if self.is_linked:
-            for link in self.links:
-                if link.from_socket != self and isinstance(link.from_socket, TextSocket):
-                    template = Template(link.from_socket.getText(**kwargs))
-                    break
+        source = self.firstSource(type=TextSource)
+        if not source is None:
+            template = Template(source.getText(**kwargs))
 
         if template is None and self.node_input:
             inputSocket = self.node.inputs[self.node_input]
-            if isinstance(inputSocket, TextSocket):
+            if isinstance(inputSocket, TextSource):
                 template = Template(inputSocket.getText(**kwargs))
 
         if template is None and self.node_property:
@@ -108,9 +152,8 @@ class TextSocket(SESocket):
         params = {}
 
         for input in self.node.inputs:
-            if isinstance(input, ObjectListSocket):
-                if input.n > 0:
-                    params['n'] = str(input.n)
+            if not input is self and isinstance(input, ParamSource):
+                params.update(input.getParams())
 
         return params
 
@@ -121,6 +164,30 @@ class TextSocket(SESocket):
 
         super().drawChecked(context, layout, node, text, source)
 
+class ExportSocket(SESocket, Exporter):
+    def export(self, exportContext):
+        '''Delegates the export to a linked source-socket if this is an input-socket
+        or to the node if this is an output-socket.
+
+        The first case fails with a ValueError if the socket is not linked.
+        The second fails with a AttributeError if the socket is not placed on an Exporter node.'''
+        if self.is_output:
+            if not isinstance(self.node, Exporter):
+                raise AttributeError("%s is not on an exporter node" % self.path_from_id())
+            return self.node.export(exportContext)
+
+        source = self.firstSource(type=Exporter)
+        if source is None:
+            raise ValueError("%s is not linked to an exporting source" % self.path_from_id())
+
+        return source.export(exportContext)
+
+class FileSocket(TextSocket):
+    def isCompatibleSource(self, socket):
+        return isinstance(socket, type(self)) # or isinstance(socket, TemplateStringSocket)
+
+# -------------------------------------------------------------------------------------------------------------------- #
+
 class TemplateStringSocket(bpy.types.NodeSocket, TextSocket):
     bl_idname = "SETemplateStringSocket"
     bl_label = "Text"
@@ -128,19 +195,15 @@ class TemplateStringSocket(bpy.types.NodeSocket, TextSocket):
 
     show_editor_if_unlinked = bpy.props.BoolProperty(default=True)
 
-    def isCompatibleOpposite(self, node, socket):
+    def isCompatibleSource(self, socket):
         return isinstance(socket, TextSocket)
 
-class FileSocket(TextSocket):
-    def isCompatibleOpposite(self, node, socket):
-        return isinstance(socket, type(self)) or isinstance(socket, TemplateStringSocket)
-
-class MwmFileSocket(bpy.types.NodeSocket, FileSocket):
+class MwmFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_idname = "SEMwmFileSocket"
     bl_label = ".mwm"
     bl_color = COLOR_MWM_SKT
 
-class LodInputSocket(bpy.types.NodeSocket, FileSocket):
+class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_idname = "SELodInputSocket"
     bl_label = "LOD"
     bl_color = COLOR_MWM_SKT
@@ -154,19 +217,15 @@ class LodInputSocket(bpy.types.NodeSocket, FileSocket):
 
         super().drawChecked(context, layout, node, text, source)
 
-    def isCompatibleOpposite(self, node, socket):
-        return isinstance(socket, MwmFileSocket) or isinstance(socket, TemplateStringSocket)
+    def isCompatibleSource(self, socket):
+        return isinstance(socket, MwmFileSocket) # or isinstance(socket, TemplateStringSocket)
 
-class HktFileSocket(bpy.types.NodeSocket, FileSocket):
+class HktFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_idname = "SEHktFileSocket"
     bl_label = ".hkt"
     bl_color = COLOR_HKT_SKT
 
-class ObjectSource:
-    def getObjects(self, socket: ObjectListSocket):
-        return []
-
-class ObjectListSocket(bpy.types.NodeSocket, SESocket, ObjectSource):
+class ObjectListSocket(bpy.types.NodeSocket, SESocket, ObjectSource, ParamSource):
     bl_idname = "SEObjectListSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
@@ -175,7 +234,7 @@ class ObjectListSocket(bpy.types.NodeSocket, SESocket, ObjectSource):
     n = bpy.props.IntProperty(default=-1)
     layer = bpy.props.IntProperty()
 
-    def getObjects(self, socket: ObjectListSocket=None):
+    def getObjects(self, socket: bpy.types.NodeSocket=None):
         if not self.enabled:
             return []
 
@@ -190,17 +249,22 @@ class ObjectListSocket(bpy.types.NodeSocket, SESocket, ObjectSource):
 
         return []
 
+    def getN(self):
+        source = self.firstSource()
+        if not source is None:
+            return source.getN()
+        return self.n
+
+    def getParams(self):
+        n = self.getN()
+        return {'n': str(n)} if n > 0 else {}
+
 # -------------------------------------------------------------------------------------------------------------------- #
 
 class SENode:
     @classmethod
     def poll(cls, tree):
         return tree.bl_idname == BlockExportTree.bl_idname
-
-    def update(self):
-        for socket in self.inputs:
-            if isinstance(socket, SESocket):
-                socket.checkLinks()
 
 class TemplateStringNode(bpy.types.Node, SENode):
     bl_idname = "SETemplateStringNode"
@@ -216,15 +280,14 @@ class TemplateStringNode(bpy.types.Node, SENode):
         if len(self.outputs) > 0:
             layout.prop(self.outputs['Text'], "text", text="")
 
-class HavokFileNode(bpy.types.Node, SENode):
+class HavokFileNode(bpy.types.Node, SENode, Exporter):
     bl_idname = "SEHavokFileNode"
     bl_label = "Havok Converter"
     bl_icon = "PHYSICS"
 
     def init(self, context):
-        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
-        pin = self.outputs.new(HktFileSocket.bl_idname, "Havok")
-        pin.node_property = "name"
+        self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        self.outputs.new(HktFileSocket.bl_idname, "Havok").node_property = "name"
 
         self.use_custom_color = True
         self.color = COLOR_HKT_WND
@@ -234,20 +297,22 @@ class HavokFileNode(bpy.types.Node, SENode):
     def draw_buttons(self, context, layout):
         layout.prop(self, "name", text="")
 
-class MwmFileNode(bpy.types.Node, SENode):
+    def export(self, exportContext):
+        return self.outputs[0].getText()
+
+class MwmFileNode(bpy.types.Node, SENode, Exporter):
     bl_idname = "SEMwmFileNode"
     bl_label = "MwmBuilder"
     bl_icon = "RENDER_RESULT"
 
     def init(self, context):
-        pin = self.inputs.new(TemplateStringSocket.bl_idname, "Name")
-        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
-        pin = self.inputs.new(HktFileSocket.bl_idname, "Havok")
-        pin = self.outputs.new(MwmFileSocket.bl_idname, "Mwm")
-        pin.node_input = "Name"
+        self.inputs.new(TemplateStringSocket.bl_idname, "Name")
+        self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        self.inputs.new(HktFileSocket.bl_idname, "Havok")
+        self.outputs.new(MwmFileSocket.bl_idname, "Mwm").node_input = "Name"
 
         for i in range(0,10):
-            pin = self.inputs.new(LodInputSocket.bl_idname, "LOD")
+            self.inputs.new(LodInputSocket.bl_idname, "LOD")
 
         self.use_custom_color = True
         self.color = COLOR_MWM_WND
@@ -260,14 +325,16 @@ class MwmFileNode(bpy.types.Node, SENode):
             if (pins[i].enabled):
                 break
 
-class BlockDefinitionNode(bpy.types.Node, SENode):
+    def export(self, exportContext):
+        return self.outputs[0].getText()
+
+class BlockDefinitionNode(bpy.types.Node, SENode, Exporter):
     bl_idname = "SEBlockDefNode"
     bl_label = "Block Definition"
     bl_icon = "TEXT"
 
     def init(self, context):
         inputs = self.inputs
-
         inputs.new(MwmFileSocket.bl_idname, "Main Model")
         inputs.new(ObjectListSocket.bl_idname, "Mount Points")
 
@@ -284,6 +351,9 @@ class BlockDefinitionNode(bpy.types.Node, SENode):
             pins[i].enabled = pins[i].is_linked or pins[i-1].is_linked
             if (pins[i].enabled):
                 break
+
+    def export(self, exportContext):
+        return "blockdef"
 
 class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
     bl_idname = "SELayerObjectsNode"
