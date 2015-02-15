@@ -199,8 +199,9 @@ class SESceneProperties(bpy.types.PropertyGroup):
         description="Provide the SubtypeId of the large size block or leave empty to use the default naming-scheme")
     small_subtypeid = bpy.props.StringProperty( name="Small Block SubtypeId",
         description="Provide the SubtypeId of the small size block or leave empty to use the default naming-scheme")
-    export_nodes = bpy.props.StringProperty( name="Export Node Tree")
 
+    export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
+        description="Use the Node editor to create and change these settings.")
 
 class DATA_PT_spceng_scene(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
@@ -253,21 +254,32 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split = col.split()
         split.column().prop(spceng, "block_specular_power", text="Power")
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
-        
+
+        try:
+            settings = bpy.data.node_groups[spceng.export_nodes]
+            if settings.bl_idname != "SEBlockExportTree":
+                settings = None
+        except KeyError:
+            settings = None
+
         layout.separator()
         layout.separator()
+
         col = layout.column(align=True)
+        col.enabled = not settings is None
         col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
         col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         layout.separator()
 
-        split = layout.split()
-        split.column().prop(spceng, "main_layers")
-        split.column().prop(spceng, "construction_layers")
+        layout.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export settings")
+
+#        split = layout.split()
+#        split.column().prop(spceng, "main_layers")
+#        split.column().prop(spceng, "construction_layers")
         
-        split = layout.split()
-        split.column().prop(spceng, "physics_layers")
-        split.column().prop(spceng, "mount_points_layers")
+#        split = layout.split()
+#        split.column().prop(spceng, "physics_layers")
+#        split.column().prop(spceng, "mount_points_layers")
 
 
 def block_bounds():
