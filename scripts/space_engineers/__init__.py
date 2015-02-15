@@ -31,6 +31,7 @@ if not reload('havok_options'): from . import havok_options
 if not reload('merge_xml'): from . import merge_xml
 if not reload('export'): from . import export
 if not reload('nodes'): from . import nodes
+if not reload('default_nodes'): from . import nodes
 
 del modules
 

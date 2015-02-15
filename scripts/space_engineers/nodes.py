@@ -1,13 +1,14 @@
 import bpy
 from string import Template
-from space_engineers.utils import layer_bits, layer_bit
+from mathutils import Vector
+from space_engineers.utils import layer_bits, layer_bit, layers
 
 COLOR_OBJECTS_SKT  = (.50, .65, .80, 1)
 COLOR_OBJECTS_WND  = (.45, .54, .61)
 COLOR_TEXT_SKT     = (.90, .90, .90, 1)
 COLOR_TEXT_WND     = (.66, .66, .66)
 COLOR_HKT_SKT      = (.60, .90, .40, 1)
-COLOR_HKT_WND      = (.50, .69, .43)
+COLOR_HKT_WND      = (.55, .69, .50)
 COLOR_MWM_SKT      = (  1, .70, .30, 1)
 COLOR_MWM_WND      = (.70, .56, .42)
 COLOR_BLOCKDEF_WND = (  1, .98, .52)
@@ -18,6 +19,7 @@ class BlockExportTree(bpy.types.NodeTree):
     bl_idname = "SEBlockExportTree"
     bl_label = "Block Export Settings"
     bl_icon = "SCRIPTPLUGINS"
+    type = "CUSTOM"
 
 
 class ObjectSource:
@@ -52,6 +54,10 @@ class Exporter:
     def export(self, exportContext):
         raise NotImplementedError("No export implemented")
 
+class ReadyState:
+
+    def isReady(self):
+        return True
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -75,8 +81,11 @@ class SESocket:
         if not source is None and not self.isCompatibleSource(source):
             return (1, 0, 0, 1)
 
+        return self.drawColorChecked(context, node, source)
+
+    def drawColorChecked(self, context, node, source):
         r, g, b, a = self.bl_color
-        return (r, g, b, a if self.is_linked else a * 0.7)
+        return (r, g, b, a if self.is_linked else a * 0.6)
 
     def isCompatibleSource(self, socket):
         '''Decide if the give socket is a compatible source for this socket.
@@ -157,6 +166,9 @@ class TextSocket(SESocket, TextSource):
 
         return params
 
+    def isReady(self):
+        return not self.is_linked or self.isCompatibleSource(self.firstSource())
+
     def drawChecked(self, context, layout, node, text, source):
         if not self.is_output and source is None and self.show_editor_if_unlinked:
             layout.prop(self, "text", text="")
@@ -182,9 +194,73 @@ class ExportSocket(SESocket, Exporter):
 
         return source.export(exportContext)
 
-class FileSocket(TextSocket):
+class ObjectsSocket(SESocket, ObjectSource, ParamSource, ReadyState):
+    n = bpy.props.IntProperty(default=-1)
+    layer = bpy.props.IntProperty()
+
+    def getObjects(self, socket: bpy.types.NodeSocket=None):
+        if not self.enabled:
+            return []
+
+        elif self.is_output:
+            if isinstance(self.node, ObjectSource):
+                return self.node.getObjects(self)
+
+        elif self.is_linked:
+            fromSocket = self.links[0].from_socket
+            if isinstance(fromSocket, ObjectSource):
+                return fromSocket.getObjects(self)
+
+        return []
+
+    def getN(self):
+        source = self.firstSource(type=ObjectsSocket)
+        if not source is None:
+            return source.getN()
+        return self.n
+
+    def getParams(self):
+        n = self.getN()
+        return {'n': str(n)} if n > 0 else {}
+
+    def isReady(self):
+        return not self.is_linked or self.isCompatibleSource(self.firstSource())
+
+    def isCompatibleSource(self, socket):
+        return isinstance(socket, ObjectSource)
+
+    def isEmpty(self):
+        isEmpty = not any(o for o in self.getObjects())
+        return isEmpty
+
+    def drawColorChecked(self, context, node, source):
+        color = super().drawColorChecked(context, node, source)
+        if self.is_linked and self.isEmpty():
+            color = (0.35, 0.35, 0.35, 1)
+        return color
+
+class FileSocket(TextSocket, ReadyState):
     def isCompatibleSource(self, socket):
         return isinstance(socket, type(self)) # or isinstance(socket, TemplateStringSocket)
+
+    def isReady(self):
+        if self.is_output:
+            isNodeReady = not isinstance(self.node, ReadyState) or self.node.isReady()
+            return isNodeReady
+
+        source = self.firstSource(type=ReadyState)
+        if not source is None:
+            return source.isReady()
+
+        return True
+
+    def drawColorChecked(self, context, node, source):
+        color = super().drawColorChecked(context, node, source)
+        if self.is_linked and not self.isReady():
+            color = (0.35, 0.35, 0.35, 1)
+            # r, g, b, a = color
+            # color = (r, g, b, a * 0.2)
+        return color
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -208,7 +284,7 @@ class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_label = "LOD"
     bl_color = COLOR_MWM_SKT
 
-    distance = bpy.props.FloatProperty(name="Distance", default=10.0, min=0.0)
+    distance = bpy.props.IntProperty(name="Distance", default=10, min=0)
 
     def drawChecked(self, context, layout, node, text, source):
         if self.is_linked:
@@ -225,39 +301,31 @@ class HktFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_label = ".hkt"
     bl_color = COLOR_HKT_SKT
 
-class ObjectListSocket(bpy.types.NodeSocket, SESocket, ObjectSource, ParamSource):
+class ObjectListSocket(bpy.types.NodeSocket, ObjectsSocket):
     bl_idname = "SEObjectListSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
     type = 'CUSTOM'
 
-    n = bpy.props.IntProperty(default=-1)
-    layer = bpy.props.IntProperty()
+class RigidBodyObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
+    '''selects only objects that have rigid-body settings'''
+    bl_idname = "SERigidBodyObjectsSocket"
+    bl_label = "Objects"
+    bl_color = COLOR_OBJECTS_SKT
+    type = 'CUSTOM'
 
     def getObjects(self, socket: bpy.types.NodeSocket=None):
-        if not self.enabled:
-            return []
+        return (o for o in super().getObjects(socket) if not o.rigid_body is None)
 
-        elif self.is_output:
-            if isinstance(self.node, ObjectSource):
-                return self.node.getObjects(self)
+class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
+    '''selects only objects that have a 'MountPoint' material'''
+    bl_idname = "SEMountPointObjectsSocket"
+    bl_label = "Objects"
+    bl_color = COLOR_OBJECTS_SKT
+    type = 'CUSTOM'
 
-        elif self.is_linked:
-            fromSocket = self.links[0].from_socket
-            if isinstance(fromSocket, ObjectSource):
-                return fromSocket.getObjects(self)
-
-        return []
-
-    def getN(self):
-        source = self.firstSource()
-        if not source is None:
-            return source.getN()
-        return self.n
-
-    def getParams(self):
-        n = self.getN()
-        return {'n': str(n)} if n > 0 else {}
+    def getObjects(self, socket: bpy.types.NodeSocket=None):
+        return (o for o in super().getObjects(socket) if 'MountPoint' in o.material_slots)
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -268,7 +336,7 @@ class SENode:
 
 class TemplateStringNode(bpy.types.Node, SENode):
     bl_idname = "SETemplateStringNode"
-    bl_label = "Text"
+    bl_label = "Text with Parameters"
     bl_icon = "TEXT"
 
     def init(self, context):
@@ -280,27 +348,34 @@ class TemplateStringNode(bpy.types.Node, SENode):
         if len(self.outputs) > 0:
             layout.prop(self.outputs['Text'], "text", text="")
 
-class HavokFileNode(bpy.types.Node, SENode, Exporter):
+class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
     bl_idname = "SEHavokFileNode"
     bl_label = "Havok Converter"
     bl_icon = "PHYSICS"
 
     def init(self, context):
-        self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        self.inputs.new(TemplateStringSocket.bl_idname, "Name")
+        self.inputs.new(RigidBodyObjectsSocket.bl_idname, "Objects")
         self.outputs.new(HktFileSocket.bl_idname, "Havok").node_property = "name"
 
         self.use_custom_color = True
         self.color = COLOR_HKT_WND
         self.width_hidden = 87.0
-        self.hide = True
-
-    def draw_buttons(self, context, layout):
-        layout.prop(self, "name", text="")
+        # self.hide = True
 
     def export(self, exportContext):
         return self.outputs[0].getText()
 
-class MwmFileNode(bpy.types.Node, SENode, Exporter):
+    def isReady(self):
+        objects = self.inputs['Objects']
+        hasObjects = objects.isReady() and not objects.isEmpty()
+
+        name = self.inputs['Name']
+        hasName = name.isReady() and name.getText()
+
+        return hasObjects and hasName
+
+class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
     bl_idname = "SEMwmFileNode"
     bl_label = "MwmBuilder"
     bl_icon = "RENDER_RESULT"
@@ -325,6 +400,12 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter):
             if (pins[i].enabled):
                 break
 
+    def isReady(self):
+        hasObjects = not self.inputs['Objects'].isEmpty()
+        hasName = self.inputs['Name'].getText()
+        # Havok is not required
+        return hasObjects and hasName
+
     def export(self, exportContext):
         return self.outputs[0].getText()
 
@@ -336,10 +417,10 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter):
     def init(self, context):
         inputs = self.inputs
         inputs.new(MwmFileSocket.bl_idname, "Main Model")
-        inputs.new(ObjectListSocket.bl_idname, "Mount Points")
+        inputs.new(MountPointObjectsSocket.bl_idname, "Mount Points")
 
         for i in range(1,11):
-            inputs.new(MwmFileSocket.bl_idname, "Constr. Phase %d" % i)
+            inputs.new(MwmFileSocket.bl_idname, "Constr. Phase")
 
         self.use_custom_color = True
         self.color = COLOR_BLOCKDEF_WND
@@ -397,9 +478,10 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
                                               update=onLayerMaskUpdate)
 
     def init(self, context):
-        for i in range(1,21):
-            pin = self.outputs.new(ObjectListSocket.bl_idname, "Layer %02d" % i)
+        for i in range(0,20):
+            pin = self.outputs.new(ObjectListSocket.bl_idname, "Layer %02d" % (i+1))
             pin.enabled = False
+            pin.layer = i
         self.use_custom_color = True
         self.color = COLOR_OBJECTS_WND
 
@@ -432,23 +514,32 @@ categories = [
     ]),
 ]
 
+registered = [
+    BlockExportTree,
+
+    MwmFileSocket,
+    LodInputSocket,
+    HktFileSocket,
+    TemplateStringSocket,
+    ObjectListSocket,
+    RigidBodyObjectsSocket,
+    MountPointObjectsSocket,
+
+    LayerObjectsNode,
+    SeparateLayerObjectsNode,
+    HavokFileNode,
+    MwmFileNode,
+    TemplateStringNode,
+    BlockDefinitionNode,
+]
+
 # -------------------------------------------------------------------------------------------------------------------- #
 
 from bpy.utils import register_class, unregister_class
 
 def register():
-    register_class(BlockExportTree)
-    register_class(MwmFileSocket)
-    register_class(LodInputSocket)
-    register_class(HktFileSocket)
-    register_class(TemplateStringSocket)
-    register_class(ObjectListSocket)
-    register_class(LayerObjectsNode)
-    register_class(SeparateLayerObjectsNode)
-    register_class(HavokFileNode)
-    register_class(MwmFileNode)
-    register_class(TemplateStringNode)
-    register_class(BlockDefinitionNode)
+    for c in registered:
+        register_class(c)
 
     try:
         nodeitems_utils.register_node_categories("SE_BLOCK_EXPORT", categories)
@@ -462,15 +553,5 @@ def unregister():
     except KeyError:
         pass
 
-    unregister_class(BlockDefinitionNode)
-    unregister_class(TemplateStringNode)
-    unregister_class(LodInputSocket)
-    unregister_class(MwmFileNode)
-    unregister_class(HavokFileNode)
-    unregister_class(SeparateLayerObjectsNode)
-    unregister_class(LayerObjectsNode)
-    unregister_class(ObjectListSocket)
-    unregister_class(TemplateStringSocket)
-    unregister_class(HktFileSocket)
-    unregister_class(MwmFileNode)
-    unregister_class(BlockExportTree)
+    for c in reversed(registered):
+        unregister_class(c)
