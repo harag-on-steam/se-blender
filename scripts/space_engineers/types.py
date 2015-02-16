@@ -21,6 +21,30 @@ def all_layers_visible(layer_mask):
     mask = layer_bits(layer_mask)
     return (scene_layers & mask) == mask
 
+def getExportNodeTree(name):
+    if name in bpy.data.node_groups:
+        tree = bpy.data.node_groups[name]
+        if tree.bl_idname == "SEBlockExportTree":
+            return tree
+    return None
+
+def getExportNodeTreeFromContext(context):
+    tree = None
+
+    if context.space_data.type == 'NODE_EDITOR':
+        tree = context.space_data.node_tree
+    elif context.space_data.type == 'PROPERTIES':
+        d = data(context.scene)
+        if not d is None:
+            settings = d.export_nodes
+            if settings in bpy.data.node_groups:
+                tree = bpy.data.node_groups[settings]
+
+    if not tree is None and tree.bl_idname != "SEBlockExportTree":
+        tree = None
+
+    return tree
+
 VERSION_URL = "https://api.github.com/repos/harag-on-steam/se-blender/tags"
 online_version = None
 is_current_version = None
@@ -193,6 +217,8 @@ class SESceneProperties(bpy.types.PropertyGroup):
     construction_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001110000000),
                                 name="Construction Stages", description="Each layer in this set represents one construction stage. Only meshes and empties are included.")
 
+    show_block_bounds = bpy.props.BoolProperty( default=True, name="Show Block Bounds", )
+
     use_custom_subtypeids = bpy.props.BoolProperty( default=False, name="Use custom SubtypeIds",
         description="This is only useful if you have to keep a specific block SubetypeId to remain backwards-compatible.")
     large_subtypeid = bpy.props.StringProperty( name="Large Block SubtypeId",
@@ -223,14 +249,13 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         layout.active = spceng.is_block
         layout.enabled = spceng.is_block
 
-        split = layout.split()
-        col = split.column()
+        col = layout.column()
         col.label(text="Block Size")
-        col.prop(spceng, "block_size", text="")
-
-        col = split.column()
-        col.label()
-        col.row().prop(spceng, "block_dimensions", text="")
+        split = col.split(percentage=.45, align=True)
+        split.prop(spceng, "block_size", text="")
+        row = split.row(align=True)
+        row.prop(spceng, "block_dimensions", text="")
+        row.prop(spceng, "show_block_bounds", icon="MOD_MESHDEFORM", icon_only=True)
 
         row = layout.row()
         row.alignment = 'RIGHT'
@@ -255,20 +280,14 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split.column().prop(spceng, "block_specular_power", text="Power")
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
 
-        try:
-            settings = bpy.data.node_groups[spceng.export_nodes]
-            if settings.bl_idname != "SEBlockExportTree":
-                settings = None
-        except KeyError:
-            settings = None
-
         layout.separator()
         layout.separator()
 
         col = layout.column(align=True)
-        col.enabled = not settings is None
-        col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
-        col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
+        op = col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        op.settings_name = spceng.export_nodes
+        op = col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
+        op.settings_name = spceng.export_nodes
         layout.separator()
 
         layout.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export settings")
@@ -281,6 +300,24 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 #        split.column().prop(spceng, "physics_layers")
 #        split.column().prop(spceng, "mount_points_layers")
 
+class NODE_PT_spceng_nodes(bpy.types.Panel):
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Space Engineers Block"
+
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.node_tree.bl_idname == "SEBlockExportTree"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.label("Export using these settings")
+        col = layout.column(align=True)
+        op = col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        op.settings_name = context.space_data.node_tree.name
+        col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
+        op.settings_name = context.space_data.node_tree.name
 
 def block_bounds():
     """
@@ -313,8 +350,7 @@ def is_small_block():
 def is_mount_points_visible():
     scene = bpy.context.scene
     d = data(scene)
-    return d and d.is_block and some_layers_visible(d.mount_points_layers)
-
+    return d and d.is_block and d.show_block_bounds
          
 # -----------------------------------------  Object Data ----------------------------------------- #
  

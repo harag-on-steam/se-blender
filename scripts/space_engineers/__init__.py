@@ -69,6 +69,7 @@ def register():
     bpy.types.Scene.space_engineers = bpy.props.PointerProperty(type=types.SESceneProperties)
     bpy.types.Material.space_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
    
+    register_class(types.NODE_PT_spceng_nodes)
     register_class(types.DATA_PT_spceng_scene)
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
@@ -104,6 +105,7 @@ def unregister():
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)
     unregister_class(types.DATA_PT_spceng_scene)
+    unregister_class(types.NODE_PT_spceng_nodes)
     
     del bpy.types.Material.space_engineers
     del bpy.types.Object.space_engineers

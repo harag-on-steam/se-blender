@@ -18,7 +18,7 @@ from space_engineers.merge_xml import CubeBlocksMerger, MergeResult
 from space_engineers.mount_points import mount_point_definitions, mount_points_xml
 from space_engineers.types import SESceneProperties
 from .utils import scaleUni, layer_bits, layer_bit, md5sum
-from .types import data, prefs
+from .types import data, prefs, getExportNodeTreeFromContext
 from .fbx import save_single
 
 from bpy_extras.io_utils import axis_conversion, ExportHelper
@@ -446,13 +446,22 @@ class ExportSceneAsBlock(bpy.types.Operator):
                     "(will only work correctly with tris/quads only meshes!)",
         default=False)
 
+    settings_name = bpy.props.StringProperty(
+        name="Used Settings",
+        description="The name of the node-tree that defines the export",
+        default="")
+
     @classmethod
     def poll(self, context):
         if not context.scene:
             return False
 
         d = data(context.scene)
-        return d and d.is_block
+        if d is None or not d.is_block:
+            return False
+
+        tree = getExportNodeTreeFromContext(context)
+        return not tree is None
 
     def invoke(self, context, event):
         if not self.directory:
@@ -527,13 +536,25 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         description="Renames the SubtypeId if a definition matches by BlockPairName and CubeSize. "
                     "Be aware that this is not backwards-compatible for players!")
 
+    settings_name = bpy.props.StringProperty(
+        name="Used Settings",
+        description="The name of the node-tree that defines the export",
+        default="MwmExport")
+
     @classmethod
     def poll(self, context):
         if not context.scene:
             return False
 
         d = data(context.scene)
-        return d and d.is_block
+        if d is None or not d.is_block:
+            return False
+
+        tree = getExportNodeTreeFromContext(context)
+        if tree is None or not any(n for n in tree.nodes if n.bl_idname == "SEBlockDefNode"):
+            return False
+
+        return True
 
     def invoke(self, context, event):
         if not self.filepath:

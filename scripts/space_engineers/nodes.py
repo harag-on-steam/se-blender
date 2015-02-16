@@ -472,6 +472,7 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
             pin.enabled = mask[i]
             if pin.enabled:
                 pin.n = ordinal
+                pin.name = "Layer %02d \u2192 %d" % (i+1, ordinal)
                 ordinal += 1
 
     layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20),
