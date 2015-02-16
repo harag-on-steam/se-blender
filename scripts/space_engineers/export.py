@@ -91,13 +91,14 @@ class Names:
 
 class ExportSettings:
     def __init__(self, scene, outputDir):
-        def typeCast(data) -> SESceneProperties:
+        def typeCast(data) -> SESceneProperties: # allows type inference in IDE
             return data
 
         self.scene = scene
         self.sceneData = typeCast(data(scene))
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
-        self.blockname = scene.name
+        self.blockname = scene.name # legacy, same as BlockPairName
+        self.BlockPairName = scene.name # consistent with CubeBlocks.sbc
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
         self.isRunMwmbuilder = True
@@ -106,7 +107,9 @@ class ExportSettings:
         self.names = Names()
 
         # set multiple times on export
-        self.blocksize = None
+        self.blocksize = None # legacy, same as CubeSize
+        self.CubeSize = None # consistent with CubeBlocks.sbc
+        self.SubtypeId = None # consistent with CubeBlocks.sbc
         self.scaleDown = None
         self.isUseTangentSpace = False
 
@@ -115,6 +118,8 @@ class ExportSettings:
         self._fbximporter = None
         self._havokfilter = None
         self._mwmbuilder = None
+
+        self.cache = {}
 
     @property
     def isOldMwmbuilder(self):
@@ -156,6 +161,24 @@ class ExportSettings:
         keyValues = vars(self).copy()
         keyValues.update(kwargs)
         return Template(templateString).safe_substitute(**keyValues)
+
+    def msg(self, level, msg, file=None):
+        if not file is None:
+            msg = basename(file) +': '+ msg
+        self.operator.report({level}, msg)
+
+    def warn(self, msg, file=None):
+        self.msg('WARNING', msg, file)
+
+    def error(self, msg, file=None):
+        self.msg('ERROR', msg, file)
+
+    def info(self, msg, file=None):
+        self.msg('INFO', msg, file)
+
+    def cacheValue(self, key, value):
+        self.cache[key] = value
+        return value
 
 FWD = 'Z'
 UP = 'Y'

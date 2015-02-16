@@ -121,7 +121,14 @@ def material_xml(settings, mat):
 
     return e
 
-def mwmbuilder_xml(settings, material_elements):
+def lod_xml(settings, lodMwmFile: str, lodDistance: int):
+    # TODO <LOD ... RenderQuality="EXTREME, HIGH">
+    e = ElementTree.Element("LOD", Distance=str(lodDistance))
+    em = ElementTree.SubElement(e, "Model")
+    em.text = settings.template(settings.names.modelpath, modelfile=os.path.basename(lodMwmFile))
+    return e
+
+def mwmbuilder_xml(settings, material_elements, lod_elements):
     d = data(settings.scene)
     e = ElementTree.Element("Model", Name=settings.blockname)
 
@@ -142,6 +149,9 @@ def mwmbuilder_xml(settings, material_elements):
 
     for mat in material_elements:
         e.append(mat)
+
+    for lod in lod_elements:
+        e.append(lod)
 
     # TODO other mwmbuilder.xml parameters:
 

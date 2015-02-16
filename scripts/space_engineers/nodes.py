@@ -1,7 +1,11 @@
+from os.path import join, basename
 import bpy
 from string import Template
 from mathutils import Vector
+import shutil
 from space_engineers.utils import layer_bits, layer_bit, layers
+from .export import ExportSettings, write_to_log, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder
+from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
 
 COLOR_OBJECTS_SKT  = (.50, .65, .80, 1)
 COLOR_OBJECTS_WND  = (.45, .54, .61)
@@ -177,7 +181,7 @@ class TextSocket(SESocket, TextSource):
         super().drawChecked(context, layout, node, text, source)
 
 class ExportSocket(SESocket, Exporter):
-    def export(self, exportContext):
+    def export(self, settings: ExportSettings):
         '''Delegates the export to a linked source-socket if this is an input-socket
         or to the node if this is an output-socket.
 
@@ -186,13 +190,13 @@ class ExportSocket(SESocket, Exporter):
         if self.is_output:
             if not isinstance(self.node, Exporter):
                 raise AttributeError("%s is not on an exporter node" % self.path_from_id())
-            return self.node.export(exportContext)
+            return self.node.export(settings)
 
         source = self.firstSource(type=Exporter)
         if source is None:
             raise ValueError("%s is not linked to an exporting source" % self.path_from_id())
 
-        return source.export(exportContext)
+        return source.export(settings)
 
 class ObjectsSocket(SESocket, ObjectSource, ParamSource, ReadyState):
     n = bpy.props.IntProperty(default=-1)
@@ -252,7 +256,7 @@ class FileSocket(TextSocket, ReadyState):
         if not source is None:
             return source.isReady()
 
-        return True
+        return False
 
     def drawColorChecked(self, context, node, source):
         color = super().drawColorChecked(context, node, source)
@@ -356,15 +360,12 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
     def init(self, context):
         self.inputs.new(TemplateStringSocket.bl_idname, "Name")
         self.inputs.new(RigidBodyObjectsSocket.bl_idname, "Objects")
-        self.outputs.new(HktFileSocket.bl_idname, "Havok").node_property = "name"
+        self.outputs.new(HktFileSocket.bl_idname, "Havok").node_input = "Name"
 
         self.use_custom_color = True
         self.color = COLOR_HKT_WND
         self.width_hidden = 87.0
         # self.hide = True
-
-    def export(self, exportContext):
-        return self.outputs[0].getText()
 
     def isReady(self):
         objects = self.inputs['Objects']
@@ -374,6 +375,30 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         hasName = name.isReady() and name.getText()
 
         return hasObjects and hasName
+
+    def export(self, settings: ExportSettings):
+        name = self.inputs['Name'].getText(**vars(settings))
+        if not name:
+            raise ValueError("no name to export under")
+
+        hktfile = join(settings.outputDir, name + ".hkt")
+        fbxfile = join(settings.outputDir, name + ".hkt.fbx")
+
+        if hktfile in settings.cache:
+            return settings.cache[hktfile]
+
+        objectsSource = self.inputs['Objects']
+        if objectsSource.isEmpty():
+            settings.warn("layers had no collision-objects for export", file=hktfile)
+            return settings.cacheValue(hktfile, 'SKIPPED')
+
+        export_fbx(settings, fbxfile, objectsSource.getObjects())
+        fbx_to_hkt(settings, fbxfile, hktfile)
+        hkt_filter(settings, hktfile, hktfile)
+
+        settings.info("export successful", file=hktfile)
+        return settings.cacheValue(hktfile, 'SUCCESS')
+
 
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
     bl_idname = "SEMwmFileNode"
@@ -406,8 +431,58 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         # Havok is not required
         return hasObjects and hasName
 
-    def export(self, exportContext):
-        return self.outputs[0].getText()
+    def export(self, settings: ExportSettings):
+        name = self.inputs['Name'].getText(**vars(settings))
+        if not name:
+            raise ValueError("no name to export under")
+
+        mwmfile = join(settings.outputDir, name + ".mwm")
+        if mwmfile in settings.cache:
+            return settings.cache[mwmfile]
+
+        objectsSource = self.inputs['Objects']
+        if objectsSource.isEmpty():
+            settings.info("layers had no objects for export", file=mwmfile)
+            return settings.cacheValue(mwmfile, 'SKIPPED')
+
+        materials = {}
+        for o in objectsSource.getObjects():
+            for ms in o.material_slots:
+                if not ms is None and not ms.material is None:
+                    materials[ms.material.name] = ms.material
+        materials_xml = [material_xml(settings, m) for m in materials.values()]
+
+        sockets = [s for s in self.inputs if s.name.startswith("LOD") and s.enabled and s.is_linked]
+        lods_xml = []
+        for i, socket in enumerate(sockets):
+            lodName = socket.getText(**vars(settings))
+            if socket.isReady() and socket.export(settings) == 'SUCCESS':
+                lodDistance = socket.distance
+                lods_xml.append(lod_xml(settings, lodName, lodDistance))
+            else:
+                settings.info("LOD %d: '%s' not included" % (i+1, lodName), file=mwmfile)
+
+        paramsfile = join(settings.outputDir, name + ".xml")
+        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
+        write_pretty_xml(paramsxml, paramsfile)
+
+        socket = self.inputs['Havok']
+        if socket.isReady() and socket.export(settings) == 'SUCCESS':
+            sourceName = socket.getText(**vars(settings))
+            sourceFile = join(settings.outputDir, sourceName + ".hkt")
+            targetFile = join(settings.outputDir, name + ".hkt")
+            if sourceFile != targetFile:
+                shutil.copy2(sourceFile, targetFile)
+        else:
+            settings.info("no collision data included", file=mwmfile)
+
+        fbxfile = join(settings.outputDir, name + ".fbx")
+        export_fbx(settings, fbxfile, objectsSource.getObjects())
+
+        mwmbuilder(settings, fbxfile, mwmfile)
+
+        settings.info("export successful", file=mwmfile)
+        return settings.cacheValue(mwmfile, 'SUCCESS')
 
 class BlockDefinitionNode(bpy.types.Node, SENode, Exporter):
     bl_idname = "SEBlockDefNode"
