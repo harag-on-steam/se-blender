@@ -10,44 +10,61 @@ All names that are used during export are derived from the scene name:
 | `+++{Scene-Name}+++`
 
 | SubtypeId
-| `+++{BlockPairName}_{Large\|Small}+++`
+| `+++{BlockPairName}_{CubeSize}+++`
 
 | Model
 | `+++Models\{SubtypeId}.mwm+++`
 
 | Construction Model
-| `+++Models\{SubtypeId}_Construction{n}.mwm+++`
+| `+++Models\{SubtypeId}_Constr{n}.mwm+++`
+
+| Level-of-Detail Model
+| `+++Models\{SubtypeId}_LOD{n}.mwm+++`
 
 | Icon
 | `+++Textures\Icons\{BlockPairName}.dds+++`
-
 |===
 
 WARNING: The BlockPairName and the SubtypeId are globally visible to all parts of the game.
 So it's important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
 
-Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
+You can customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
 This is primarily meant for mod authors that want to use the add-on but need their existing blocks to keep their ids
 to remain backwards-compatible. Otherwise there is hardly a good reason to change them.
 
+=== Configuring the Export
+
+[.thumb]
+image::blender-no-nodes-yet.png[float=right]
+
+The add-on uses a custom Blender node-tree to configure the export.
+Initially your .blend file contains no such node-tree and your scene's default settings-name `MwmExport`
+will be displayed as invalid. You can create the default settings by clicking on the `+` next to the settings-selector.
+
 === Exporting .mwm files
 
-The export itself runs through theses steps once you have chosen an output directory:
+By default the export runs through theses steps once you have chosen an output directory:
 
  . Export the collision-meshes to a `.hkt.fbx` file
  . Convert the `.hkt.fbx` file into a `.hkt` file via Havok's FBX-importer
  . Run the `.hkt` file through Havok's filter-manager to calculate and add rigid body data to it
- . Repeat the following steps for the main layer and all construction layers
+ . Repeat the following steps for the main layer and all construction and level-of-detail layers
  .. Export the meshes to a `.fbx` file
  .. Export the material-info to a `.xml` file with parameters for MwmBuilder
  .. Use the `.fbx`, `.xml` and `.hkt` files as input for MwmBuilder to produce the final .mwm file
 
-NOTE: Every external conversion step is logged to a separate log file which all start with the name of the block.
-If the export fails for any reason a first step should be to consult these log-files.
+NOTE: The add-on logs the result of each step of the export in Blender's link:images/blender-report.png[info-log].
+In addition the output of external tools is logged to separate log files that are all named like the file that is
+exported in each step with `.log` appended.
+If a step fails for any reason you should consult these log-files.
+
+=== Customizing the Export
+
+TODO (describe the node editor)
 
 === Block Definitions
 
-When you export .mwm files the add-on automatically creates a corresponding .blockdef.xml file for each exported block.
+When you export .mwm files the add-on also creates a corresponding `.blockdef.xml` file for each exported block.
 This file contains all the information that is available in Blender and that is relevant
 for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 
@@ -64,13 +81,13 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
   <ModelOffset x="0" y="0" z="0"/>
   <Model>Models\ExampleBlock_Large.mwm</Model>
   <BuildProgressModels>
-    <Model BuildPercentUpperBound="0.33" File="Models\ExampleBlock_Large_Construction1.mwm"/>
-    <Model BuildPercentUpperBound="0.67" File="Models\ExampleBlock_Large_Construction2.mwm"/>
-    <Model BuildPercentUpperBound="1.00" File="Models\ExampleBlock_Large_Construction3.mwm"/>
+    <Model BuildPercentUpperBound="0.33" File="Models\ExampleBlock_Large_Constr1.mwm"/>
+    <Model BuildPercentUpperBound="0.67" File="Models\ExampleBlock_Large_Constr2.mwm"/>
+    <Model BuildPercentUpperBound="1.00" File="Models\ExampleBlock_Large_Constr3.mwm"/>
   </BuildProgressModels>
   <MountPoints>
-    <MountPoint EndX="1.00" EndY="0.40" Side="Left" StartX="0.30" StartY="0.00"/>
-    <MountPoint EndX="0.30" EndY="0.10" Side="Left" StartX="0.00" StartY="0.00"/>
+    <MountPoint Side="Left" StartX="0.30" StartY="0.00" EndX="1.00" EndY="0.40"/>
+    <MountPoint Side="Left" StartX="0.00" StartY="0.00" EndX="0.30" EndY="0.10"/>
     ...
   </MountPoints>
   <BlockPairName>ExampleBlock</BlockPairName>
@@ -79,8 +96,8 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 
 === Updating CubeBlocks.sbc
 
-You can also use the "Update block definitions" operation to tell the add-on to take the same XML data it writes to a .blockdef.xml file and
-merge it with matching `<Definition>` sections of your mod's `CubeBlocks.sbc`.
+You can use the "Update block definitions" operation to tell the add-on to take the same XML data
+it writes to a `.blockdef.xml` file and merge it with matching `<Definition>` sections of your mod's `CubeBlocks.sbc`.
 That saves you the trouble to do this by hand.
 
 NOTE: Updating `CubeBlocks.sbc` will only work for blocks that are already present in the file.

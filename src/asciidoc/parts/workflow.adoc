@@ -12,38 +12,38 @@ This layout currently cannot be changed.
 
 === Scene Layout
 
-[.thumb]
-image::blender-scene.png[width=450,float=right,link=images/blender-scene.png]
-
 Inside Blender the add-on uses one scene per block.
-That's why the block-settings are on the scene tab of the properties-panel.
+That's why the block-settings are on the link:images/blender-scene.png[scene tab] of the properties-panel.
 
 On this panel you define if the block is a large or a small block and if the export should automatically
 create a small version of your block if it is a large one.
 You also define the size of your block in in-game grid units here.
 
 The layers of the scene contain the different components of a block.
-If you don't like the default layout you can change it with the corresponding layer masks on the scene panel.
+This is the default layer-setup described below:
 
-==== Main Layer
+image::layer-overview.png[align=center]
 
-By default you have one layer that contains the model of the fully-built block.
-You don't need to restrict yourself to only one mesh-object.
-If it's useful to split your block into several objects (probably to apply modifiers to some of them) by all means do so.
+==== Main Model
 
-==== Collision Layer
+The first layer contains the model of the fully-built block.
+You don't need to restrict yourself to only one mesh-object on this layer.
+If it's useful to split your block into several objects -- probably to apply modifiers to some of them -- by all means do so.
+
+==== Collision Model
 
 [.thumb]
 image::blender-physics.png[width=450,float=right,link=images/blender-physics.png]
 
-Next you have a layer that contains the simplified meshes that represent the block's collision shape.
+The second layer contains the simplified meshes that represent the block's collision shape.
 If you don't provide any collision meshes or unmark the layer the resulting .mwm file
 will not contain collision data and SE will default to a simple collision box that encompasses the whole block.
 
 Havok, the physics engine of SE, requires some settings to do its work.
 You provide those on Blender's Physics tab by enabling `Rigid Bodies` for your collision meshes.
 Only the settings `Shape`, `Mass`, `Friction` and `Bounciness` (Restitution) are exported to Havok.
-Of those `Shape` is the most important one because it has a significant performance impact.
+
+Of those settings `Shape` is the most important because it has a significant performance impact.
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessary. Avoid `Mesh` collisions.
 
@@ -76,30 +76,41 @@ link:images/blender-mp-mirror.png[modifiers like 'mirror' or 'array']
 to some of the mount point faces.
 
 For mount point editing it is a good idea to switch to link:images/blender-mp-ortho.png[ortho-view] (`Numpad 5`) and
-turn on 'snap to grid'. Also, if the mount point layer is visible the add-on will show a box with dashed, orange lines.
-The lines represents the in-game size of the block as it is defined on the scene tab.
+turn on 'snap to grid'.
+You can also tell the add-on to show the block's bounding box by enabling the option on the link:images/blender-scene.png[scene tab].
+It's dashed, orange lines represent the space your block occupies in-game.
 This should help you to position the mount points correctly.
 
-If you don't provide mount points or unmark the layer none will be calculated.
+If you don't provide mount points none will be calculated.
 The game defaults to full mount points on all sides of the block in that case.
 
-==== Construction Layers
+==== Construction Phases
 
-Lastly there are several layers for the construction phases of the block.
+Layers 11-13 are used for the construction phases of the block.
 There is one layer for each phase of construction, from earliest to latest.
 If you change the number of construction layers you increase or decrease the number of construction phases.
 A block is allowed to have no construction phases at all.
 
-WARNING: If you don't have meshes on a construction layer MwmBuilder will fail to produce a .mwm file for that phase.
+NOTE: If you don't have meshes on a construction layer it will be skipped and your block will have one phase less.
 
-The construction phases reuse the same collision shape your main block model uses.
-There is currently no way to define separate collision models for the construction phases
-but it would probably be unwise to have those, anyway.
-A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.
+By default the construction phases reuse the same collision shape your main block model uses.
+It's possible to change that using different export settings.
+But keep in mind that can be dangerous to a ship or the player
+if a block changes its physical dimensions when it is welded to completion.
 
 TIP: A Blender mesh-object can be assigned to several layers.
-So if your construction models gets more and more detailed you can start with the initial frame as one object that
+So if your construction models get more and more detailed you can start with the basic shape as one object that
 is visible on all construction layers and then progressively add more objects towards the final construction layer.
+
+==== Levels of Detail
+
+Layers 6-8 are used to model versions of your main model that have progressively less detail.
+The game can display those models when the block is too far away to see the small details of your main model.
+This way less triangles need to be rendered which is good for performance.
+The default distances at which the models are switched are 10, 30 and 50.
+
+NOTE: If you don't have meshes on a LOD layer it will not be included in the export and
+the game will not switch models at that distance.
 
 === Textures
 
