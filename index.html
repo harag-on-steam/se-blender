@@ -518,10 +518,11 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#file-layout">File layout</a></li>
 <li><a href="#scene-layout">Scene Layout</a>
 <ul class="sectlevel3">
-<li><a href="#main-layer">Main Layer</a></li>
-<li><a href="#collision-layer">Collision Layer</a></li>
+<li><a href="#main-model">Main Model</a></li>
+<li><a href="#collision-model">Collision Model</a></li>
 <li><a href="#mount-points">Mount Points</a></li>
-<li><a href="#construction-layers">Construction Layers</a></li>
+<li><a href="#construction-phases">Construction Phases</a></li>
+<li><a href="#levels-of-detail">Levels of Detail</a></li>
 </ul>
 </li>
 <li><a href="#textures">Textures</a>
@@ -544,7 +545,9 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#exporting">Exporting</a>
 <ul class="sectlevel2">
 <li><a href="#naming-conventions">Naming Conventions</a></li>
+<li><a href="#configuring-the-export">Configuring the Export</a></li>
 <li><a href="#exporting-mwm-files">Exporting .mwm files</a></li>
+<li><a href="#customizing-the-export">Customizing the Export</a></li>
 <li><a href="#block-definitions">Block Definitions</a></li>
 <li><a href="#updating-cubeblocks-sbc">Updating CubeBlocks.sbc</a></li>
 </ul>
@@ -705,14 +708,9 @@ Don&#8217;t forget to "Save User Settings".
 </div>
 <div class="sect2">
 <h3 id="scene-layout"><a class="anchor" href="#scene-layout"></a>Scene Layout</h3>
-<div class="imageblock thumb" style="float: right">
-<div class="content">
-<a class="image" href="images/blender-scene.png"><img src="./images/blender-scene.png" alt="blender scene" width="450"></a>
-</div>
-</div>
 <div class="paragraph">
 <p>Inside Blender the add-on uses one scene per block.
-That&#8217;s why the block-settings are on the scene tab of the properties-panel.</p>
+That&#8217;s why the block-settings are on the <a href="images/blender-scene.png">scene tab</a> of the properties-panel.</p>
 </div>
 <div class="paragraph">
 <p>On this panel you define if the block is a large or a small block and if the export should automatically
@@ -721,33 +719,40 @@ You also define the size of your block in in-game grid units here.</p>
 </div>
 <div class="paragraph">
 <p>The layers of the scene contain the different components of a block.
-If you don&#8217;t like the default layout you can change it with the corresponding layer masks on the scene panel.</p>
+This is the default layer-setup described below:</p>
+</div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<img src="./images/layer-overview.png" alt="layer overview">
+</div>
 </div>
 <div class="sect3">
-<h4 id="main-layer"><a class="anchor" href="#main-layer"></a>Main Layer</h4>
+<h4 id="main-model"><a class="anchor" href="#main-model"></a>Main Model</h4>
 <div class="paragraph">
-<p>By default you have one layer that contains the model of the fully-built block.
-You don&#8217;t need to restrict yourself to only one mesh-object.
-If it&#8217;s useful to split your block into several objects (probably to apply modifiers to some of them) by all means do so.</p>
+<p>The first layer contains the model of the fully-built block.
+You don&#8217;t need to restrict yourself to only one mesh-object on this layer.
+If it&#8217;s useful to split your block into several objects&#8201;&#8212;&#8201;probably to apply modifiers to some of them&#8201;&#8212;&#8201;by all means do so.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="collision-layer"><a class="anchor" href="#collision-layer"></a>Collision Layer</h4>
+<h4 id="collision-model"><a class="anchor" href="#collision-model"></a>Collision Model</h4>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
 <a class="image" href="images/blender-physics.png"><img src="./images/blender-physics.png" alt="blender physics" width="450"></a>
 </div>
 </div>
 <div class="paragraph">
-<p>Next you have a layer that contains the simplified meshes that represent the block&#8217;s collision shape.
+<p>The second layer contains the simplified meshes that represent the block&#8217;s collision shape.
 If you don&#8217;t provide any collision meshes or unmark the layer the resulting .mwm file
 will not contain collision data and SE will default to a simple collision box that encompasses the whole block.</p>
 </div>
 <div class="paragraph">
 <p>Havok, the physics engine of SE, requires some settings to do its work.
 You provide those on Blender&#8217;s Physics tab by enabling <code>Rigid Bodies</code> for your collision meshes.
-Only the settings <code>Shape</code>, <code>Mass</code>, <code>Friction</code> and <code>Bounciness</code> (Restitution) are exported to Havok.
-Of those <code>Shape</code> is the most important one because it has a significant performance impact.
+Only the settings <code>Shape</code>, <code>Mass</code>, <code>Friction</code> and <code>Bounciness</code> (Restitution) are exported to Havok.</p>
+</div>
+<div class="paragraph">
+<p>Of those settings <code>Shape</code> is the most important because it has a significant performance impact.
 Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>Convex Hull</code> only if necessary. Avoid <code>Mesh</code> collisions.</p>
 </div>
@@ -816,40 +821,41 @@ to some of the mount point faces.</p>
 </div>
 <div class="paragraph">
 <p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> (<code>Numpad 5</code>) and
-turn on 'snap to grid'. Also, if the mount point layer is visible the add-on will show a box with dashed, orange lines.
-The lines represents the in-game size of the block as it is defined on the scene tab.
+turn on 'snap to grid'.
+You can also tell the add-on to show the block&#8217;s bounding box by enabling the option on the <a href="images/blender-scene.png">scene tab</a>.
+It&#8217;s dashed, orange lines represent the space your block occupies in-game.
 This should help you to position the mount points correctly.</p>
 </div>
 <div class="paragraph">
-<p>If you don&#8217;t provide mount points or unmark the layer none will be calculated.
+<p>If you don&#8217;t provide mount points none will be calculated.
 The game defaults to full mount points on all sides of the block in that case.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="construction-layers"><a class="anchor" href="#construction-layers"></a>Construction Layers</h4>
+<h4 id="construction-phases"><a class="anchor" href="#construction-phases"></a>Construction Phases</h4>
 <div class="paragraph">
-<p>Lastly there are several layers for the construction phases of the block.
+<p>Layers 11-13 are used for the construction phases of the block.
 There is one layer for each phase of construction, from earliest to latest.
 If you change the number of construction layers you increase or decrease the number of construction phases.
 A block is allowed to have no construction phases at all.</p>
 </div>
-<div class="admonitionblock warning">
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-If you don&#8217;t have meshes on a construction layer MwmBuilder will fail to produce a .mwm file for that phase.
+If you don&#8217;t have meshes on a construction layer it will be skipped and your block will have one phase less.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The construction phases reuse the same collision shape your main block model uses.
-There is currently no way to define separate collision models for the construction phases
-but it would probably be unwise to have those, anyway.
-A block model that changes its physical dimensions while the player is welding right next to it can be dangerous.</p>
+<p>By default the construction phases reuse the same collision shape your main block model uses.
+It&#8217;s possible to change that using different export settings.
+But keep in mind that can be dangerous to a ship or the player
+if a block changes its physical dimensions when it is welded to completion.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -859,8 +865,30 @@ A block model that changes its physical dimensions while the player is welding r
 </td>
 <td class="content">
 A Blender mesh-object can be assigned to several layers.
-So if your construction models gets more and more detailed you can start with the initial frame as one object that
+So if your construction models get more and more detailed you can start with the basic shape as one object that
 is visible on all construction layers and then progressively add more objects towards the final construction layer.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="levels-of-detail"><a class="anchor" href="#levels-of-detail"></a>Levels of Detail</h4>
+<div class="paragraph">
+<p>Layers 6-8 are used to model versions of your main model that have progressively less detail.
+The game can display those models when the block is too far away to see the small details of your main model.
+This way less triangles need to be rendered which is good for performance.
+The default distances at which the models are switched are 10, 30 and 50.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you don&#8217;t have meshes on a LOD layer it will not be included in the export and
+the game will not switch models at that distance.
 </td>
 </tr>
 </table>
@@ -1165,7 +1193,7 @@ For those there is the <code>file</code> property on the Data tab of the empty.<
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SubtypeId</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{BlockPairName}_{Large|Small}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{BlockPairName}_{CubeSize}</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Model</p></td>
@@ -1173,7 +1201,11 @@ For those there is the <code>file</code> property on the Data tab of the empty.<
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Construction Model</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_Construction{n}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_Constr{n}.mwm</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Level-of-Detail Model</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_LOD{n}.mwm</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Icon</p></td>
@@ -1195,15 +1227,28 @@ So it&#8217;s important that you choose a sufficiently unique name for the scene
 </table>
 </div>
 <div class="paragraph">
-<p>Currently you can only customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
+<p>You can customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
 This is primarily meant for mod authors that want to use the add-on but need their existing blocks to keep their ids
 to remain backwards-compatible. Otherwise there is hardly a good reason to change them.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="configuring-the-export"><a class="anchor" href="#configuring-the-export"></a>Configuring the Export</h3>
+<div class="imageblock thumb" style="float: right">
+<div class="content">
+<img src="./images/blender-no-nodes-yet.png" alt="blender no nodes yet">
+</div>
+</div>
+<div class="paragraph">
+<p>The add-on uses a custom Blender node-tree to configure the export.
+Initially your .blend file contains no such node-tree and your scene&#8217;s default settings-name <code>MwmExport</code>
+will be displayed as invalid. You can create the default settings by clicking on the <code>+</code> next to the settings-selector.</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="exporting-mwm-files"><a class="anchor" href="#exporting-mwm-files"></a>Exporting .mwm files</h3>
 <div class="paragraph">
-<p>The export itself runs through theses steps once you have chosen an output directory:</p>
+<p>By default the export runs through theses steps once you have chosen an output directory:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -1217,7 +1262,7 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 <p>Run the <code>.hkt</code> file through Havok&#8217;s filter-manager to calculate and add rigid body data to it</p>
 </li>
 <li>
-<p>Repeat the following steps for the main layer and all construction layers</p>
+<p>Repeat the following steps for the main layer and all construction and level-of-detail layers</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
@@ -1241,17 +1286,25 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Every external conversion step is logged to a separate log file which all start with the name of the block.
-If the export fails for any reason a first step should be to consult these log-files.
+The add-on logs the result of each step of the export in Blender&#8217;s <a href="images/blender-report.png">info-log</a>.
+In addition the output of external tools is logged to separate log files that are all named like the file that is
+exported in each step with <code>.log</code> appended.
+If a step fails for any reason you should consult these log-files.
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
+<h3 id="customizing-the-export"><a class="anchor" href="#customizing-the-export"></a>Customizing the Export</h3>
+<div class="paragraph">
+<p>TODO (describe the node editor)</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="block-definitions"><a class="anchor" href="#block-definitions"></a>Block Definitions</h3>
 <div class="paragraph">
-<p>When you export .mwm files the add-on automatically creates a corresponding .blockdef.xml file for each exported block.
+<p>When you export .mwm files the add-on also creates a corresponding <code>.blockdef.xml</code> file for each exported block.
 This file contains all the information that is available in Blender and that is relevant
 for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <code>CubeBlocks.sbc</code>:</p>
 </div>
@@ -1268,13 +1321,13 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
   <span class="tag">&lt;ModelOffset</span> <span class="attribute-name">x</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">y</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">z</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
   <span class="tag">&lt;Model&gt;</span>Models\ExampleBlock_Large.mwm<span class="tag">&lt;/Model&gt;</span>
   <span class="tag">&lt;BuildProgressModels&gt;</span>
-    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.33</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction1.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
-    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.67</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction2.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
-    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Construction3.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.33</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Constr1.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.67</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Constr2.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Model</span> <span class="attribute-name">BuildPercentUpperBound</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">File</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Models\ExampleBlock_Large_Constr3.mwm</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
   <span class="tag">&lt;/BuildProgressModels&gt;</span>
   <span class="tag">&lt;MountPoints&gt;</span>
-    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.40</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
-    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.10</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">1.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.40</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;MountPoint</span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.10</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
     ...
   <span class="tag">&lt;/MountPoints&gt;</span>
   <span class="tag">&lt;BlockPairName&gt;</span>ExampleBlock<span class="tag">&lt;/BlockPairName&gt;</span>
@@ -1285,8 +1338,8 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
 <div class="sect2">
 <h3 id="updating-cubeblocks-sbc"><a class="anchor" href="#updating-cubeblocks-sbc"></a>Updating CubeBlocks.sbc</h3>
 <div class="paragraph">
-<p>You can also use the "Update block definitions" operation to tell the add-on to take the same XML data it writes to a .blockdef.xml file and
-merge it with matching <code>&lt;Definition&gt;</code> sections of your mod&#8217;s <code>CubeBlocks.sbc</code>.
+<p>You can use the "Update block definitions" operation to tell the add-on to take the same XML data
+it writes to a <code>.blockdef.xml</code> file and merge it with matching <code>&lt;Definition&gt;</code> sections of your mod&#8217;s <code>CubeBlocks.sbc</code>.
 That saves you the trouble to do this by hand.</p>
 </div>
 <div class="admonitionblock note">
@@ -1309,7 +1362,7 @@ You can use the content of a .blockdef.xml file as an initial skeleton for a blo
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-02-01 13:30:20 CET
+Last updated 2015-02-01 17:01:53 CET
 </div>
 </div>
 </body>
