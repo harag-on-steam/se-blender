@@ -82,44 +82,81 @@ def write_pretty_xml(elem: ElementTree.Element, filepath: str):
         filepath, encoding="utf-8", xml_declaration=False, method="ordered-attribs")
 
 class Names:
-    subtypeid = '${blockname}_${blocksize}'
-    blockpairname = '${blockname}'
-    main = '${blockname}_${blocksize}'
-    construction = '${blockname}_${blocksize}_Construction${n}'
-    icon = 'Textures\Icons\${blockname}.dds'
-    modelpath = '${modeldir}${modelfile}'
+    subtypeid = '${BlockPairName}_${CubeSize}'
+    main = '${SubtypeId}'
+    construction = '${SubtypeId}_Constr${n}'
+    lod = '${SubtypeId}_LOD${n}'
+    icon = '${IconsDir}${BlockPairName}.dds'
+    modelpath = '${ModelsDir}${modelfile}'
+
+_RE_BLOCK_NAME = re.compile(r"^(.+)\.(Large|Small|\d+)$", re.IGNORECASE)
+
+def func():
+    pass
+_FUNCTION_TYPE = type(func)
+del func
 
 class ExportSettings:
-    def __init__(self, scene, outputDir):
+    def __init__(self, scene, outputDir, exportNodes=None):
         def typeCast(data) -> SESceneProperties: # allows type inference in IDE
             return data
 
-        self.scene = scene
+        self.scene = scene # FIXME not used by ObjectSource.getObjects()
         self.sceneData = typeCast(data(scene))
+        self.exportNodes = bpy.data.node_groups[self.sceneData.export_nodes] if exportNodes is None else exportNodes
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
-        self.blockname = scene.name # legacy, same as BlockPairName
-        self.BlockPairName = scene.name # consistent with CubeBlocks.sbc
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
         self.isRunMwmbuilder = True
         self.isFixDirBug = prefs().fix_dir_bug
-        self.modeldir = 'Models\\'
         self.names = Names()
-
-        # set multiple times on export
-        self.blocksize = None # legacy, same as CubeSize
-        self.CubeSize = None # consistent with CubeBlocks.sbc
-        self.SubtypeId = None # consistent with CubeBlocks.sbc
-        self.scaleDown = None
         self.isUseTangentSpace = False
-
         # set on first access, see properties below
         self._isOldMwmbuilder = None
         self._fbximporter = None
         self._havokfilter = None
         self._mwmbuilder = None
+        # set multiple times on export
+        self.scaleDown = None
+
+        # substitution parameters
+        # self.BlockPairName # corresponds with element-name in CubeBlocks.sbc, see property below
+        self.ModelsDir = 'Models\\'
+        self.IconsDir = 'Textures\\Icons\\'
+        # set multiple times on export
+        self._CubeSize = None # corresponds with element-name in CubeBlocks.sbc, setter also sets SubtypeId
+        self.SubtypeId = None # corresponds with element-name in CubeBlocks.sbc
 
         self.cache = {}
+
+    @property
+    def CubeSize(self):
+        return self._CubeSize
+
+    @CubeSize.setter
+    def CubeSize(self, value):
+        self._CubeSize = value
+        self.SubtypeId = self.template(self.names.subtypeid)
+        d = self.sceneData
+        if d and d.use_custom_subtypeids:
+            if self.CubeSize == 'Large' and d.large_subtypeid:
+                self.SubtypeId = d.large_subtypeid
+            elif self.CubeSize == 'Small' and d.small_subtypeid:
+                self.SubtypeId = d.small_subtypeid
+
+    @property
+    def BlockPairName(self): # the scene name without Blender's ".nnn" suffix
+        name = self.scene.name
+        m = _RE_BLOCK_NAME.search(name)
+        return m.group(1) if m else name
+
+    @property
+    def blockname(self): # legacy, read-only
+        return self.BlockPairName
+
+    @property
+    def blocksize(self): # legacy, read-only
+        return self.CubeSize
 
     @property
     def isOldMwmbuilder(self):
@@ -158,27 +195,40 @@ class ExportSettings:
                 raise
 
     def template(self, templateString, **kwargs):
-        keyValues = vars(self).copy()
-        keyValues.update(kwargs)
-        return Template(templateString).safe_substitute(**keyValues)
+        return Template(templateString).safe_substitute(self, **kwargs)
 
-    def msg(self, level, msg, file=None):
-        if not file is None:
-            msg = basename(file) +': '+ msg
+    def msg(self, level, msg, file=None, node = None):
+        if not file is None and not node is None:
+            msg = "%s (%s): %s" % (basename(file), node.name, msg)
+        elif not file is None:
+            msg = "%s: %s" % (basename(file), msg)
+        elif not node is None:
+            msg = "(%s): %s" % (node.name, msg)
         self.operator.report({level}, msg)
 
-    def warn(self, msg, file=None):
-        self.msg('WARNING', msg, file)
+    def warn(self, msg, file=None, node = None):
+        self.msg('WARNING', msg, file, node)
 
-    def error(self, msg, file=None):
-        self.msg('ERROR', msg, file)
+    def error(self, msg, file=None, node = None):
+        self.msg('ERROR', msg, file, node)
 
-    def info(self, msg, file=None):
-        self.msg('INFO', msg, file)
+    def info(self, msg, file=None, node = None):
+        self.msg('INFO', msg, file, node)
 
     def cacheValue(self, key, value):
         self.cache[key] = value
         return value
+
+    def __getitem__(self, key): # makes all attributes available for parameter substitution
+        if not type(key) is str or key.startswith('_'):
+            raise KeyError(key)
+        try:
+            value = getattr(self, key)
+            if value is None or type(value) is _FUNCTION_TYPE:
+                raise KeyError(key)
+            return value
+        except AttributeError:
+            raise KeyError(key)
 
 FWD = 'Z'
 UP = 'Y'
@@ -238,6 +288,49 @@ def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
         cmdline.append(fix)
 
     settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log')
+
+def generateBlockDefXml(settings: ExportSettings, modelFile: string, mountPointObjects: iter, constrModelFiles: string):
+    d = data(settings.scene)
+
+    block = ElementTree.Element('Definition')
+
+    id = ElementTree.SubElement(block, 'Id')
+    subtypeId = ElementTree.SubElement(id, 'SubtypeId')
+    subtypeId.text = settings.SubtypeId
+
+    icon = ElementTree.SubElement(block, 'Icon')
+    icon.text = settings.template(settings.names.icon)
+
+    ElementTree.SubElement(block, 'CubeSize').text = settings.CubeSize
+    ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'
+
+    x, z, y = d.block_dimensions # z and y switched on purpose; y is up, z is forward in SE
+    eSize = ElementTree.SubElement(block, 'Size')
+    eSize.attrib = OrderedDict([('x', str(x)), ('y', str(y)), ('z', str(z)), ])
+
+    eOffset = ElementTree.SubElement(block, 'ModelOffset')
+    eOffset.attrib = OrderedDict([('x', '0'), ('y', '0'), ('z', '0'), ])
+
+    modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
+    ElementTree.SubElement(block, 'Model').text = modelpath
+
+    numConstr = len(constrModelFiles)
+    if numConstr > 0:
+        constr = ElementTree.SubElement(block, 'BuildProgressModels')
+        for i, constrModelFile in enumerate(constrModelFiles):
+            upperBound = "%.2f" % (1.0 * (i+1) / numConstr)
+            constrModelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(constrModelFile))
+            eModel = ElementTree.SubElement(constr, 'Model')
+            eModel.attrib = OrderedDict([('BuildPercentUpperBound', upperBound), ('File', constrModelpath), ])
+
+    mountpoints = mount_point_definitions(mountPointObjects)
+    if len(mountpoints) > 0:
+        block.append(mount_points_xml(mountpoints))
+
+    blockPairName = ElementTree.SubElement(block, 'BlockPairName')
+    blockPairName.text = settings.BlockPairName
+
+    return block
 
 class ExportSet:
     def __init__(self, layer_mask_bits, filename):
@@ -314,55 +407,7 @@ class HavokSet(ExportSet):
 
 class MountPointSet(ExportSet):
     def generateXml(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
-        d = data(settings.scene)
-
-        block = ElementTree.Element('Definition')
-
-        id = ElementTree.SubElement(block, 'Id')
-        subtypeId = ElementTree.SubElement(id, 'SubtypeId')
-
-        if d.use_custom_subtypeids:
-            if settings.blocksize == 'Large' and d.large_subtypeid:
-                subtypeId.text = d.large_subtypeid
-            elif settings.blocksize == 'Small' and d.small_subtypeid:
-                subtypeId.text = d.small_subtypeid
-
-        if not subtypeId.text:
-            subtypeId.text = settings.template(settings.names.subtypeid)
-
-        icon = ElementTree.SubElement(block, 'Icon')
-        icon.text = settings.template(settings.names.icon)
-
-        ElementTree.SubElement(block, 'CubeSize').text = settings.blocksize
-        ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'
-
-        x, z, y = d.block_dimensions # z and y switched on purpose; y is up, z is forward in SE
-        eSize = ElementTree.SubElement(block, 'Size')
-        eSize.attrib = OrderedDict([('x', str(x)), ('y', str(y)), ('z', str(z)), ])
-
-        eOffset = ElementTree.SubElement(block, 'ModelOffset')
-        eOffset.attrib = OrderedDict([('x', '0'), ('y', '0'), ('z', '0'), ])
-
-        modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
-        ElementTree.SubElement(block, 'Model').text = modelpath
-
-        numConstr = len(constrModelFiles)
-        if numConstr > 0:
-            constr = ElementTree.SubElement(block, 'BuildProgressModels')
-            for i, constrModelFile in enumerate(constrModelFiles):
-                upperBound = "%.2f" % (1.0 * (i+1) / numConstr)
-                constrModelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(constrModelFile))
-                eModel = ElementTree.SubElement(constr, 'Model')
-                eModel.attrib = OrderedDict([('BuildPercentUpperBound', upperBound), ('File', constrModelpath), ])
-
-        mountpoints = mount_point_definitions(self.objects)
-        if len(mountpoints) > 0:
-            block.append(mount_points_xml(mountpoints))
-
-        blockPairName = ElementTree.SubElement(block, 'BlockPairName')
-        blockPairName.text = settings.template(settings.names.blockpairname)
-
-        return block
+        return generateBlockDefXml(settings, modelFile, self.objects, constrModelFiles)
 
     def filenames(self, settings: ExportSettings):
         super().filenames(settings)
@@ -417,7 +462,9 @@ class BlockExport:
         settings = self.settings
         failed = False
 
-        for settings.blocksize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+        for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+            settings.updateFromSize()
+
             xml = self.mp.generateXml(
                 settings,
                 mwmfile(self.main, settings),
@@ -450,172 +497,3 @@ class BlockExport:
         self.collectObjects()
         self.exportFiles()
 
-class ExportSceneAsBlock(bpy.types.Operator):
-    bl_idname = "export_scene.space_engineers_block"
-    bl_label = "Export Space Engineers Block"
-    bl_description = "Exports the current scene as a block."
-
-    directory = bpy.props.StringProperty(subtype='DIR_PATH')
-
-    all_scenes = bpy.props.BoolProperty(
-        name="All Scenes",
-        description="Export all scenes that are marked as blocks.")
-    skip_mwmbuilder = bpy.props.BoolProperty(
-        name="Skip mwmbuilder",
-        description="Export intermediary files but do not run them through mwmbuilder")
-    use_tspace = bpy.props.BoolProperty(
-        name="Tangent Space",
-        description="Add binormal and tangent vectors, together with normal they form the tangent space "
-                    "(will only work correctly with tris/quads only meshes!)",
-        default=False)
-
-    settings_name = bpy.props.StringProperty(
-        name="Used Settings",
-        description="The name of the node-tree that defines the export",
-        default="")
-
-    @classmethod
-    def poll(self, context):
-        if not context.scene:
-            return False
-
-        d = data(context.scene)
-        if d is None or not d.is_block:
-            return False
-
-        tree = getExportNodeTreeFromContext(context)
-        return not tree is None
-
-    def invoke(self, context, event):
-        if not self.directory:
-            self.directory = os.path.dirname(context.blend_data.filepath)
-
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-    def draw(self, context):
-        lay = self.layout
-
-        col = lay.column()
-        col.prop(self, "all_scenes")
-        col.prop(self, "skip_mwmbuilder")
-        col.prop(self, "use_tspace")
-
-    def execute(self, context):
-        org_mode = None
-
-        try:
-            if context.active_object and context.active_object.mode != 'OBJECT' and bpy.ops.object.mode_set.poll():
-                org_mode = context.active_object.mode
-                bpy.ops.object.mode_set(mode='OBJECT')
-
-            if self.all_scenes:
-                scenes = [scene for scene in bpy.data.scenes if data(scene).is_block]
-            else:
-                scenes = [context.scene]
-
-            wm = context.window_manager
-            wm.progress_begin(0, len(scenes))
-            try:
-                for i, scene in enumerate(scenes):
-                    settings = ExportSettings(scene, self.directory)
-                    settings.operator = self
-                    settings.isRunMwmbuilder = not self.skip_mwmbuilder
-                    settings.isUseTangentSpace = self.use_tspace
-
-                    BlockExport(settings).export()
-
-                    wm.progress_update(i)
-            finally:
-                wm.progress_end()
-
-        except FileNotFoundError as e: # raised when the addon preferences are missing some tool paths
-            self.report({'ERROR'}, "Configuration error: %s" % e)
-
-        except subprocess.CalledProcessError as e:
-            self.report({'ERROR'}, "An external tool failed, check generated logs: %s" % e)
-
-        finally:
-            if context.active_object and org_mode and bpy.ops.object.mode_set.poll():
-                bpy.ops.object.mode_set(mode=org_mode)
-
-        return {'FINISHED'}
-
-class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
-    bl_idname = "export_scene.space_engineers_update_definitions"
-    bl_label = "Update Block Definitions"
-    bl_description = "Update the block-definitions in CubeBlocks.sbc."
-
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH')
-
-    all_scenes = bpy.props.BoolProperty(
-        name="All Scenes",
-        description="Update with data from all scenes that are marked as blocks.")
-    create_backup = bpy.props.BoolProperty(
-        name="Backup Target File",
-        description="Creates a backup of the target file before updating.")
-    allow_renames = bpy.props.BoolProperty(
-        name="Update SubtypeIds",
-        description="Renames the SubtypeId if a definition matches by BlockPairName and CubeSize. "
-                    "Be aware that this is not backwards-compatible for players!")
-
-    settings_name = bpy.props.StringProperty(
-        name="Used Settings",
-        description="The name of the node-tree that defines the export",
-        default="MwmExport")
-
-    @classmethod
-    def poll(self, context):
-        if not context.scene:
-            return False
-
-        d = data(context.scene)
-        if d is None or not d.is_block:
-            return False
-
-        tree = getExportNodeTreeFromContext(context)
-        if tree is None or not any(n for n in tree.nodes if n.bl_idname == "SEBlockDefNode"):
-            return False
-
-        return True
-
-    def invoke(self, context, event):
-        if not self.filepath:
-            self.filepath = os.path.dirname(context.blend_data.filepath)
-
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-    def draw(self, context):
-        lay = self.layout
-
-        col = lay.column()
-        col.prop(self, "all_scenes")
-        col.prop(self, "create_backup")
-
-    def execute(self, context):
-        path = bpy.path.abspath(self.filepath)
-        dir = os.path.dirname(path)
-        merger = CubeBlocksMerger(cubeBlocksPath=path, backup=self.create_backup)
-
-        if self.all_scenes:
-            scenes = [scene for scene in bpy.data.scenes if data(scene).is_block]
-        else:
-            scenes = [context.scene]
-
-        wm = context.window_manager
-        wm.progress_begin(0, len(scenes))
-        try:
-            for i, scene in enumerate(scenes):
-                settings = ExportSettings(scene, dir)
-                settings.operator = self
-
-                BlockExport(settings).mergeBlockDefs(merger)
-
-                wm.progress_update(i)
-
-            merger.write()
-        finally:
-            wm.progress_end()
-
-        return {'FINISHED'}

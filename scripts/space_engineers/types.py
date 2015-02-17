@@ -290,7 +290,10 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         op.settings_name = spceng.export_nodes
         layout.separator()
 
-        layout.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export settings")
+        row = layout.row(align=True)
+        row.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export settings")
+        if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
+            row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
 
 #        split = layout.split()
 #        split.column().prop(spceng, "main_layers")
@@ -303,7 +306,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 class NODE_PT_spceng_nodes(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    bl_label = "Space Engineers Block"
+    bl_label = "Space Engineers Export"
 
     @classmethod
     def poll(cls, context):
@@ -318,6 +321,8 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
         op.settings_name = context.space_data.node_tree.name
         col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         op.settings_name = context.space_data.node_tree.name
+
+        layout.operator("export_scene.space_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
 
 def block_bounds():
     """

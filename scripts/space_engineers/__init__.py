@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 3, 5),
+	"version": (0, 4, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene | Material | Empty , Tools > Create",
 	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
@@ -32,6 +32,7 @@ if not reload('merge_xml'): from . import merge_xml
 if not reload('export'): from . import export
 if not reload('nodes'): from . import nodes
 if not reload('default_nodes'): from . import nodes
+if not reload('operators'): from . import operators
 
 del modules
 
@@ -74,8 +75,9 @@ def register():
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
 
-    register_class(export.ExportSceneAsBlock)
-    register_class(export.UpdateDefinitionsFromBlockScene)
+    register_class(operators.AddDefaultExportNodes)
+    register_class(operators.ExportSceneAsBlock)
+    register_class(operators.UpdateDefinitionsFromBlockScene)
     register_class(types.CheckVersionOnline)
     register_class(mount_points.AddMountPointSkeleton)
     register_class(mount_points.SetupGrid)
@@ -99,8 +101,9 @@ def unregister():
     unregister_class(mount_points.SetupGrid)
     unregister_class(mount_points.AddMountPointSkeleton)
     unregister_class(types.CheckVersionOnline)
-    unregister_class(export.UpdateDefinitionsFromBlockScene)
-    unregister_class(export.ExportSceneAsBlock)
+    unregister_class(operators.UpdateDefinitionsFromBlockScene)
+    unregister_class(operators.ExportSceneAsBlock)
+    unregister_class(operators.AddDefaultExportNodes)
 
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)
