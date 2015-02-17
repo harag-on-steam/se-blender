@@ -159,7 +159,5 @@ def mwmbuilder_xml(settings, material_elements, lod_elements):
     # <BoneGridSize>2.5</BoneGridSize>
     # <BoneMapping>
     #    <Bone X="0" Y="0" Z="0" />
-    # <LOD Distance="300">
-    #    <Model>Models\Cubes\large\Assembler_LOD1</Model>
 
     return e

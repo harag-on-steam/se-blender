@@ -4,7 +4,7 @@ from bgl import glEnable, glDisable, glColor3f, glVertex3f, glLineWidth, glBegin
 from mathutils import Matrix, Vector
 from math import sqrt
 from .utils import BoxCorner, bounds, sparse, X, Y, Z, transX, transY, transZ, rot, mirror, flip, layers, layer_bits
-from .types import is_mount_points_visible, block_bounds, is_small_block, data
+from .types import show_block_bounds, block_bounds, is_small_block, data
 
 import bpy
 
@@ -168,11 +168,11 @@ class AddMountPointSkeleton(bpy.types.Operator):
 
     def execute(self, context):
         s = context.scene
-        d = data(s)
 
-        if (layer_bits(d.mount_points_layers) == 0):
-            self.report({'ERROR'}, "No layer is marked as a mount-point layer")
-            return {'FINISHED'}
+        #d = data(s)
+        #if (layer_bits(d.mount_points_layers) == 0):
+        #    self.report({'ERROR'}, "No layer is marked as a mount-point layer")
+        #    return {'FINISHED'}
 
         ob = create_mount_point_skeleton()
 
@@ -182,9 +182,9 @@ class AddMountPointSkeleton(bpy.types.Operator):
         ob.lock_scale = (True, True, True)
 
         s.objects.link(ob)
-        ob.layers = d.mount_points_layers
+        #ob.layers = d.mount_points_layers
 
-        s.layers = layers(layer_bits(s.layers) | layer_bits(d.mount_points_layers))
+        #s.layers = layers(layer_bits(s.layers) | layer_bits(d.mount_points_layers))
 
         return {'FINISHED'}
 
@@ -237,7 +237,7 @@ def draw_box(verts):
     glEnd()
 
 def draw_block_box():
-    if not is_mount_points_visible():
+    if not show_block_bounds():
         return
 
     box = block_bounds()

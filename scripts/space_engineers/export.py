@@ -1,24 +1,17 @@
-from collections import namedtuple, OrderedDict
-from functools import partial
-import hashlib
-import io
 import os
-from os.path import join, basename
 import re
-from string import Template
 import string
 import subprocess
 import tempfile
-from xml.etree import ElementTree
 import bpy
-import shutil
+from collections import OrderedDict
+from os.path import basename
+from string import Template
+from xml.etree import ElementTree
 
-from .mwmbuilder import mwmbuilder_xml, material_xml
-from space_engineers.merge_xml import CubeBlocksMerger, MergeResult
-from space_engineers.mount_points import mount_point_definitions, mount_points_xml
-from space_engineers.types import SESceneProperties
-from .utils import scaleUni, layer_bits, layer_bit, md5sum
-from .types import data, prefs, getExportNodeTreeFromContext
+from .mount_points import mount_point_definitions, mount_points_xml
+from .utils import scaleUni, md5sum
+from .types import data, prefs, SESceneProperties
 from .fbx import save_single
 
 from bpy_extras.io_utils import axis_conversion, ExportHelper
@@ -332,168 +325,4 @@ def generateBlockDefXml(settings: ExportSettings, modelFile: string, mountPointO
 
     return block
 
-class ExportSet:
-    def __init__(self, layer_mask_bits, filename):
-        self.layer_mask_bits = layer_mask_bits
-        self.filename_template = filename
-        self.objects = []
-
-    def test(self, ob):
-        return (layer_bits(ob.layers) & self.layer_mask_bits) != 0
-
-    def collect(self, ob):
-        self.objects.append(ob)
-
-    def filenames(self, settings: ExportSettings):
-        self.basepath = join(settings.outputDir, settings.template(self.filename_template))
-
-class MwmSet(ExportSet):
-    def __init__(self, layer_mask_bits, filename):
-        super().__init__(layer_mask_bits, filename)
-        self.materials = set()
-
-    def collect(self, ob):
-        super().collect(ob)
-        self.materials |= {slot.material for slot in ob.material_slots if slot.material}
-
-    def filenames(self, settings: ExportSettings):
-        super().filenames(settings)
-        self.fbxfile = self.basepath + '.fbx'
-        self.paramsfile = self.basepath + '.xml'
-        self.havokfile = self.basepath + '.hkt'
-        self.mwmfile = self.basepath + '.mwm'
-
-    def export(self, settings: ExportSettings, havokFile: string = None):
-        self.filenames(settings)
-
-        if havokFile:
-            if havokFile != self.havokfile:
-                shutil.copy2(havokFile, self.havokfile)
-
-        paramsxml = mwmbuilder_xml(settings, (material_xml(settings, mat) for mat in self.materials))
-        write_pretty_xml(paramsxml, self.paramsfile)
-
-        if (settings.isOldMwmbuilder):
-            write_to_log(self.paramsfile + '.log', b"Old version of mwmbuilder detected. Using different RescaleFactor.")
-
-        export_fbx(settings, self.fbxfile, self.objects)
-
-        mwmbuilder(settings, self.fbxfile, self.mwmfile)
-
-        return self.mwmfile
-
-class HavokSet(ExportSet):
-    def test(self, ob):
-        return super().test(ob) and ob.rigid_body
-
-    def filenames(self, settings: ExportSettings):
-        super().filenames(settings)
-        self.havokfile = self.basepath + '.hkt'
-
-    def export(self, settings: ExportSettings):
-        self.filenames(settings)
-
-        if settings.isLogToolOutput and len(self.objects) == 0:
-            write_to_log(self.havokfile + '.convert.log', b"no collision available for export")
-            return None
-
-        fbxfile = self.havokfile + '.fbx'
-        export_fbx(settings, fbxfile, self.objects)
-
-        fbx_to_hkt(settings, fbxfile, self.havokfile)
-        hkt_filter(settings, self.havokfile, self.havokfile)
-
-        return self.havokfile
-
-class MountPointSet(ExportSet):
-    def generateXml(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
-        return generateBlockDefXml(settings, modelFile, self.objects, constrModelFiles)
-
-    def filenames(self, settings: ExportSettings):
-        super().filenames(settings)
-        self.blockdeffile = self.basepath + '.blockdef.xml'
-
-    def export(self, settings: ExportSettings, modelFile: string, constrModelFiles: string):
-        block = self.generateXml(settings, modelFile, constrModelFiles)
-
-        self.filenames(settings)
-
-        write_pretty_xml(block, self.blockdeffile)
-
-        return self.blockdeffile
-
-# mapping (scene.block_size) -> (block_size_name, apply_scale_down)
-SIZES = {
-    'LARGE' : [('Large', False)],
-    'SMALL' : [('Small', False)],
-    'SCALE_DOWN' : [('Large', False), ('Small', True)]
-}
-
-class BlockExport:
-    def __init__(self, settings: ExportSettings):
-        self.settings = settings
-
-        d = data(self.settings.scene)
-
-        self.havok = HavokSet(layer_bits(d.physics_layers), settings.names.main)
-        self.mp = MountPointSet(layer_bits(d.mount_points_layers), settings.names.main)
-
-        self.main = MwmSet(layer_bits(d.main_layers), settings.names.main)
-
-        constr_bits = [layer_bit(i) for i, layer in enumerate(d.construction_layers) if layer]
-        self.constr = [MwmSet( bits, Template(settings.names.construction).safe_substitute(n = i+1))
-                       for i, bits in enumerate(constr_bits)]
-
-        self.sets = [self.havok, self.mp, self.main] + self.constr
-
-    def collectObjects(self):
-        for ob in self.settings.scene.objects:
-            for set in self.sets:
-                if set.test(ob):
-                    set.collect(ob)
-
-    def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
-        self.collectObjects()
-
-        def mwmfile(artifact: MwmSet, settings: ExportSettings):
-            artifact.filenames(settings)
-            return artifact.mwmfile
-
-        settings = self.settings
-        failed = False
-
-        for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-            settings.updateFromSize()
-
-            xml = self.mp.generateXml(
-                settings,
-                mwmfile(self.main, settings),
-                [mwmfile(c, settings) for c in self.constr],
-            )
-
-            result = cubeBlocks.merge(xml)
-            if MergeResult.NOT_FOUND in result:
-                failed = True
-                settings.operator.report({'WARNING'}, "CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (
-                    xml.findtext("./Id/SubtypeId")))
-            elif MergeResult.MERGED in result:
-                settings.operator.report({'INFO'}, "Updated SubtypeId [%s]" % (xml.findtext("./Id/SubtypeId")))
-
-        return not failed
-
-    def exportFiles(self):
-        settings = self.settings
-
-        for settings.blocksize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-            havokfile = self.havok.export(settings)
-            modelFile = self.main.export(settings, havokfile)
-            constrFiles = [
-                c.export(settings, havokfile)
-                for c in self.constr
-            ]
-            blockdeffile = self.mp.export(settings, modelFile, constrFiles)
-
-    def export(self):
-        self.collectObjects()
-        self.exportFiles()
 

@@ -24,7 +24,7 @@ def all_layers_visible(layer_mask):
 def getExportNodeTree(name):
     if name in bpy.data.node_groups:
         tree = bpy.data.node_groups[name]
-        if tree.bl_idname == "SEBlockExportTree":
+        if not tree is None and tree.bl_idname == "SEBlockExportTree":
             return tree
     return None
 
@@ -207,6 +207,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
     block_specular_power = bpy.props.FloatProperty( min=0.0, description="per block specular power", )
     block_specular_shininess = bpy.props.FloatProperty( min=0.0, description="per block specular shininess", )
 
+    # legacy layer-masks, not visible in UI
     main_layers =         bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b10000000000000000000), 
                                 name="Main Block", description="All meshes and empties on these layers will be part of the main block model.")
     physics_layers =      bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b01000000000000000000), 
@@ -295,14 +296,6 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
             row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
 
-#        split = layout.split()
-#        split.column().prop(spceng, "main_layers")
-#        split.column().prop(spceng, "construction_layers")
-        
-#        split = layout.split()
-#        split.column().prop(spceng, "physics_layers")
-#        split.column().prop(spceng, "mount_points_layers")
-
 class NODE_PT_spceng_nodes(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
@@ -352,7 +345,7 @@ def is_small_block():
     d = data(bpy.context.scene)
     return d and 'SMALL' == d.block_size
 
-def is_mount_points_visible():
+def show_block_bounds():
     scene = bpy.context.scene
     d = data(scene)
     return d and d.is_block and d.show_block_bounds
