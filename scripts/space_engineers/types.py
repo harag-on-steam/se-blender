@@ -1,9 +1,9 @@
 import bpy
 import os
-from mathutils import Vector
-from .utils import BoundingBox, layers, layer_bits, check_path
 import requests
-import re
+from mathutils import Vector
+from .versions import versionsOnGitHub, Version
+from .utils import BoundingBox, layers, layer_bits, check_path
 
 PROP_GROUP = "space_engineers"
 
@@ -45,14 +45,12 @@ def getExportNodeTreeFromContext(context):
 
     return tree
 
-VERSION_URL = "https://api.github.com/repos/harag-on-steam/se-blender/tags"
-online_version = None
-is_current_version = None
-version_pattern = re.compile(r"(\d+)\.(\d+)\.(\d+)")
-
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
+versions = []
+latestRelease = None
+latestPreRelease = None
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
@@ -122,66 +120,43 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
 
         row = layout.row()
         row.alignment = 'LEFT'
-        if online_version:
-            if is_current_version:
-                from space_engineers import bl_info
-                row.operator('wm.space_engineers_check_version', icon="URL")
-                row.label(icon='FILE_TICK', text="%d.%d.%d is the current version" % bl_info['version'])
-            else:
-                op = row.operator('wm.url_open', icon="URL", text="Open GitHub Releases")
-                op.url = 'https://github.com/harag-on-steam/se-blender/releases/latest'
-                #op.url = 'http://forums.keenswh.com/post/?id=7090652&trail=81#81'
-                row.label(icon='ERROR', text="There is a newer version %d.%d.%d" % online_version)
-        else:
-            row.operator('wm.space_engineers_check_version', icon="URL")
-            row.label(icon='QUESTION', text="online version not known, yet")
+
+        row2 = row.row(align=True)
+        row2.alignment = 'LEFT'
+        op = row2.operator('wm.url_open', icon='URL', text="Show all versions")
+        op.url = 'https://github.com/harag-on-steam/se-blender/releases'
+        row2.operator('wm.space_engineers_check_version', icon="FILE_REFRESH", text="Check online")
+
+        from space_engineers import version
+        global latestRelease, latestPreRelease
+
+        if latestRelease:
+            ico = 'FILE_TICK' if version == latestRelease else 'ERROR' if version < latestRelease else 'INFO'
+            op = row.operator('wm.url_open', icon=ico, text="Latest Release: %s" % latestRelease)
+            op.url = latestRelease.weburl
+
+        if version.prerelease:
+            row.label(icon='INFO', text="You are using a pre-release.")
 
 def prefs() -> SEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences
 
 class CheckVersionOnline(bpy.types.Operator):
     bl_idname = "wm.space_engineers_check_version"
-    bl_label = "Check version online"
+    bl_label = "Check versions online"
     bl_description = "Retrieves the current version of this addon online and compares it against the running version."
 
     def execute(self, context):
-        global online_version
-        global is_current_version
+        global versions, latestRelease, latestPreRelease
 
         try:
-            tags = requests.get(VERSION_URL, verify=False)
-            json = tags.json()
-        except (requests.RequestException, ValueError):
-            self.report({'ERROR'}, "Failed to load version information from GitHub")
+            versions, latestRelease, latestPreRelease = versionsOnGitHub("harag-on-steam", "se-blender")
+        except requests.RequestException as re:
+            self.report({'ERROR'}, str(re))
             return {'FINISHED'}
-
-        for tag in json:
-            match = version_pattern.match(tag['name'])
-            if match:
-                online_version = (
-                    int(match.group(1)),
-                    int(match.group(2)),
-                    int(match.group(3)),
-                )
-                break
-
-        if not online_version:
-            self.report({'WARN'}, "No version information available")
+        except ValueError as ve:
+            self.report({'ERROR'}, str(ve))
             return {'FINISHED'}
-
-        is_current_version = True
-
-        from space_engineers import bl_info
-
-        for x, y in zip(bl_info['version'], online_version):
-            if x < y:
-                is_current_version = False
-                break
-
-        if is_current_version:
-            self.report({'INFO'}, "%d.%d.%d is the current version" % bl_info['version'])
-        else:
-            self.report({'WARNING'}, "There is a newer version %d.%d.%d" % online_version)
 
         return {'FINISHED'}
 

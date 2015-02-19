@@ -4,8 +4,8 @@ bl_info = {
 	"author": "Harag",
 	"version": (0, 4, 0),
     "blender": (2, 72, 0),
-	"location": "Properties > Scene | Material | Empty , Tools > Create",
-	"wiki_url": "https://github.com/harag-on-steam/se-blender/wiki",
+	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
+	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
 	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
     "category": "Space Engineers",
 }
@@ -33,8 +33,11 @@ if not reload('export'): from . import export
 if not reload('nodes'): from . import nodes
 if not reload('default_nodes'): from . import nodes
 if not reload('operators'): from . import operators
+if not reload('versions'): from . import versions
 
 del modules
+
+version = versions.Version(version=bl_info['version'], prerelease=False, qualifier=None)
 
 # register data & UI classes
 
