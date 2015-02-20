@@ -5,6 +5,7 @@ from .export import ExportSettings
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree
+from .utils import currentSceneHolder
 from .default_nodes import createDefaultTree
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
@@ -122,8 +123,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
         lay = self.layout
 
         col = lay.column()
-        # FIXME node graph does not use settings.scene, yet
-        # col.prop(self, "all_scenes")
+        col.prop(self, "all_scenes")
         col.prop(self, "skip_mwmbuilder")
         col.prop(self, "use_tspace")
 
@@ -145,12 +145,17 @@ class ExportSceneAsBlock(bpy.types.Operator):
             wm.progress_begin(0, len(scenes))
             try:
                 for i, scene in enumerate(scenes):
-                    settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name))
-                    settings.operator = self
-                    settings.isRunMwmbuilder = not self.skip_mwmbuilder
-                    settings.isUseTangentSpace = self.use_tspace
+                    # store the scene in a thread-local for the export-nodes
+                    currentSceneHolder.scene = scene
+                    try:
+                        settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name))
+                        settings.operator = self
+                        settings.isRunMwmbuilder = not self.skip_mwmbuilder
+                        settings.isUseTangentSpace = self.use_tspace
 
-                    BlockExport(settings).export()
+                        BlockExport(settings).export()
+                    finally:
+                        currentSceneHolder.scene = None
 
                     wm.progress_update(i)
             finally:
@@ -217,8 +222,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         lay = self.layout
 
         col = lay.column()
-        # FIXME node graph does not use settings.scene, yet
-        # col.prop(self, "all_scenes")
+        col.prop(self, "all_scenes")
         col.prop(self, "create_backup")
 
     def execute(self, context):
@@ -235,12 +239,16 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         wm.progress_begin(0, len(scenes))
         try:
             for i, scene in enumerate(scenes):
-                settings = ExportSettings(scene, dir)
-                settings.operator = self
+                currentSceneHolder.scene = scene
+                try:
+                    settings = ExportSettings(scene, dir)
+                    settings.operator = self
 
-                BlockExport(settings).mergeBlockDefs(merger)
+                    BlockExport(settings).mergeBlockDefs(merger)
 
-                wm.progress_update(i)
+                    wm.progress_update(i)
+                finally:
+                    currentSceneHolder.scene = None
 
             merger.write()
         finally:

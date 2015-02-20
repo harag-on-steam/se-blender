@@ -1,8 +1,8 @@
-from cmath import exp
 from collections import namedtuple
 from enum import IntEnum
 from functools import partial
 import hashlib
+import threading
 from mathutils import Matrix, Vector
 import bpy
 import os
@@ -333,3 +333,9 @@ def check_path(path, isDirectory=False, expectedBaseName=None, subpathExists=Non
         result = result and os.path.exists(os.path.join(path, subpathExists))
 
     return result
+
+currentSceneHolder = threading.local()
+
+def scene():
+    s = getattr(currentSceneHolder, "scene", None)
+    return s if s else bpy.context.scene

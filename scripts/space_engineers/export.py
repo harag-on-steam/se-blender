@@ -94,7 +94,7 @@ class ExportSettings:
         def typeCast(data) -> SESceneProperties: # allows type inference in IDE
             return data
 
-        self.scene = scene # FIXME not used by ObjectSource.getObjects()
+        self.scene = scene # ObjectSource.getObjects() uses .utils.scene() instead
         self.sceneData = typeCast(data(scene))
         self.exportNodes = bpy.data.node_groups[self.sceneData.export_nodes] if exportNodes is None else exportNodes
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))

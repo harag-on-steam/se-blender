@@ -1,12 +1,10 @@
-from os.path import join, basename
-from subprocess import CalledProcessError
 import bpy
-from string import Template
-from mathutils import Vector
 import shutil
-from space_engineers.utils import layer_bits, layer_bit, layers
-from .export import ExportSettings, write_to_log, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, \
-    generateBlockDefXml
+from os.path import join
+from subprocess import CalledProcessError
+from string import Template
+from .utils import layer_bits, layer_bit, scene
+from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
 
 COLOR_OBJECTS_SKT  = (.50, .65, .80, 1)
@@ -598,7 +596,7 @@ class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
 
     def getObjects(self, socket: ObjectListSocket):
         mask = layer_bits(self.layer_mask)
-        return (obj for obj in bpy.context.scene.objects
+        return (obj for obj in scene().objects
             if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
 
 class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
@@ -634,7 +632,7 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
 
     def getObjects(self, socket: ObjectListSocket):
         mask = layer_bit(socket.layer)
-        return (obj for obj in bpy.context.scene.objects
+        return (obj for obj in scene().objects
             if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
 
 # -------------------------------------------------------------------------------------------------------------------- #
