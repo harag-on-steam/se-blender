@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import bpy
 import os
 import requests
@@ -48,9 +49,27 @@ def getExportNodeTreeFromContext(context):
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
-versions = []
+
+
+versions = {
+    '_' : (
+        Version(weburl='https://github.com/harag-on-steam/se-blender/releases'),
+        ('_', '(no version-info)', "Click 'Refresh' to download version-information", 'QUESTION', 0)
+    )
+}
+
 latestRelease = None
 latestPreRelease = None
+
+def version_icon(v: Version) -> str:
+    import space_engineers as addon
+    if not v:
+        return 'NONE'
+    if v == latestRelease:
+        return 'FILE_TICK' if addon.version == v else 'ERROR' if addon.version < v else 'SPACE2'
+    if v and v.prerelease:
+        return 'FILE_TICK' if addon.version == v else 'VISIBLE_IPO_ON'
+    return 'SPACE3'
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
@@ -82,6 +101,11 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         subtype='FILE_PATH',
         description='Locate hctStandAloneFilterManager.exe. Probably in C:\\Program Files\\Havok\\HavokContentTools\\',
     )
+
+    def versions_enum(self, context):
+        return [info[1] for info in versions.values()]
+
+    selected_version = bpy.props.EnumProperty(items=versions_enum, name="Versions")
 
     def draw(self, context):
         layout = self.layout
@@ -118,45 +142,62 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
 
         layout.separator()
 
-        row = layout.row()
-        row.alignment = 'LEFT'
+        split = layout.split(percentage=0.42)
 
-        row2 = row.row(align=True)
-        row2.alignment = 'LEFT'
-        op = row2.operator('wm.url_open', icon='URL', text="Show all versions")
-        op.url = 'https://github.com/harag-on-steam/se-blender/releases'
-        row2.operator('wm.space_engineers_check_version', icon="FILE_REFRESH", text="Check online")
+        # ----
+        split2 = split.split(percentage=0.60, align=True)
 
-        from space_engineers import version
-        global latestRelease, latestPreRelease
+        row = split2.row(align=True)
+        versionInfo = versions[self.selected_version]
+        row.prop(self, 'selected_version', text="", icon=versionInfo[1][3])
+        row.operator('wm.space_engineers_check_version', icon="FILE_REFRESH", text="")
 
-        if latestRelease:
-            ico = 'FILE_TICK' if version == latestRelease else 'ERROR' if version < latestRelease else 'INFO'
-            op = row.operator('wm.url_open', icon=ico, text="Latest Release: %s" % latestRelease)
-            op.url = latestRelease.weburl
+        row = split2.row(align=True)
+        row.enabled = not '_' == versionInfo[1][0]
+        op = row.operator('wm.url_open', icon="URL", text="Show Online")
+        op.url = versionInfo[0].weburl
 
-        if version.prerelease:
+        # ----
+        row = split.row()
+        row.alignment = 'RIGHT'
+
+        import space_engineers as addon
+        if addon.version.prerelease:
             row.label(icon='INFO', text="You are using a pre-release.")
+
+        op = row.operator('wm.url_open', icon='URL', text="Show all versions")
+        op.url = 'https://github.com/harag-on-steam/se-blender/releases'
+
 
 def prefs() -> SEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences
 
 class CheckVersionOnline(bpy.types.Operator):
     bl_idname = "wm.space_engineers_check_version"
-    bl_label = "Check versions online"
-    bl_description = "Retrieves the current version of this addon online and compares it against the running version."
+    bl_label = "Download available versions"
+    bl_description = "Downloads the list of available versions."
 
     def execute(self, context):
         global versions, latestRelease, latestPreRelease
 
         try:
-            versions, latestRelease, latestPreRelease = versionsOnGitHub("harag-on-steam", "se-blender")
+            vers, latestRelease, latestPreRelease = versionsOnGitHub("harag-on-steam", "se-blender")
         except requests.RequestException as re:
             self.report({'ERROR'}, str(re))
             return {'FINISHED'}
         except ValueError as ve:
             self.report({'ERROR'}, str(ve))
             return {'FINISHED'}
+
+        versions = OrderedDict(
+            (repr(v), (
+                v,
+                (repr(v), str(v), '', version_icon(v), i)
+            ))
+            for i,v in enumerate(vers))
+
+        selectedVersion = repr(latestRelease) if latestRelease else repr(any(versions)) if any(versions) else '_'
+        prefs().selected_version = selectedVersion
 
         return {'FINISHED'}
 

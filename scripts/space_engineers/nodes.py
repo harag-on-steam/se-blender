@@ -408,7 +408,7 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
     bl_idname = "SEMwmFileNode"
     bl_label = "MwmBuilder"
-    bl_icon = "RENDER_RESULT"
+    bl_icon = "EXPORT"
 
     def init(self, context):
         self.inputs.new(TemplateStringSocket.bl_idname, "Name")
@@ -501,7 +501,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
 class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
     bl_idname = "SEBlockDefNode"
     bl_label = "Block Definition"
-    bl_icon = "TEXT"
+    bl_icon = "SETTINGS"
 
     def init(self, context):
         inputs = self.inputs
@@ -580,7 +580,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
 class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
     bl_idname = "SELayerObjectsNode"
     bl_label = "Combined Layers"
-    bl_icon = "OBJECT_DATA"
+    bl_icon = "GROUP"
     bl_width_default = 170.0
 
     layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20))
@@ -602,7 +602,7 @@ class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
 class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
     bl_idname = "SESeparateLayerObjectsNode"
     bl_label = "Separate Layers"
-    bl_icon = "OBJECT_DATA"
+    bl_icon = "GROUP"
     bl_width_default = 170.0
 
     def onLayerMaskUpdate(self, context):
