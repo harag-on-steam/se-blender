@@ -89,17 +89,17 @@ def createDefaultTree(tree: BlockExportTree):
     layerConstr = newSeparateLayers(tree, "Construction Phases", (-777, - 96), 0b00000000001110000000)
     layerMP     = newCombinedLayers(tree, "Mount Points",        ( 179,  208), 0b00100000000000000000)
 
-    physics = newHavokConverter(tree, "", (-516, 412), '${SubtypeId}', layerPhys)
+    physics = newHavokConverter(tree, "Havok", (-516, 412), '${SubtypeId}', layerPhys)
 
     nameLOD = newText(tree, "LOD Name", (-564, 82), '${SubtypeId}_LOD${n}')
-    mwmLODs = [newMwmBuilder(tree, None, (-105, 392 - 128*i), nameLOD, o, physics)
+    mwmLODs = [newMwmBuilder(tree, "Mwm LOD%d" % (i+1), (-105, 392 - 128*i), nameLOD, o, physics)
                for i, o in enumerate(layerLOD)]
 
-    mwmMain = newMwmBuilder(tree, None, (173, 551), '${SubtypeId}', layerMain, physics,
+    mwmMain = newMwmBuilder(tree, "Mwm Main", (173, 551), '${SubtypeId}', layerMain, physics,
                             [(s,d) for s, d in zip(mwmLODs, [10,30,50])])
 
     nameConstr = newText(tree, "Construction Name", (-564, -9), '${SubtypeId}_Constr${n}')
-    mwmConstrs = [newMwmBuilder(tree, None, (-105, -21 - 128*i), nameConstr, o, physics)
+    mwmConstrs = [newMwmBuilder(tree, "Mwm Constr%d" % (i+1), (-105, -21 - 128*i), nameConstr, o, physics)
                for i, o in enumerate(layerConstr)]
 
     newBlockDef(tree, None, (473, 105), mwmMain, layerMP, mwmConstrs)

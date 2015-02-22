@@ -1,7 +1,8 @@
+from collections import OrderedDict
 import os
 from subprocess import CalledProcessError
 import bpy
-from .export import ExportSettings
+from .export import ExportSettings, MissbehavingToolError
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree
@@ -22,59 +23,70 @@ class BlockExport:
     def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
         settings = self.settings
 
-        blockdefNode = None
-        for n in settings.exportNodes.nodes:
-            if isinstance(n, BlockDefinitionNode):
-                blockdefNode = n
-                break
+        # store the scene in a thread-local for the export-nodes
+        currentSceneHolder.scene = settings.scene
+        try:
+            blockdefNode = None
+            for n in settings.exportNodes.nodes:
+                if isinstance(n, BlockDefinitionNode):
+                    blockdefNode = n
+                    break
 
-        if blockdefNode is None:
-            settings.error("No block-definition node in export node-tree '%s'" % (settings.exportNodes.name))
-            return False
+            if blockdefNode is None:
+                settings.error("No block-definition node in export node-tree '%s'" % (settings.exportNodes.name))
+                return False
 
-        failed = False
-        for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-            settings.cache.clear()
+            failed = False
+            for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+                settings.cache.clear()
 
-            try:
-                xml = blockdefNode.generateBlockDefXml(settings)
-            except ValueError as e:
-                settings.error(str(e), node=blockdefNode)
-                failed = True
-                continue
+                try:
+                    xml = blockdefNode.generateBlockDefXml(settings)
+                except ValueError as e:
+                    settings.error(str(e), node=blockdefNode)
+                    failed = True
+                    continue
 
-            result = cubeBlocks.merge(xml)
-            if MergeResult.NOT_FOUND in result:
-                failed = True
-                settings.warn("CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (settings.SubtypeId))
-            elif MergeResult.MERGED in result:
-                settings.info("Updated SubtypeId [%s]" % (settings.SubtypeId))
+                result = cubeBlocks.merge(xml)
+                if MergeResult.NOT_FOUND in result:
+                    failed = True
+                    settings.warn("CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (settings.SubtypeId))
+                elif MergeResult.MERGED in result:
+                    settings.info("Updated SubtypeId [%s]" % (settings.SubtypeId))
+        finally:
+            currentSceneHolder.scene = None
 
         return not failed
 
     def export(self):
         settings = self.settings
 
-        skips = False
-        failures = False
+        skips = OrderedDict()
+        failures = OrderedDict()
 
-        for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-            settings.cache.clear()
+        # store the scene in a thread-local for the export-nodes
+        currentSceneHolder.scene = settings.scene
+        try:
+            for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+                settings.cache.clear()
 
-            for exporter in settings.exportNodes.nodes:
-                if not isinstance(exporter, Exporter):
-                    continue
+                for exporter in settings.exportNodes.nodes:
+                    if not isinstance(exporter, Exporter):
+                        continue
 
-                result = exporter.export(settings)
-                if 'SKIPPED' == result:
-                    skips = True
-                elif 'FAILED' == result:
-                    failures = True
+                    name = exporter.label if exporter.label else exporter.name
+                    result = exporter.export(settings)
+                    if 'SKIPPED' == result:
+                        skips[name] = exporter
+                    elif 'FAILED' == result:
+                        failures[name] = exporter
+        finally:
+            currentSceneHolder.scene = None
 
         if skips:
-            settings.warn("Some export-nodes were skipped.")
+            settings.warn("Some export-nodes were skipped: %s" % list(skips.keys()))
         if failures:
-            settings.error("Some export-nodes failed.")
+            settings.error("Some export-nodes failed: %s" % list(failures.keys()))
 
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
@@ -145,17 +157,12 @@ class ExportSceneAsBlock(bpy.types.Operator):
             wm.progress_begin(0, len(scenes))
             try:
                 for i, scene in enumerate(scenes):
-                    # store the scene in a thread-local for the export-nodes
-                    currentSceneHolder.scene = scene
-                    try:
-                        settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name))
-                        settings.operator = self
-                        settings.isRunMwmbuilder = not self.skip_mwmbuilder
-                        settings.isUseTangentSpace = self.use_tspace
+                    settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name))
+                    settings.operator = self
+                    settings.isRunMwmbuilder = not self.skip_mwmbuilder
+                    settings.isUseTangentSpace = self.use_tspace
 
-                        BlockExport(settings).export()
-                    finally:
-                        currentSceneHolder.scene = None
+                    BlockExport(settings).export()
 
                     wm.progress_update(i)
             finally:
@@ -166,6 +173,9 @@ class ExportSceneAsBlock(bpy.types.Operator):
 
         except CalledProcessError as e:
             self.report({'ERROR'}, "An external tool failed, check generated logs: %s" % e)
+
+        except MissbehavingToolError as e:
+            self.report({'ERROR'}, str(e))
 
         finally:
             if context.active_object and org_mode and bpy.ops.object.mode_set.poll():
@@ -239,16 +249,12 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         wm.progress_begin(0, len(scenes))
         try:
             for i, scene in enumerate(scenes):
-                currentSceneHolder.scene = scene
-                try:
-                    settings = ExportSettings(scene, dir)
-                    settings.operator = self
+                settings = ExportSettings(scene, dir)
+                settings.operator = self
 
-                    BlockExport(settings).mergeBlockDefs(merger)
+                BlockExport(settings).mergeBlockDefs(merger)
 
-                    wm.progress_update(i)
-                finally:
-                    currentSceneHolder.scene = None
+                wm.progress_update(i)
 
             merger.write()
         finally:

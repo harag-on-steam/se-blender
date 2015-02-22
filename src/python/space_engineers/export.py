@@ -25,6 +25,13 @@ STDOUT_OPERATOR = StdoutOperator()
 # mwmbuilder from Space Engineers 01.051
 OLD_MWMBUILDER_MD5 = '261163f6d3743d28fede7944b2b0949a'
 
+class MissbehavingToolError(subprocess.SubprocessError):
+    def __init__(self, message: str):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 def tool_path(propertyName, displayName, toolPath=None):
     if None == toolPath:
         toolPath = getattr(bpy.context.user_preferences.addons['space_engineers'].preferences, propertyName)
@@ -175,7 +182,7 @@ class ExportSettings:
             self._havokfilter = tool_path('havokFilterMgr', 'Havok Filter Manager')
         return self._havokfilter
 
-    def callTool(self, cmdline, logfile=None, cwd=None, successfulExitCodes=[0], loglines=[]):
+    def callTool(self, cmdline, logfile=None, cwd=None, successfulExitCodes=[0], loglines=[], logtextInspector=None):
         try:
             out = subprocess.check_output(cmdline, cwd=cwd, stderr=subprocess.STDOUT)
             if self.isLogToolOutput and logfile:
@@ -184,6 +191,8 @@ class ExportSettings:
         except subprocess.CalledProcessError as e:
             if self.isLogToolOutput and logfile:
                 write_to_log(logfile, e.output, cmdline=cmdline, cwd=cwd, loglines=loglines)
+            if not logtextInspector is None:
+                logtextInspector(e.output)
             if not e.returncode in successfulExitCodes:
                 raise
 
@@ -277,13 +286,22 @@ def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
 
     cmdline = [settings.mwmbuilder, '/m:'+os.path.basename(srcfile)]
 
+    logInspector = None
+
     if settings.isFixDirBug:
         # the bug cuts the first 6 characters from the source directory
         # this prepends them again
         fix = "/o:" + os.path.dirname(srcfile)[:6]
         cmdline.append(fix)
 
-    settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log')
+        def inspectLog(logtext):
+            if b"Cannot find output path:" in logtext:
+                raise MissbehavingToolError(
+                    "MwmBuilder is bugged. You need to create folder '%s' by hand to make it happy." %
+                        os.path.dirname(srcfile)[:6] )
+        logInspector = inspectLog
+
+    settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log', logtextInspector=logInspector)
 
 def generateBlockDefXml(settings: ExportSettings, modelFile: string, mountPointObjects: iter, constrModelFiles: string):
     d = data(settings.scene)
