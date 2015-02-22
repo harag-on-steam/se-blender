@@ -390,7 +390,7 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
 
         objectsSource = self.inputs['Objects']
         if objectsSource.isEmpty():
-            settings.warn("layers had no collision-objects for export", file=hktfile, node=self)
+            settings.text("layers had no collision-objects for export", file=hktfile, node=self)
             return settings.cacheValue(hktfile, 'SKIPPED')
 
         export_fbx(settings, fbxfile, objectsSource.getObjects())
@@ -448,7 +448,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
 
         objectsSource = self.inputs['Objects']
         if objectsSource.isEmpty():
-            settings.warn("layers had no objects for export", file=mwmfile, node=self)
+            settings.text("layers had no objects for export", file=mwmfile, node=self)
             return settings.cacheValue(mwmfile, 'SKIPPED')
 
         materials = {}
@@ -470,7 +470,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
                 # report skips grouped after the export of dependencies
                 msgs.append("socket '%s' not ready, skipped" % (socket.name))
         for msg in msgs:
-            settings.warn(msg, file=mwmfile, node=self)
+            settings.text(msg, file=mwmfile, node=self)
 
         paramsfile = join(settings.outputDir, name + ".xml")
         paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
@@ -563,7 +563,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
 
         mountPointsSocket = self.inputs['Mount Points']
         if mountPointsSocket.is_linked and mountPointsSocket.isEmpty():
-            settings.warn("no mount-points included", file=blockdeffile, node=self)
+            settings.text("no mount-points included", file=blockdeffile, node=self)
 
         constrModelFiles = [] # maybe stays empty
         for i, socket in enumerate(s for s in self.inputs if s.name.startswith('Constr')):
@@ -572,7 +572,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
                 if socket.isReady():
                     constrModelFiles.append(constrName + ".mwm")
                 else:
-                    settings.warn("socket '%s' not ready, skipped" % (socket.name), file=blockdeffile, node=self)
+                    settings.text("socket '%s' not ready, skipped" % (socket.name), file=blockdeffile, node=self)
 
         xml = generateBlockDefXml(settings, modelFile, mountPointsSocket.getObjects(), constrModelFiles)
         return settings.cacheValue(blockdeffilecontent, xml)

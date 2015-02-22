@@ -208,6 +208,9 @@ class ExportSettings:
     def info(self, msg, file=None, node = None):
         self.msg('INFO', msg, file, node)
 
+    def text(self, msg, file=None, node = None):
+        self.msg('OPERATOR', msg, file, node)
+
     def cacheValue(self, key, value):
         self.cache[key] = value
         return value
