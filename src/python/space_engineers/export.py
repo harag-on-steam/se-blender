@@ -351,18 +351,16 @@ def generateBlockDefXml(
     mirroring = {}
     for o in mirroringObjects:
         axis = mirroringAxisFromObjectName(o)
-        print(o.name)
-        print(axis)
         if not mirroring.get(axis, None):
             enum = o.space_engineers_mirroring
-            print(enum)
             if not enum in {'Unsupported', 'NonRectangular'}:
                 mirroring[axis] = enum
             else:
                 settings.warn("Mirroring%s defined by object %s is '%s'. Reset to 'None'." % (axis, o.name, enum))
-    for axis in ('X','Y','Z'):
-        mirroringElem = ElementTree.SubElement(block, 'Mirroring'+axis)
-        mirroringElem.text = mirroring.get(axis, 'None')
+    if len(mirroring) > 0:
+        for axis in ('X','Y','Z'):
+            mirroringElem = ElementTree.SubElement(block, 'Mirroring'+axis)
+            mirroringElem.text = mirroring.get(axis, 'None')
 
     blockPairName = ElementTree.SubElement(block, 'BlockPairName')
     blockPairName.text = settings.BlockPairName
