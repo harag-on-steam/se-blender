@@ -10,6 +10,7 @@ from string import Template
 from xml.etree import ElementTree
 
 from .mount_points import mount_point_definitions, mount_points_xml
+from .mirroring import mirroringAxisFromObjectName
 from .utils import scaleUni, md5sum
 from .types import data, prefs, SESceneProperties
 from .fbx import save_single
@@ -303,7 +304,13 @@ def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
 
     settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log', logtextInspector=logInspector)
 
-def generateBlockDefXml(settings: ExportSettings, modelFile: string, mountPointObjects: iter, constrModelFiles: string):
+def generateBlockDefXml(
+        settings: ExportSettings,
+        modelFile: string,
+        mountPointObjects: iter,
+        mirroringObjects: iter,
+        constrModelFiles: string):
+
     d = data(settings.scene)
 
     block = ElementTree.Element('Definition')
@@ -340,6 +347,22 @@ def generateBlockDefXml(settings: ExportSettings, modelFile: string, mountPointO
     mountpoints = mount_point_definitions(mountPointObjects)
     if len(mountpoints) > 0:
         block.append(mount_points_xml(mountpoints))
+
+    mirroring = {}
+    for o in mirroringObjects:
+        axis = mirroringAxisFromObjectName(o)
+        print(o.name)
+        print(axis)
+        if not mirroring.get(axis, None):
+            enum = o.space_engineers_mirroring
+            print(enum)
+            if not enum in {'Unsupported', 'NonRectangular'}:
+                mirroring[axis] = enum
+            else:
+                settings.warn("Mirroring%s defined by object %s is '%s'. Reset to 'None'." % (axis, o.name, enum))
+    for axis in ('X','Y','Z'):
+        mirroringElem = ElementTree.SubElement(block, 'Mirroring'+axis)
+        mirroringElem.text = mirroring.get(axis, 'None')
 
     blockPairName = ElementTree.SubElement(block, 'BlockPairName')
     blockPairName.text = settings.BlockPairName

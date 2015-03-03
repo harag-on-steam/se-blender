@@ -3,6 +3,7 @@ import bpy
 import os
 import requests
 from mathutils import Vector
+from .mirroring import mirroringAxisFromObjectName
 from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path
 
@@ -382,18 +383,25 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        ob = context.active_object
+        ob = context.object
         return (ob and ob.type == 'EMPTY' and data(ob))
 
     def draw(self, context):
-        d = data(context.active_object)
+        d = data(context.object)
+        isMirror = not mirroringAxisFromObjectName(context.active_object) is None
 
         layout = self.layout
 
-        if context.active_object.name.lower().startswith("subpart_") and not d.file:
-            layout.alert = True
-        layout.prop(d, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
-        layout.alert = False
+        row = layout.row()
+        row.enabled = not isMirror
+        if context.object.name.lower().startswith("subpart_") and not d.file:
+            row.alert = True
+        row.prop(d, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
+
+        row = layout.row()
+        row.enabled = isMirror
+        row.prop(context.object, "space_engineers_mirroring", icon="MOD_MIRROR" if not isMirror else 'NONE')
+
 
 # -----------------------------------------  Material Data ----------------------------------------- #
 

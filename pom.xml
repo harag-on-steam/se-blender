@@ -6,7 +6,7 @@
 	
 	<groupId>net.cortexx</groupId>
 	<artifactId>se-blender</artifactId>
-	<version>0.4.2</version>
+	<version>0.5.0</version>
 	<name>SE Block Tools for Blender</name>
 
 	<properties>
@@ -16,7 +16,7 @@
 	</properties>
 
 	<build>
-		<finalName>blender-space_engineers-${version}</finalName>
+		<finalName>blender-space_engineers-${project.version}</finalName>
 		
 		<defaultGoal>process-resources</defaultGoal>
 		<plugins>

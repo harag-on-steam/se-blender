@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 4, 2),
+	"version": (0, 5, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
@@ -23,6 +23,7 @@ def reload(module_name):
         return False
 
 if not reload('utils'): from . import utils
+if not reload('mirroring'): from . import mirroring
 if not reload('types'): from . import types
 if not reload('mount_points'): from . import mount_points
 if not reload('mwmbuilder'): from . import mwmbuilder
@@ -70,9 +71,10 @@ def register():
     register_class(types.SEMaterialProperties)
    
     bpy.types.Object.space_engineers = bpy.props.PointerProperty(type=types.SEObjectProperties)
+    bpy.types.Object.space_engineers_mirroring = mirroring.mirroringProperty
     bpy.types.Scene.space_engineers = bpy.props.PointerProperty(type=types.SESceneProperties)
     bpy.types.Material.space_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
-   
+
     register_class(types.NODE_PT_spceng_nodes)
     register_class(types.DATA_PT_spceng_scene)
     register_class(types.DATA_PT_spceng_empty)
@@ -115,6 +117,7 @@ def unregister():
     
     del bpy.types.Material.space_engineers
     del bpy.types.Object.space_engineers
+    del bpy.types.Object.space_engineers_mirroring
     del bpy.types.Scene.space_engineers
     
     unregister_class(types.SEMaterialProperties)

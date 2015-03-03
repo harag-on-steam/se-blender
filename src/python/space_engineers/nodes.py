@@ -3,6 +3,7 @@ import shutil
 from os.path import join
 from subprocess import CalledProcessError
 from string import Template
+from .mirroring import mirroringAxisFromObjectName
 from .utils import layer_bits, layer_bit, scene
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
@@ -62,6 +63,10 @@ class ReadyState:
 
     def isReady(self):
         return True
+
+class Upgradable:
+    def upgrade(self):
+        pass
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -331,6 +336,16 @@ class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     def getObjects(self, socket: bpy.types.NodeSocket=None):
         return (o for o in super().getObjects(socket) if 'MountPoint' in o.material_slots)
 
+class MirroringObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
+    '''selects only objects that are name 'Mirror(ing)...' '''
+    bl_idname = "SEMirroringObjectsSocket"
+    bl_label = "Objects"
+    bl_color = COLOR_OBJECTS_SKT
+    type = 'CUSTOM'
+
+    def getObjects(self, socket: bpy.types.NodeSocket=None):
+        return (o for o in super().getObjects(socket) if not mirroringAxisFromObjectName(o) is None)
+
 # -------------------------------------------------------------------------------------------------------------------- #
 
 class SENode:
@@ -498,7 +513,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         settings.info("export successful", file=mwmfile, node=self)
         return settings.cacheValue(mwmfile, 'SUCCESS')
 
-class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
+class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEBlockDefNode"
     bl_label = "Block Definition"
     bl_icon = "SETTINGS"
@@ -507,12 +522,20 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
         inputs = self.inputs
         inputs.new(MwmFileSocket.bl_idname, "Main Model")
         inputs.new(MountPointObjectsSocket.bl_idname, "Mount Points")
+        inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
 
         for i in range(1,11):
             inputs.new(MwmFileSocket.bl_idname, "Constr. Phase %d" % (i))
 
         self.use_custom_color = True
         self.color = COLOR_BLOCKDEF_WND
+
+    def upgrade(self):
+        inputs = self.inputs
+
+        # new in v0.5.0
+        if inputs.get('Mirroring', None) is None:
+            inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
 
     def update(self):
         pins = [p for p in self.inputs.values() if p.name.startswith('Constr')]
@@ -565,6 +588,8 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
         if mountPointsSocket.is_linked and mountPointsSocket.isEmpty():
             settings.text("no mount-points included", file=blockdeffile, node=self)
 
+        mirroringSocket = self.inputs['Mirroring']
+
         constrModelFiles = [] # maybe stays empty
         for i, socket in enumerate(s for s in self.inputs if s.name.startswith('Constr')):
             if socket.enabled and socket.is_linked:
@@ -574,7 +599,13 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState):
                 else:
                     settings.text("socket '%s' not ready, skipped" % (socket.name), file=blockdeffile, node=self)
 
-        xml = generateBlockDefXml(settings, modelFile, mountPointsSocket.getObjects(), constrModelFiles)
+        xml = generateBlockDefXml(
+            settings,
+            modelFile,
+            mountPointsSocket.getObjects(),
+            mirroringSocket.getObjects(),
+            constrModelFiles)
+
         return settings.cacheValue(blockdeffilecontent, xml)
 
 class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
@@ -666,6 +697,7 @@ registered = [
     ObjectListSocket,
     RigidBodyObjectsSocket,
     MountPointObjectsSocket,
+    MirroringObjectsSocket,
 
     LayerObjectsNode,
     SeparateLayerObjectsNode,
@@ -677,11 +709,22 @@ registered = [
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
+@bpy.app.handlers.persistent
+def upgradeNodesAfterLoad(dummy):
+    for nodeTree in bpy.data.node_groups:
+        if isinstance(nodeTree, BlockExportTree):
+            for node in nodeTree.nodes:
+                if isinstance(node, Upgradable):
+                    node.upgrade()
+
 from bpy.utils import register_class, unregister_class
 
 def register():
     for c in registered:
         register_class(c)
+
+    if not upgradeNodesAfterLoad in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(upgradeNodesAfterLoad)
 
     try:
         nodeitems_utils.register_node_categories("SE_BLOCK_EXPORT", categories)
@@ -694,6 +737,9 @@ def unregister():
         nodeitems_utils.unregister_node_categories("SE_BLOCK_EXPORT")
     except KeyError:
         pass
+
+    if upgradeNodesAfterLoad in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(upgradeNodesAfterLoad)
 
     for c in reversed(registered):
         unregister_class(c)
