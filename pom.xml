@@ -18,6 +18,13 @@
 	<build>
 		<finalName>blender-space_engineers-${project.version}</finalName>
 		
+		<resources>
+			<resource>
+				<directory>${basedir}/src/asciidoc/js</directory>
+				<targetPath>${project.build.directory}/generated-docs</targetPath>
+			</resource>
+		</resources>
+		
 		<defaultGoal>process-resources</defaultGoal>
 		<plugins>
 			<plugin>

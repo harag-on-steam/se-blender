@@ -16,3 +16,8 @@ include::parts/install.adoc[]
 include::parts/workflow.adoc[]
 
 include::parts/export.adoc[]
+
++++<link href="featherlight.min.css" type="text/css" rel="stylesheet" title="Featherlight Styles" />
+<script src="jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="featherlight.min.js" type="text/javascript" charset="utf-8"></script>
+<script>$( 'a[href$=".png"]' ).featherlight(); $( 'a[href="#blockdef"]' ).featherlight();</script>+++
