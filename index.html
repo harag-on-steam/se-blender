@@ -539,7 +539,12 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#special-material-names">Special Material Names</a></li>
 </ul>
 </li>
-<li><a href="#empties">Empties</a></li>
+<li><a href="#empties">Empties</a>
+<ul class="sectlevel3">
+<li><a href="#location-markers">Location Markers</a></li>
+<li><a href="#mirroring">Mirroring</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#exporting">Exporting</a>
@@ -547,11 +552,11 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#naming-conventions">Naming Conventions</a></li>
 <li><a href="#configuring-the-export">Configuring the Export</a></li>
 <li><a href="#exporting-mwm-files">Exporting .mwm files</a></li>
-<li><a href="#customizing-the-export">Customizing the Export</a></li>
 <li><a href="#block-definitions">Block Definitions</a></li>
 <li><a href="#updating-cubeblocks-sbc">Updating CubeBlocks.sbc</a></li>
 </ul>
 </li>
+<li><a href="#customizing-the-export">Customizing the Export</a></li>
 </ul>
 </div>
 </div>
@@ -586,17 +591,17 @@ So if you are new to 3D modelling you should probably learn how to do that prope
 <div class="sect2">
 <h3 id="getting-the-tools"><a class="anchor" href="#getting-the-tools"></a>Getting the tools</h3>
 <div class="paragraph">
-<p>The first thing you need to do to get started is to download and install all the required parts.</p>
+<p>To get started first you need to download and install all the required parts.</p>
 </div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>Get version <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
-<p>Get version <a href="https://software.intel.com/sites/havok/en/">2013.1.0</a>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://software.intel.com/sites/havok/en/">2013.1.0</a>
 (<a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe">64bit</a>
 or <a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe">32bit</a>, 330MB)
 This contains the filter manager <code>hctStandAloneFilterManager.exe</code> that&#8217;s used to create rigid-body physics data.
@@ -620,7 +625,7 @@ You need to get Havok 2013.1. Space Engineers is currently unable to use files c
 <dl>
 <dt class="hdlist1">The Havok FBX Importer</dt>
 <dd>
-<p>This is a <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">separate download</a> (3,5MB)
+<p>This is a <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">separate download</a> (3,5MB)
 because I had to <a href="https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b&#8230;&#8203;master">fix a view things</a>
 in the sources and compile it against Havok 2013.1
 (the <a href="http://www.projectanarchy.com/download">official download</a> is compiled against Havok 2014).
@@ -641,7 +646,7 @@ The .zip contains just one executable file. It&#8217;s probably a good idea to p
 </div>
 </div>
 <div class="paragraph">
-<p>Once you got the <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (30kb)
+<p>Once you got the <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (30kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File&#8230;&#8203;" and
@@ -710,7 +715,7 @@ Don&#8217;t forget to "Save User Settings".
 <h3 id="scene-layout"><a class="anchor" href="#scene-layout"></a>Scene Layout</h3>
 <div class="paragraph">
 <p>Inside Blender the add-on uses one scene per block.
-That&#8217;s why the block-settings are on the <a href="images/blender-scene.png">scene tab</a> of the properties-panel.</p>
+That&#8217;s why the block-settings are on the <a href="images/blender-scene.png">scene tab</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span> of the properties-panel.</p>
 </div>
 <div class="paragraph">
 <p>On this panel you define if the block is a large or a small block and if the export should automatically
@@ -808,7 +813,7 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 <div class="paragraph">
 <p>The third layer defines the mount points of your block.
 The meshes on this layer are not directly exported but are used instead to calculate the
-<a href="#blockdef">mount point definitions</a>.</p>
+<a href="#blockdef">mount point definitions</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.</p>
 </div>
 <div class="paragraph">
 <p>This works by creating rectangular faces that use the material <code>MountPoint</code> and are aligned to one of
@@ -816,13 +821,14 @@ six sides of the block. To quickly create the material and an object that has on
 of the six sides use the corresponding button on the Tools panel of the 3D view.
 Duplicate, resize and move those faces in edit mode to create more mount points for a side of the block.
 You can also split out faces to several objects if you want to apply
-<a href="images/blender-mp-mirror.png">modifiers like 'mirror' or 'array'</a>
+<a href="images/blender-mp-mirror.png">modifiers like 'mirror' or 'array'</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>
 to some of the mount point faces.</p>
 </div>
 <div class="paragraph">
-<p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> (<code>Numpad 5</code>) and
+<p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span> (<code>Numpad 5</code>) and
 turn on 'snap to grid'.
-You can also tell the add-on to show the block&#8217;s bounding box by enabling the option on the <a href="images/blender-scene.png">scene tab</a>.
+You can also tell the add-on to show the block&#8217;s bounding box by enabling the option on the
+<a href="images/blender-scene.png">scene tab</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.
 It&#8217;s dashed, orange lines represent the space your block occupies in-game.
 This should help you to position the mount points correctly.</p>
 </div>
@@ -1148,9 +1154,12 @@ if you named the material "Emmisive".
 </div>
 <div class="sect2">
 <h3 id="empties"><a class="anchor" href="#empties"></a>Empties</h3>
+<div class="sect3">
+<h4 id="location-markers"><a class="anchor" href="#location-markers"></a>Location Markers</h4>
 <div class="paragraph">
 <p>SE uses empties to represent predefined points of interest on a model like terminal keypads, cargo ports or
-the location of the thruster flame. The empty&#8217;s function is determined by its name.</p>
+the location of the thruster flame. The purpose of each empty is determined by its name&#8201;&#8212;&#8201;i.e. <code>detector_terminal_1</code>
+ or <code>detector_conveyor_1</code> for example.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1159,16 +1168,60 @@ the location of the thruster flame. The empty&#8217;s function is determined by 
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-For those empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
+For empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
 <code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to <code>0.5</code>. This way you can preview the exact size in Blender.
 </td>
 </tr>
 </table>
 </div>
+<div class="sect4">
+<h5 id="linking-model-files"><a class="anchor" href="#linking-model-files"></a>Linking Model Files</h5>
 <div class="paragraph">
-<p>There are some empty types that require linking to other model files that contain attached parts.
-Currently these are doors, rotors, pistons and turrets.
-For those there is the <code>file</code> property on the Data tab of the empty.</p>
+<p>Some blocks like doors, rotors, pistons and turrets are composed of several models each of which is in a separate file.
+To link from one of those models to the next SE expects empties that have a name starting with <code>subpart_</code>.
+For those empties there is the <code>file</code> property on the Data tab of the empty that names the next part-file.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="mirroring"><a class="anchor" href="#mirroring"></a>Mirroring</h4>
+<div class="imageblock thumb" style="float: right">
+<div class="content">
+<a class="image" href="images/blender-mirroring.png"><img src="./images/blender-mirroring.png" alt="blender mirroring" width="450"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>When SE "mirrors" a block on a mirroring-plane what really happens is that a copy of the block is placed on
+the opposite side of the plane at the same distance to the plane as the original block.
+Then the copied block is rotated according to the mirroring-settings for the <em>local block-axis</em> that is currently
+pointing towards the mirroring-plane. So there is a maximum of three independent mirroring-rotations per block.</p>
+</div>
+<div class="paragraph">
+<p>You can model these rotations in Blender by adding and rotating three specially named empties to the scene.
+By default they are expected to be placed on layer 4.
+Fittingly their names have to start with either <code>MirrorLeftRight</code>, <code>MirrorTopBottom</code> or <code>MirrorFrontBack</code>&#8201;&#8212;&#8201;so they can be named <code>MirrorLeftRight.001</code> and will still be recognized by the add-on.</p>
+</div>
+<div class="paragraph">
+<p>Rotations you set on those empties are only valid for export if they are multiples of 90°&#8201;&#8212;&#8201;so it&#8217;s a good idea to turn on snapping when you rotate them in the 3D view.
+Even if you adhere to that rule some combinations cannot be used because SE does not support them.
+To check if a rotation is valid watch the <code>Mirroring</code> property on the Data tab of the empty.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To get a visual cue if a rotation is the correct one you can create
+<a href="http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Duplication#Linked_Duplicates">linked copies</a>
+of your main model and
+<a href="http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Groups_and_Parenting">parent</a>
+them to the mirroring-empties.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
@@ -1222,6 +1275,7 @@ For those there is the <code>file</code> property on the Data tab of the empty.<
 <td class="content">
 The BlockPairName and the SubtypeId are globally visible to all parts of the game.
 So it&#8217;s important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
+It&#8217;s probably also a good idea to not use spaces in your names.
 </td>
 </tr>
 </table>
@@ -1269,7 +1323,7 @@ will be displayed as invalid. You can create the default settings by clicking on
 <p>Export the meshes to a <code>.fbx</code> file</p>
 </li>
 <li>
-<p>Export the material-info to a <code>.xml</code> file with parameters for MwmBuilder</p>
+<p>Export the info for materials and linked levels-of-detail to a <code>.xml</code> file with parameters for MwmBuilder</p>
 </li>
 <li>
 <p>Use the <code>.fbx</code>, <code>.xml</code> and <code>.hkt</code> files as input for MwmBuilder to produce the final .mwm file</p>
@@ -1286,19 +1340,14 @@ will be displayed as invalid. You can create the default settings by clicking on
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The add-on logs the result of each step of the export in Blender&#8217;s <a href="images/blender-report.png">info-log</a>.
-In addition the output of external tools is logged to separate log files that are all named like the file that is
-exported in each step with <code>.log</code> appended.
-If a step fails for any reason you should consult these log-files.
+The add-on logs the result of each step of the export in Blender&#8217;s
+<a href="images/blender-report.png">info-log</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.
+In addition the output of external tools is logged to separate log files that are named like the file that is
+exported by the step with <code>.log</code> appended.
+If an external tool fails for any reason or does not produce the expected file you should consult these log-files.
 </td>
 </tr>
 </table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="customizing-the-export"><a class="anchor" href="#customizing-the-export"></a>Customizing the Export</h3>
-<div class="paragraph">
-<p>TODO (describe the node editor)</p>
 </div>
 </div>
 <div class="sect2">
@@ -1330,6 +1379,7 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
     <span class="tag">&lt;MountPoint</span> <span class="attribute-name">Side</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">Left</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">StartY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.00</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndX</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.30</span><span class="delimiter">&quot;</span></span> <span class="attribute-name">EndY</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">0.10</span><span class="delimiter">&quot;</span></span><span class="tag">/&gt;</span>
     ...
   <span class="tag">&lt;/MountPoints&gt;</span>
+  <span class="tag">&lt;MirroringX&gt;</span>HalfY<span class="tag">&lt;/MirroringX&gt;</span>
   <span class="tag">&lt;BlockPairName&gt;</span>ExampleBlock<span class="tag">&lt;/BlockPairName&gt;</span>
 <span class="tag">&lt;/Definition&gt;</span></code></pre>
 </div>
@@ -1351,7 +1401,8 @@ That saves you the trouble to do this by hand.</p>
 <td class="content">
 Updating <code>CubeBlocks.sbc</code> will only work for blocks that are already present in the file.
 The add-on searches for them by their <code>&lt;SubtypeId&gt;</code>.
-You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.
+You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition
+and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Components&gt;</code> to it.
 </td>
 </tr>
 </table>
@@ -1359,10 +1410,24 @@ You can use the content of a .blockdef.xml file as an initial skeleton for a blo
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="customizing-the-export"><a class="anchor" href="#customizing-the-export"></a>Customizing the Export</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TODO (describe the node editor)</p>
+</div>
+<div class="paragraph">
+<p><link href="featherlight.min.css" type="text/css" rel="stylesheet" title="Featherlight Styles" />
+<script src="jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="featherlight.min.js" type="text/javascript" charset="utf-8"></script>
+<script>$( 'a[href$=".png"]' ).featherlight(); $( 'a[href="#blockdef"]' ).featherlight();</script></p>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-02-01 17:01:53 CET
+Last updated 2015-03-05 23:28:19 CET
 </div>
 </div>
 </body>
