@@ -1,14 +1,12 @@
-== Installation
-
 === Getting the tools
 
-The first thing you need to do to get started is to download and install all the required parts.
+To get started first you need to download and install all the required parts.
 
 Blender::
-Get version http://www.blender.org/download/[2.72 or later] (90MB), 2.73 is current at the time of this writing.
+Get version {dl} http://www.blender.org/download/[2.72 or later] (90MB), 2.73 is current at the time of this writing.
 
 The Havok "Content Tools for Game Artists and Designers"::
-Get version https://software.intel.com/sites/havok/en/[2013.1.0]
+Get version {dl} https://software.intel.com/sites/havok/en/[2013.1.0]
 (https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe[64bit]
 or https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe[32bit], 330MB)
 This contains the filter manager `hctStandAloneFilterManager.exe` that's used to create rigid-body physics data.
@@ -17,7 +15,7 @@ The default install location is `C:\Program Files\Havok\HavokContentTools`
 WARNING: You need to get Havok 2013.1. Space Engineers is currently unable to use files created with Havok 2014.
 
 The Havok FBX Importer::
-This is a https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1[separate download] (3,5MB)
+This is a {dl} https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1[separate download] (3,5MB)
 because I had to https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b...master[fix a view things]
 in the sources and compile it against Havok 2013.1
 (the http://www.projectanarchy.com/download[official download] is compiled against Havok 2014).
@@ -31,7 +29,7 @@ This one comes with Space Engineers and is located in the game's directory under
 [.thumb]
 image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
 
-Once you got the https://github.com/harag-on-steam/se-blender/releases/latest[current version] (30kb)
+Once you got the {dl} https://github.com/harag-on-steam/se-blender/releases/latest[current version] (30kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File..." and

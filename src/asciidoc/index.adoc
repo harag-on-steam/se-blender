@@ -1,5 +1,8 @@
 = SE Block Tools for Blender
 
+:zoom: icon:search-plus[role="keyseq"]
+:dl: icon:download[role="keyseq"]
+
 Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
 This add-on eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer's own .mwm mesh-format.
 To do that it provides property panels for all the special data Space Engineers stores inside an .mwm file
@@ -11,11 +14,25 @@ So if you are new to 3D modelling you should probably learn how to do that prope
 
 // TODO Having said that, there is an addendum that should help you to get on the right track.
 
+== Installation
+
 include::parts/install.adoc[]
+
+== Using the Add-on
 
 include::parts/workflow.adoc[]
 
+include::parts/mat-tex.adoc[]
+
+include::parts/empties.adoc[]
+
+== Exporting
+
 include::parts/export.adoc[]
+
+== Customizing the Export
+
+include::parts/customize.adoc[]
 
 +++<link href="featherlight.min.css" type="text/css" rel="stylesheet" title="Featherlight Styles" />
 <script src="jquery.min.js" type="text/javascript" charset="utf-8"></script>

@@ -1,5 +1,3 @@
-== Exporting
-
 === Naming Conventions
 
 All names that are used during export are derived from the scene name:
@@ -27,6 +25,7 @@ All names that are used during export are derived from the scene name:
 
 WARNING: The BlockPairName and the SubtypeId are globally visible to all parts of the game.
 So it's important that you choose a sufficiently unique name for the scene to avoid naming-collisions with other mods.
+It's probably also a good idea to not use spaces in your names.
 
 You can customize the SubtypeIds of blocks by enabling the corresponding option in the scene properties.
 This is primarily meant for mod authors that want to use the add-on but need their existing blocks to keep their ids
@@ -50,17 +49,14 @@ By default the export runs through theses steps once you have chosen an output d
  . Run the `.hkt` file through Havok's filter-manager to calculate and add rigid body data to it
  . Repeat the following steps for the main layer and all construction and level-of-detail layers
  .. Export the meshes to a `.fbx` file
- .. Export the material-info to a `.xml` file with parameters for MwmBuilder
+ .. Export the info for materials and linked levels-of-detail to a `.xml` file with parameters for MwmBuilder
  .. Use the `.fbx`, `.xml` and `.hkt` files as input for MwmBuilder to produce the final .mwm file
 
-NOTE: The add-on logs the result of each step of the export in Blender's link:images/blender-report.png[info-log].
-In addition the output of external tools is logged to separate log files that are all named like the file that is
-exported in each step with `.log` appended.
-If a step fails for any reason you should consult these log-files.
-
-=== Customizing the Export
-
-TODO (describe the node editor)
+NOTE: The add-on logs the result of each step of the export in Blender's
+link:images/blender-report.png[info-log] {zoom}.
+In addition the output of external tools is logged to separate log files that are named like the file that is
+exported by the step with `.log` appended.
+If an external tool fails for any reason or does not produce the expected file you should consult these log-files.
 
 === Block Definitions
 
@@ -90,6 +86,7 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
     <MountPoint Side="Left" StartX="0.00" StartY="0.00" EndX="0.30" EndY="0.10"/>
     ...
   </MountPoints>
+  <MirroringX>HalfY</MirroringX>
   <BlockPairName>ExampleBlock</BlockPairName>
 </Definition>
 ```
@@ -102,4 +99,5 @@ That saves you the trouble to do this by hand.
 
 NOTE: Updating `CubeBlocks.sbc` will only work for blocks that are already present in the file.
 The add-on searches for them by their `<SubtypeId>`.
-You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition.
+You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition
+and add the missing properties like `<TypeId>` and `<Components>` to it.

@@ -1,0 +1,42 @@
+=== Empties
+
+==== Location Markers
+
+SE uses empties to represent predefined points of interest on a model like terminal keypads, cargo ports or
+the location of the thruster flame. The purpose of each empty is determined by its name -- i.e. `detector_terminal_1`
+ or `detector_conveyor_1` for example.
+
+TIP: For empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
+`Display` property to `Cube` and the `Size` property to `0.5`. This way you can preview the exact size in Blender.
+
+===== Linking Model Files
+
+Some blocks like doors, rotors, pistons and turrets are composed of several models each of which is in a separate file.
+To link from one of those models to the next SE expects empties that have a name starting with `subpart_`.
+For those empties there is the `file` property on the Data tab of the empty that names the next part-file.
+
+==== Mirroring
+
+[.thumb]
+image::blender-mirroring.png[width=450,float=right,link=images/blender-mirroring.png]
+
+When SE "mirrors" a block on a mirroring-plane what really happens is that a copy of the block is placed on
+the opposite side of the plane at the same distance to the plane as the original block.
+Then the copied block is rotated according to the mirroring-settings for the _local block-axis_ that is currently
+pointing towards the mirroring-plane. So there is a maximum of three independent mirroring-rotations per block.
+
+You can model these rotations in Blender by adding and rotating three specially named empties to the scene.
+By default they are expected to be placed on layer 4.
+Fittingly their names have to start with either `MirrorLeftRight`, `MirrorTopBottom` or `MirrorFrontBack`
+-- so they can be named `MirrorLeftRight.001` and will still be recognized by the add-on.
+
+Rotations you set on those empties are only valid for export if they are multiples of 90°
+-- so it's a good idea to turn on snapping when you rotate them in the 3D view.
+Even if you adhere to that rule some combinations cannot be used because SE does not support them.
+To check if a rotation is valid watch the `Mirroring` property on the Data tab of the empty.
+
+TIP: To get a visual cue if a rotation is the correct one you can create
+link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Duplication#Linked_Duplicates[linked copies]
+of your main model and
+link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Groups_and_Parenting[parent]
+them to the mirroring-empties.

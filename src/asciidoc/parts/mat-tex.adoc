@@ -1,0 +1,138 @@
+=== Textures
+
+This is a small excursion into how SE textures a block.
+The game currently uses a maximum of two textures per face of a mesh.
+Both of them have four channels (RGBA).
+
+==== Diffuse/Emissive
+
+By convention Keen names this kind of texture-files with `_de.dds` at the end
+but you are allowed to ignore the convention.
+The RGB-channels of this texture represent the diffuse color of each pixel of a face --
+just like with any regular digital picture.
+
+The A-channel of the texture does not represent the transparency of the pixels, though.
+Instead it tells SE how much emissive light a pixel gives off in the dark.
+Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
+Theoretically the light given off could be different from the diffuse color of the pixel but in SE
+it is always the same as the diffuse color so there are no extra channels for that.
+
+NOTE: The emissivity channel is only considered if the material (see next section) that uses the texture is
+named `Emissive`.
+
+===== Recolorable Blocks
+
+If the texture-filename ends in `_me.dds` instead the A-channel serves a double purpose.
+Here the values in the range 115 to 140 serve as a mask -- so you can't have Emissivity at these levels.
+The mask tells the game how much of the color the user has chosen for the block should be mixed in.
+A value of 140 means "only the user's color", a value of 115 means "only the block's color".
+
+==== Normal/Specular
+
+This kind of texture is named with `_ns.dds` at the end and contains no color information at all.
+The RGB-channels contain a standard DirectX normal-map.
+The A-channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
+A value of 0 means "don't apply any specularity", a value of 255 means "apply full specularity".
+
+TIP: The A-channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
+to edit SE's textures. It's therefor a good idea to separate the channels in those tools.
+For example, in Gimp you can convert the A-channel into a layer mask and edit and view that separately.
+
+=== Materials
+
+==== Texturing
+
+[.thumb]
+image::blender-material-simple.png[width=450,float=right,link=images/blender-material-simple.png]
+
+Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
+http://wiki.blender.org/index.php/Doc:2.6/Manual/Textures/Mapping/UV/Unwrapping[UV-mapping]
+to tell the game which _part_ of a texture to use for a face).
+
+In Blender there are several types of materials depending on the renderer you have chosen.
+If you choose `Blender Render` as the renderer you can switch between simple and node-based materials.
+If you choose `Cycles` as the renderer you are forced to use node-based materials.
+
+This addon needs you to use simple materials because these are the only ones where it can reliably know
+it can find the texture-files in the slots on the Texture property tab.
+
+It distinguishes between the diffuse/emissive and the normal/specular textures by looking at the influence levels
+of the textures. If the 'Diffuse' influence is above 0.0 the texture is considered to be the diffuse/emissive texture.
+If the 'Normal' influence level is above 0.0 it is considered to be the normal/specular texture.
+
+TIP: If you configure no normal/specular texture and your diffuse/emissive texture's filename uses Keen's convention
+to end in `_de.dds` or `_me.dds` the addon assumes there is a normal/specular texture-file that ends with `_ns.dds`
+and will export that to SE automatically. So following the convention saves you some work if you are not interested
+in viewing the normal map or specularity in Blender.
+
+===== Texture Paths
+
+The game resolves texture-paths relative to two different base folders.
+The first is the game's `Content/` folder (so you are able to reuse the game's textures),
+the second is the root-folder of the mod. This is why the add-on expects the .blend file to be in the root-folder
+because it then automatically knows the location of that folder without you telling it.
+
+When exporting .mwm files the add-on derives the correct relative texture-paths by comparing each texture's absolute path
+against the root-folder of your mod and additionally to the game's location (as configured in the add-on preferences).
+
+IMPORTANT: Don't use texture-files that are not inside the mod folder or the game's `Content\` folder.
+Neither Blender nor the add-on will prevent you from doing so but this will not work when exporting .mwm files.
+
+NOTE: The add-on does not check if the path of a texture actually points to an existing file.
+But it's easy to spot missing texture-files when you configure the 3D view to display meshes with their materials.
+
+==== Specularity
+
+Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
+The values you set there are the maximum values for that material.
+How much of those maximum values are actually applied to a pixel of a face
+is determined by the A-channel of the normal/specular texture.
+
+WARNING: There is also a "Specular" panel. This is the wrong panel.
+With that you control specularity as it is rendered by Blender.
+The algorithm Blender uses is similar to the one SE uses but the values have different meanings.
+Because of that the add-on cannot reuse Blender's settings and you have to provide them separately for SE.
+
+The effect of the two values `Intensity` and `Power` are hard to describe so it is best if you play with them
+and watch the results in-game. Just know that at high values (30.0 / 30.0) the game's specularity shader
+also starts to mirror the environment like smooth metal would do.
+
+==== Transparent Materials
+
+Transparent materials like glass are handled specially by the game.
+They have some extra settings that are not contained in an .mwm file
+but are instead stored in a file called `TransparentMaterials.sbc`.
+It makes no sense for this add-on to support editing the content of this file
+because the settings cannot be viewed in Blender, anyway.
+
+What you get if you change a material from `Normal` to `Glass` are the settings that _are_ stored in the
+.mwm file on export. For the meaning of these settings please refer to Keen's
+http://steamcommunity.com/sharedfiles/filedetails/?id=300427203[tutorial]
+on transparent materials.
+
+==== Special Material Names
+
+Normally you are free to choose the name of a material.
+But there are some visuals in SE that are only enabled if the material of the face has a special name
+
+===== Emissivity
+
+Emissivity is generally only enabled if the material is named `Emissive`.
+Otherwise the emissive intensity from the diffuse/emissive texture is ignored.
+
+===== Status lights
+
+A lot of block types have some type of status indicator.
+Landing Gear displays the lock state,
+several other blocks show if they are powered,
+conveyors show if the conveyor-line is established or broken, etc.
+
+Because all these are some form of lights Keen chose to also use the `Emissive` material name for this.
+If a block has more than one status the materials are additionally numbered, starting with zero
+(so `Emissive0` through `Emissive3` for batteries, for example).
+
+NOTE: For status-lights you have basically no control over the color of the face.
+The game uses hard-coded values to override the color with the typical black, yellow, green or red.
+
+TIP: It's easy to spell "Emissive" wrong. If status lights don't work the first thing you should check is
+if you named the material "Emmisive".
