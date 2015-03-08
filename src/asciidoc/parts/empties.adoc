@@ -26,17 +26,16 @@ Then the copied block is rotated according to the mirroring-settings for the _lo
 pointing towards the mirroring-plane. So there is a maximum of three independent mirroring-rotations per block.
 
 You can model these rotations in Blender by adding and rotating three specially named empties to the scene.
-By default they are expected to be placed on layer 4.
-Fittingly their names have to start with either `MirrorLeftRight`, `MirrorTopBottom` or `MirrorFrontBack`
--- so they can be named `MirrorLeftRight.001` and will still be recognized by the add-on.
+Fittingly their names are `MirrorLeftRight`, `MirrorTopBottom` and `MirrorFrontBack`.
+They need to be placed on the layer that is designated as the mirroring layer in the export settings.
+By default this is layer four. Use the corresponding button on the Tools panel of the 3D view to quickly do so.
+It's okay if Blender adds a .001 suffix to the names, the add-on can handle that.
 
-Rotations you set on those empties are only valid for export if they are multiples of 90°
+The rotations you set on the empties are only valid for export if they are multiples of 90°
 -- so it's a good idea to turn on snapping when you rotate them in the 3D view.
 Even if you adhere to that rule some combinations cannot be used because SE does not support them.
 To check if a rotation is valid watch the `Mirroring` property on the Data tab of the empty.
 
-TIP: To get a visual cue if a rotation is the correct one you can create
-link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Duplication#Linked_Duplicates[linked copies]
-of your main model and
-link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Groups_and_Parenting[parent]
-them to the mirroring-empties.
+NOTE: The objects that are attached to the empties are
+link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Duplication#Linked_Duplicates[linked duplicates]
+of your main model. So modifying them will also change your main model and vice versa.
