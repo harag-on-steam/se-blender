@@ -3,10 +3,12 @@ import os
 from subprocess import CalledProcessError
 import bpy
 from .export import ExportSettings, MissbehavingToolError
+from .mirroring import setupMirrors
 from .merge_xml import CubeBlocksMerger, MergeResult
-from .types import getExportNodeTreeFromContext, getExportNodeTree, data
-from .nodes import BlockDefinitionNode, Exporter, BlockExportTree
-from .utils import currentSceneHolder
+from .mount_points import create_mount_point_skeleton
+from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData
+from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef
+from .utils import currentSceneHolder, layers, layer_bits, layer_bit
 from .default_nodes import createDefaultTree
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
@@ -285,3 +287,84 @@ class AddDefaultExportNodes(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class AddMirroringEmpties(bpy.types.Operator):
+    bl_idname = "object.space_engineers_mirrors"
+    bl_label = "Block Mirroring"
+    bl_description = "Creates or rebuilds empties to model the block-mirroring. " \
+                     "Rotate those empties to configure the mirroring for the corresponding axes."
+
+    @classmethod
+    def poll(self, context):
+        return True
+
+    def execute(self, context):
+        blockData = sceneData(context.scene)
+        isSmall = blockData.block_size == 'SMALL'
+
+        try:
+            blockDef = getBlockDef(blockData.getExportNodeTree())
+            mainObjects = blockDef.getMainObjects()
+            layer = blockDef.getMirroringLayer()
+        except ValueError as e:
+            self.report({'ERROR'}, "Invalid export settings: " + str(e))
+            return {'FINISHED'}
+
+        setupMirrors(context.scene, mainObjects, blockData.block_dimensions, isSmall, layer)
+
+        if layer >= 0:
+            context.scene.layers = layers(layer_bits(context.scene.layers) | layer_bit(layer))
+        else:
+            self.report({'WARNING'}, "No mirroring layer defined. Objects were created on active layer.")
+
+        return {'FINISHED'}
+
+class AddMountPointSkeleton(bpy.types.Operator):
+    bl_idname = 'object.spceng_mountpoint_add'
+    bl_label = 'Mount-Points'
+    bl_options = {'REGISTER'}
+    bl_description = \
+        "Creates an object with six rectangular mount-point faces, one for each side of the block. " \
+        "Duplicate these faces in edit-mode or use modifiers to create additional mount-points."
+
+    def execute(self, context):
+        s = context.scene
+
+        ob = create_mount_point_skeleton()
+        ob.location = (0, 0, 0)
+        ob.lock_location = (True, True, True)
+        ob.lock_rotation = (True, True, True)
+        ob.lock_scale = (True, True, True)
+
+        s.objects.link(ob)
+
+        try:
+            layer = getBlockDef(sceneData(s).getExportNodeTree()).getMountPointLayer()
+        except ValueError:
+            layer = -1
+
+        if layer >= 0:
+            ob.layers = layers(layer_bit(layer))
+            s.layers = layers(layer_bits(s.layers) | layer_bit(layer))
+        else:
+            self.report({'WARNING'}, "No mount-point layer defined. Objects were created on active layer.")
+
+        return {'FINISHED'}
+
+class SetupGrid(bpy.types.Operator):
+    bl_idname = 'view3d.spceng_setup_grid'
+    bl_label = 'Set up Grid'
+    bl_options = {'REGISTER'}
+    bl_description = \
+        "Sets the view-grid to a scaling of 1.25 with 5 subdivision. " \
+        "This way you get 10 steps per one large block-cube."
+
+    def execute(self, context):
+        space = context.space_data
+
+        space.grid_scale = 1.25
+        space.grid_subdivisions = 5
+
+        if (space.grid_lines < 21):
+            space.grid_lines = 21
+
+        return {'FINISHED'}

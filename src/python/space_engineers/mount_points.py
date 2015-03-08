@@ -158,55 +158,6 @@ def create_mount_point_skeleton():
 
     return ob
 
-class AddMountPointSkeleton(bpy.types.Operator):
-    bl_idname = 'object.spceng_mountpoint_add'
-    bl_label = 'Mount-Points'
-    bl_options = {'REGISTER'}
-    bl_description = \
-        "Creates an object with six mount-point faces, one for each side of the block. " \
-        "Duplicate these faces in edit-mode or use modifiers to create additional mount-points."
-
-    def execute(self, context):
-        s = context.scene
-
-        #d = data(s)
-        #if (layer_bits(d.mount_points_layers) == 0):
-        #    self.report({'ERROR'}, "No layer is marked as a mount-point layer")
-        #    return {'FINISHED'}
-
-        ob = create_mount_point_skeleton()
-
-        ob.location = (0, 0, 0)
-        ob.lock_location = (True, True, True)
-        ob.lock_rotation = (True, True, True)
-        ob.lock_scale = (True, True, True)
-
-        s.objects.link(ob)
-        #ob.layers = d.mount_points_layers
-
-        #s.layers = layers(layer_bits(s.layers) | layer_bits(d.mount_points_layers))
-
-        return {'FINISHED'}
-
-class SetupGrid(bpy.types.Operator):
-    bl_idname = 'view3d.spceng_setup_grid'
-    bl_label = 'Setup Grid'
-    bl_options = {'REGISTER'}
-    bl_description = \
-        "Sets the view-grid to a scaling of 1.25 with 5 subdivision. " \
-        "This way you get 10 steps per one large block-cube."
-
-    def execute(self, context):
-        space = context.space_data
-
-        space.grid_scale = 1.25
-        space.grid_subdivisions = 5
-
-        if (space.grid_lines < 21):
-            space.grid_lines = 21
-
-        return {'FINISHED'}
-
 
 # ------------------------------------ draw block bounding box ------------------------------------------- #
 

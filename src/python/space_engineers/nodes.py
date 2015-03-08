@@ -4,7 +4,7 @@ from os.path import join
 from subprocess import CalledProcessError
 from string import Template
 from .mirroring import mirroringAxisFromObjectName
-from .utils import layer_bits, layer_bit, scene
+from .utils import layer_bits, layer_bit, scene, first
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
 
@@ -513,6 +513,64 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         settings.info("export successful", file=mwmfile, node=self)
         return settings.cacheValue(mwmfile, 'SUCCESS')
 
+class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
+    bl_idname = "SELayerObjectsNode"
+    bl_label = "Combined Layers"
+    bl_icon = "GROUP"
+    bl_width_default = 170.0
+
+    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20))
+
+    def init(self, context):
+        pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
+        self.use_custom_color = True
+        self.color = COLOR_OBJECTS_WND
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, 'layer_mask')
+
+    def getObjects(self, socket: ObjectListSocket):
+        mask = layer_bits(self.layer_mask)
+        return (obj for obj in scene().objects
+            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+
+class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
+    bl_idname = "SESeparateLayerObjectsNode"
+    bl_label = "Separate Layers"
+    bl_icon = "GROUP"
+    bl_width_default = 170.0
+
+    def onLayerMaskUpdate(self, context):
+        mask = self.layer_mask
+        ordinal = 1
+
+        for i, pin in enumerate(self.outputs.values()):
+            pin.enabled = mask[i]
+            if pin.enabled:
+                pin.n = ordinal
+                pin.name = "Layer %02d \u2192 %d" % (i+1, ordinal)
+                ordinal += 1
+
+    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20),
+                                              update=onLayerMaskUpdate)
+
+    def init(self, context):
+        for i in range(0,20):
+            pin = self.outputs.new(ObjectListSocket.bl_idname, "Layer %02d" % (i+1))
+            pin.enabled = False
+            pin.layer = i
+        self.use_custom_color = True
+        self.color = COLOR_OBJECTS_WND
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, 'layer_mask')
+
+    def getObjects(self, socket: ObjectListSocket):
+        mask = layer_bit(socket.layer)
+        return (obj for obj in scene().objects
+            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+
 class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEBlockDefNode"
     bl_label = "Block Definition"
@@ -608,63 +666,35 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
 
         return settings.cacheValue(blockdeffilecontent, xml)
 
-class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
-    bl_idname = "SELayerObjectsNode"
-    bl_label = "Combined Layers"
-    bl_icon = "GROUP"
-    bl_width_default = 170.0
+    def getMainObjects(self):
+         mwmMainFileSocket = self.inputs['Main Model'].firstSource(type=MwmFileSocket)
+         if mwmMainFileSocket is None:
+             raise ValueError('block-definition is not linked to a main model')
 
-    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20))
+         mwmMainObjectsSocket = mwmMainFileSocket.node.inputs['Objects']
+         return mwmMainObjectsSocket.getObjects()
 
-    def init(self, context):
-        pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
-        pin.n = -1
-        self.use_custom_color = True
-        self.color = COLOR_OBJECTS_WND
+    def _getLayer(self, socket: SESocket):
+        source = socket.firstSource(type=ObjectsSocket)
+        if source is None:
+            return -1
+        if not isinstance(source.node, LayerObjectsNode) and not isinstance(source.node):
+            return -1
+        return next( (i for i, b in enumerate(source.node.layer_mask) if b), -1)
 
-    def draw_buttons(self, context, layout):
-        layout.prop(self, 'layer_mask')
+    def getMountPointLayer(self):
+        return self._getLayer(self.inputs['Mount Points'])
 
-    def getObjects(self, socket: ObjectListSocket):
-        mask = layer_bits(self.layer_mask)
-        return (obj for obj in scene().objects
-            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+    def getMirroringLayer(self):
+        return self._getLayer(self.inputs['Mirroring'])
 
-class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
-    bl_idname = "SESeparateLayerObjectsNode"
-    bl_label = "Separate Layers"
-    bl_icon = "GROUP"
-    bl_width_default = 170.0
+# -------------------------------------------------------------------------------------------------------------------- #
 
-    def onLayerMaskUpdate(self, context):
-        mask = self.layer_mask
-        ordinal = 1
-
-        for i, pin in enumerate(self.outputs.values()):
-            pin.enabled = mask[i]
-            if pin.enabled:
-                pin.n = ordinal
-                pin.name = "Layer %02d \u2192 %d" % (i+1, ordinal)
-                ordinal += 1
-
-    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20),
-                                              update=onLayerMaskUpdate)
-
-    def init(self, context):
-        for i in range(0,20):
-            pin = self.outputs.new(ObjectListSocket.bl_idname, "Layer %02d" % (i+1))
-            pin.enabled = False
-            pin.layer = i
-        self.use_custom_color = True
-        self.color = COLOR_OBJECTS_WND
-
-    def draw_buttons(self, context, layout):
-        layout.prop(self, 'layer_mask')
-
-    def getObjects(self, socket: ObjectListSocket):
-        mask = layer_bit(socket.layer)
-        return (obj for obj in scene().objects
-            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+def getBlockDef(nodeTree: bpy.types.NodeTree) -> BlockDefinitionNode:
+     blockDef = first(n for n in nodeTree.nodes if isinstance(n, BlockDefinitionNode))
+     if blockDef is None:
+         raise ValueError('export settings contain no block-definition')
+     return blockDef
 
 # -------------------------------------------------------------------------------------------------------------------- #
 

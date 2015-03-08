@@ -4,6 +4,7 @@ from math import radians as rad
 import math
 import re
 import bpy
+from .utils import layers, layer_bits, layer_bit
 
 mirroring = OrderedDict([
     ('None', (0.0, 0.0, 0.0)),
@@ -89,8 +90,62 @@ def getMirroringProp(self):
 mirroringProperty = bpy.props.EnumProperty(
     items=mirroringUI,
     name="Mirroring",
-    description="Mirroring-setting if empty is named 'MirrorFrontBottom', 'MirrorTopBottom' or 'MirrorLeftRight'  ",
+    description="Mirroring-rotation; empty needs to be named 'MirrorFrontBottom', 'MirrorTopBottom' or 'MirrorLeftRight'  ",
     options=set(),
     get=getMirroringProp,
     set=setMirroringProp,
 )
+
+MIRRORS = {
+    'X' : ('MirrorLeftRight', Vector((-1, 0, 0))),
+    'Y' : ('MirrorTopBottom', Vector(( 0, 0, 1))),
+    'Z' : ('MirrorFrontBack', Vector(( 0, 1, 0))),
+}
+
+def setupMirrors(scene: bpy.types.Scene, mainObjects=[], blockSize=(1,1,1), isSmall=False, layer=-1):
+    cubeSize = 0.5 if isSmall else 2.5
+    maxBlockSize = max(blockSize) * cubeSize
+    mirrorDistance = maxBlockSize + cubeSize
+    mirrorLayer = layers(layer_bit(scene.active_layer if layer == -1 else layer))
+
+    mirrors = { 'X' : None, 'Y' : None, 'Z' : None }
+
+    for ob in scene.objects:
+        axis = mirroringAxisFromObjectName(ob)
+        if not axis is None and mirrors[axis] is None:
+            mirrors[axis] = ob
+
+    for axis, mirror in mirrors.items():
+        if mirror is None:
+            mirror = mirrors[axis] = bpy.data.objects.new(MIRRORS[axis][0], None)
+            mirror.empty_draw_type = 'ARROWS'
+            mirror.show_x_ray = True
+            scene.objects.link(mirror)
+        mirror.empty_draw_size = cubeSize
+        mirror.location = MIRRORS[axis][1] * mirrorDistance
+        mirror.layers = mirrorLayer # needs to be done after the object is in the scene
+
+    # need these more than once but generators only evaluate once
+    mainObjects = [o for o in mainObjects]
+    mirrors = {m for m in mirrors.values()}
+    removed = set() # don't re-add old mesh copies
+
+    for mirror in mirrors:
+        for c in mirror.children:
+            try:
+                scene.objects.unlink(c)
+            except RuntimeError:
+                pass # already removed from the scene
+            c.parent = None
+            removed.add(c)
+
+    for mirror in mirrors:
+        for o in mainObjects:
+            if o.type == 'MESH' and not o.parent in mirrors and not o in removed:
+                copy = o.copy()
+                copy.parent = mirror
+                copy.hide_select = True
+                scene.objects.link(copy)
+                copy.layers = mirrorLayer # needs to be done after the object is in the scene
+
+    scene.update()

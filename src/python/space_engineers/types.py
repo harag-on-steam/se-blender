@@ -11,7 +11,7 @@ PROP_GROUP = "space_engineers"
 
 def data(obj):
     # avoids AttributeError
-    return getattr(obj, PROP_GROUP, None)    
+    return getattr(obj, PROP_GROUP, None)
 
 def some_layers_visible(layer_mask):
     scene_layers = layer_bits(bpy.context.scene.layers)
@@ -35,7 +35,7 @@ def getExportNodeTreeFromContext(context):
 
     if context.space_data.type == 'NODE_EDITOR':
         tree = context.space_data.node_tree
-    elif context.space_data.type == 'PROPERTIES':
+    elif context.space_data.type in {'PROPERTIES', 'INFO'}:
         d = data(context.scene)
         if not d is None:
             settings = d.export_nodes
@@ -216,7 +216,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     
     is_block = bpy.props.BoolProperty( default=False, name="Export as Block", 
-        description="Is this scene automatically exported to Space Engineers as a block according to the rules defined in this panel?")
+        description="Does this scene contain the models for a block in Space Engineers?")
 
     block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
     block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
@@ -247,6 +247,18 @@ class SESceneProperties(bpy.types.PropertyGroup):
     export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
         description="Use the Node editor to create and change these settings.")
 
+    # too bad https://developer.blender.org/D113 never made it into Blender
+    def getExportNodeTree(self):
+        if not self.export_nodes:
+            raise ValueError('scene references no export node-tree')
+        nodeTree = bpy.data.node_groups.get(self.export_nodes, None)
+        if nodeTree is None:
+            raise ValueError('scene references a non-existing export node-tree')
+        return nodeTree
+
+def sceneData(scene: bpy.types.Scene) -> SESceneProperties:
+    return data(scene)
+
 class DATA_PT_spceng_scene(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -262,7 +274,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        spceng = data(context.scene)
+        spceng = sceneData(context.scene)
 
         layout.active = spceng.is_block
         layout.enabled = spceng.is_block

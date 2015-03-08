@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 5, 0),
+	"version": (0, 5, 1),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
@@ -51,6 +51,11 @@ class SEView3DToolsPanel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_label = "Space Engineers"
 
+    @classmethod
+    def poll(self, context):
+        blockData = types.sceneData(context.scene)
+        return blockData and blockData.is_block
+
     def draw(self, context):
         layout = self.layout
 
@@ -58,9 +63,16 @@ class SEView3DToolsPanel(bpy.types.Panel):
 
         space = context.space_data
         if space.grid_scale != 1.25 or space.grid_subdivisions != 5:
-            col.operator(mount_points.SetupGrid.bl_idname, icon='GRID')
+            col.operator(operators.SetupGrid.bl_idname, icon='GRID')
 
-        col.operator(mount_points.AddMountPointSkeleton.bl_idname, icon='FACESEL')
+        col.operator(operators.AddMountPointSkeleton.bl_idname, icon='FACESEL')
+        col.operator(operators.AddMirroringEmpties.bl_idname, icon='MOD_MIRROR')
+
+def menu_func_export(self, context):
+    self.layout.operator(operators.ExportSceneAsBlock.bl_idname,
+                         text="Space Engineers Block (.mwm)")
+    self.layout.operator(operators.UpdateDefinitionsFromBlockScene.bl_idname,
+                         text="Space Engineers Definition Update (.sbc)")
 
 def register():
     from bpy.utils import register_class
@@ -80,12 +92,15 @@ def register():
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
 
+    register_class(types.CheckVersionOnline)
     register_class(operators.AddDefaultExportNodes)
+    register_class(operators.AddMirroringEmpties)
     register_class(operators.ExportSceneAsBlock)
     register_class(operators.UpdateDefinitionsFromBlockScene)
-    register_class(types.CheckVersionOnline)
-    register_class(mount_points.AddMountPointSkeleton)
-    register_class(mount_points.SetupGrid)
+    register_class(operators.AddMountPointSkeleton)
+    register_class(operators.SetupGrid)
+
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
 
     nodes.register()
 
@@ -103,12 +118,15 @@ def unregister():
 
     nodes.unregister()
 
-    unregister_class(mount_points.SetupGrid)
-    unregister_class(mount_points.AddMountPointSkeleton)
-    unregister_class(types.CheckVersionOnline)
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+
+    unregister_class(operators.SetupGrid)
+    unregister_class(operators.AddMountPointSkeleton)
     unregister_class(operators.UpdateDefinitionsFromBlockScene)
     unregister_class(operators.ExportSceneAsBlock)
+    unregister_class(operators.AddMirroringEmpties)
     unregister_class(operators.AddDefaultExportNodes)
+    unregister_class(types.CheckVersionOnline)
 
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)
