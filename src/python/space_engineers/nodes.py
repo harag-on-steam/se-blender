@@ -289,16 +289,42 @@ class MwmFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_label = ".mwm"
     bl_color = COLOR_MWM_SKT
 
+# according to VRageRender.MyRenderModel.LoadData()
+RENDER_QUALITIES = [
+    ('LOW', 'Low', 'Low'),
+    ('NORMAL', 'Norm', 'Normal'),
+    ('HIGH', 'High', 'High'),
+    ('EXTREME', 'Extr', 'Extreme'),
+]
+
 class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_idname = "SELodInputSocket"
     bl_label = "LOD"
     bl_color = COLOR_MWM_SKT
 
-    distance = bpy.props.IntProperty(name="Distance", default=10, min=0)
+    distance = bpy.props.IntProperty(
+        name="Distance", default=10, min=0,
+        description="The distance at which to switch to this level-of-detail")
+    use_qualities = bpy.props.BoolProperty(
+        name="Use Qualities", default=False,
+        description="Should this level-of-detail only be used with a subset of render quality profiles?")
+    qualities = bpy.props.EnumProperty(
+        name="Render Quality",
+        items=RENDER_QUALITIES, default={q[0] for q in RENDER_QUALITIES}, options={'ENUM_FLAG'},
+        description="Mark the render quality profiles this level-of-detail should be used at")
 
     def drawChecked(self, context, layout, node, text, source):
         if self.is_linked:
-            layout.prop(self, "distance")
+            col = layout.column()
+
+            row = col.row(align=True)
+            row.prop(self, "distance")
+            row.prop(self, "use_qualities", icon_only=True, icon='MOD_DECIM')
+
+            if self.use_qualities:
+                row = col.row()
+                row.prop(self, "qualities")
+
             return
 
         super().drawChecked(context, layout, node, text, source)
@@ -481,7 +507,8 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
             lodName = socket.getText(settings)
             if socket.isReady() and socket.export(settings) == 'SUCCESS':
                 lodDistance = socket.distance
-                lods_xml.append(lod_xml(settings, lodName, lodDistance))
+                renderQualities = socket.qualities if socket.use_qualities else None
+                lods_xml.append(lod_xml(settings, lodName, lodDistance, renderQualities))
             else:
                 # report skips grouped after the export of dependencies
                 msgs.append("socket '%s' not ready, skipped" % (socket.name))

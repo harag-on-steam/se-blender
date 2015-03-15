@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import re
 import bpy
@@ -121,9 +122,14 @@ def material_xml(settings, mat):
 
     return e
 
-def lod_xml(settings, lodMwmFile: str, lodDistance: int):
-    # TODO <LOD ... RenderQuality="EXTREME, HIGH">
-    e = ElementTree.Element("LOD", Distance=str(lodDistance))
+def lod_xml(settings, lodMwmFile: str, lodDistance: int, renderQualities:iter=None):
+    e = ElementTree.Element("LOD")
+    attrib = OrderedDict()
+    attrib['Distance'] = str(lodDistance)
+    if not renderQualities is None:
+        attrib['RenderQuality'] = ', '.join(renderQualities)
+    e.attrib = attrib
+
     em = ElementTree.SubElement(e, "Model")
     em.text = settings.template(settings.names.modelpath, modelfile=os.path.basename(lodMwmFile))
     return e
