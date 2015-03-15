@@ -521,13 +521,14 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#main-model">Main Model</a></li>
 <li><a href="#collision-model">Collision Model</a></li>
 <li><a href="#mount-points">Mount Points</a></li>
-<li><a href="#construction-phases">Construction Phases</a></li>
+<li><a href="#construction-stages">Construction Stages</a></li>
 <li><a href="#levels-of-detail">Levels of Detail</a></li>
 </ul>
 </li>
 <li><a href="#textures">Textures</a>
 <ul class="sectlevel3">
 <li><a href="#diffuse-emissive">Diffuse/Emissive</a></li>
+<li><a href="#recolorable-blocks">Recolorable Blocks</a></li>
 <li><a href="#normal-specular">Normal/Specular</a></li>
 </ul>
 </li>
@@ -565,7 +566,7 @@ table.CodeRay td.code>pre{padding:0}
 <div class="sectionbody">
 <div class="paragraph">
 <p>Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
-This add-on is a productivity tool that simplifies the steps you need to take to get from a 3D mesh in Blender to
+This add-on simplifies the steps you need to take to get from a 3D mesh in Blender to
 Space Engineer’s own .mwm mesh-format. To do that</p>
 </div>
 <div class="olist arabic">
@@ -854,12 +855,12 @@ The game defaults to full mount points on all sides of the block in that case.</
 </div>
 </div>
 <div class="sect3">
-<h4 id="construction-phases"><a class="anchor" href="#construction-phases"></a>Construction Phases</h4>
+<h4 id="construction-stages"><a class="anchor" href="#construction-stages"></a>Construction Stages</h4>
 <div class="paragraph">
-<p>Layers 11-13 are used for the construction phases of the block.
-There is one layer for each phase of construction, from earliest to latest.
-If you change the number of construction layers you increase or decrease the number of construction phases.
-A block is allowed to have no construction phases at all.</p>
+<p>Layers 11-13 are used for the construction stages of the block.
+There is one layer for each stage of construction, from earliest to latest.
+If you change the number of construction layers you increase or decrease the number of construction stages.
+A block is allowed to have no construction stages at all.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -868,13 +869,13 @@ A block is allowed to have no construction phases at all.</p>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-If you don&#8217;t have meshes on a construction layer it will be skipped and your block will have one phase less.
+If you don&#8217;t have meshes on a construction layer it will be skipped and your block will have one stage less.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>By default the construction phases reuse the same collision shape your main block model uses.
+<p>By default the construction stages reuse the same collision shape your main block model uses.
 It&#8217;s possible to change that using different export settings.
 But keep in mind that can be dangerous to a ship or the player
 if a block changes its physical dimensions when it is welded to completion.</p>
@@ -927,46 +928,75 @@ Both of them have four channels (RGBA).</p>
 <div class="sect3">
 <h4 id="diffuse-emissive"><a class="anchor" href="#diffuse-emissive"></a>Diffuse/Emissive</h4>
 <div class="paragraph">
-<p>By convention Keen names this kind of texture-files with <code>_de.dds</code> at the end
+<p>By convention Keen names this kind of texture-file with a suffix of <code>_de.dds</code>
 but you are allowed to ignore the convention.
-The RGB-channels of this texture represent the diffuse color of each pixel of a face&#8201;&#8212;&#8201;just like with any regular digital picture.</p>
+The RGB-channels of this texture represent the diffuse color of a face&#8212;&#8203;just like with any regular digital image.</p>
 </div>
 <div class="paragraph">
 <p>The A-channel of the texture does not represent the transparency of the pixels, though.
 Instead it tells SE how much emissive light a pixel gives off in the dark.
 Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
-Theoretically the light given off could be different from the diffuse color of the pixel but in SE
+In theory the light given off could be different from the diffuse color of the pixel but in SE
 it is always the same as the diffuse color so there are no extra channels for that.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The emissivity channel is only considered if the material (see next section) that uses the texture is
-named <code>Emissive</code>.
-</td>
-</tr>
-</table>
 </div>
-<div class="sect4">
-<h5 id="recolorable-blocks"><a class="anchor" href="#recolorable-blocks"></a>Recolorable Blocks</h5>
+<div class="sect3">
+<h4 id="recolorable-blocks"><a class="anchor" href="#recolorable-blocks"></a>Recolorable Blocks</h4>
 <div class="paragraph">
-<p>If the texture-filename ends in <code>_me.dds</code> instead the A-channel serves a double purpose.
-Here the values in the range 115 to 140 serve as a mask&#8201;&#8212;&#8201;so you can&#8217;t have Emissivity at these levels.
-The mask tells the game how much of the color the user has chosen for the block should be mixed in.
-A value of 140 means "only the user&#8217;s color", a value of 115 means "only the block&#8217;s color".</p>
+<p>If instead the texture-filename ends in <code>_me.dds</code> the A-channel serves a double purpose.
+Here the values in the range 115 to 140 represent a mask that controls
+which parts of the texture can be recolored by the player.</p>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p>A value of 115 means that the pixel is fully recolored with the player-chosen color.</p>
+</li>
+<li>
+<p>A value of 140 means that the pixel keeps its original color.</p>
+</li>
+<li>
+<p>A value in-between mixes the colors with the corresponding ratio.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Recoloring uses a <a href="http://en.wikipedia.org/wiki/HSL_and_HSV">HSL color-model</a>
+in which the player-chosen hue replaces the original hue.
+Saturation and value are added and clamped at a maximum of 100.</p>
+</div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<a class="image" href="images/alpha-channel.png"><img src="./images/alpha-channel.png" alt="alpha channel" width="350"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>If the value of the texture&#8217;s A-channel is not in the range 115 to 140 it still controls emissivity
+but the values have a slightly different meaning.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A value of 0 still means the pixel is fully emissive. It also means it is fully recolored.</p>
+</li>
+<li>
+<p>A value of 115 means the pixel has no emissivity. Again, it is fully recolored.</p>
+</li>
+<li>
+<p>A value of 255 also means the pixel is fully emissive. But here the pixel is not recolored.</p>
+</li>
+<li>
+<p>And finally a value of 140 means the pixel is neither emissive nor is it recolored.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect3">
 <h4 id="normal-specular"><a class="anchor" href="#normal-specular"></a>Normal/Specular</h4>
 <div class="paragraph">
-<p>This kind of texture is named with <code>_ns.dds</code> at the end and contains no color information at all.
-The RGB-channels contain a standard DirectX normal-map.
-The A-channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
+<p>This kind of texture has a suffix of <code>_ns.dds</code> and contains no color information at all.
+The RGB-channels contain a standard DirectX <a href="http://en.wikipedia.org/wiki/Normal_mapping">normal-map</a>.
+The A-channel tells the game how much of a material&#8217;s maximum specularity settings it should apply to a pixel.
 A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "apply full specularity".</p>
 </div>
 <div class="admonitionblock tip">
@@ -1120,13 +1150,6 @@ on transparent materials.</p>
 But there are some visuals in SE that are only enabled if the material of the face has a special name</p>
 </div>
 <div class="sect4">
-<h5 id="emissivity"><a class="anchor" href="#emissivity"></a>Emissivity</h5>
-<div class="paragraph">
-<p>Emissivity is generally only enabled if the material is named <code>Emissive</code>.
-Otherwise the emissive intensity from the diffuse/emissive texture is ignored.</p>
-</div>
-</div>
-<div class="sect4">
 <h5 id="status-lights"><a class="anchor" href="#status-lights"></a>Status lights</h5>
 <div class="paragraph">
 <p>A lot of block types have some type of status indicator.
@@ -1135,7 +1158,7 @@ several other blocks show if they are powered,
 conveyors show if the conveyor-line is established or broken, etc.</p>
 </div>
 <div class="paragraph">
-<p>Because all these are some form of lights Keen chose to also use the <code>Emissive</code> material name for this.
+<p>Because all these are some form of lights Keen chose to use the material name <code>Emissive</code> for this.
 If a block has more than one status the materials are additionally numbered, starting with zero
 (so <code>Emissive0</code> through <code>Emissive3</code> for batteries, for example).</p>
 </div>
@@ -1147,7 +1170,7 @@ If a block has more than one status the materials are additionally numbered, sta
 </td>
 <td class="content">
 For status-lights you have basically no control over the color of the face.
-The game uses hard-coded values to override the color with the typical black, yellow, green or red.
+The game uses hard-coded values to override the color with the typical black, yellow, red, green or blue.
 </td>
 </tr>
 </table>
@@ -1443,7 +1466,7 @@ and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Co
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-03-09 02:14:08 CET
+Last updated 2015-03-15 21:50:32 CET
 </div>
 </div>
 </body>
