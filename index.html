@@ -565,10 +565,23 @@ table.CodeRay td.code>pre{padding:0}
 <div class="sectionbody">
 <div class="paragraph">
 <p>Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
-This add-on eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer&#8217;s own .mwm mesh-format.
-To do that it provides property panels for all the special data Space Engineers stores inside an .mwm file
-directly in Blender.
-In addition it is able to automatically configure and run the conversion-tools you would normally run by hand.</p>
+This add-on is a productivity tool that simplifies the steps you need to take to get from a 3D mesh in Blender to
+Space Engineer’s own .mwm mesh-format. To do that</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The add-on provides property panels for all the special data SE stores inside an .mwm file directly in Blender.</p>
+</li>
+<li>
+<p>You use Blender layers to define the main model, the collision model, mount-points, mirroring-settings,
+level-of-detail models and construction stages.</p>
+</li>
+<li>
+<p>The workflow that configures and runs the conversion-tools (Havok, MwmBuilder) for you is customizable
+to suite your needs.</p>
+</li>
+</ol>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -578,7 +591,7 @@ In addition it is able to automatically configure and run the conversion-tools y
 </td>
 <td class="content">
 The add-on (and this documentation) expect you to know how to work with Blender.
-So if you are new to 3D modelling you should probably learn how to do that properly before you continue.
+So if you are new to 3D modelling you should probably learn how to do that first before you continue.
 </td>
 </tr>
 </table>
@@ -591,7 +604,7 @@ So if you are new to 3D modelling you should probably learn how to do that prope
 <div class="sect2">
 <h3 id="getting-the-tools"><a class="anchor" href="#getting-the-tools"></a>Getting the tools</h3>
 <div class="paragraph">
-<p>To get started first you need to download and install all the required parts.</p>
+<p>To get started first you need to download and install all the required tools.</p>
 </div>
 <div class="dlist">
 <dl>
@@ -646,7 +659,7 @@ The .zip contains just one executable file. It&#8217;s probably a good idea to p
 </div>
 </div>
 <div class="paragraph">
-<p>Once you got the <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (30kb)
+<p>Once you got the <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (40kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File&#8230;&#8203;" and
@@ -715,20 +728,23 @@ Don&#8217;t forget to "Save User Settings".
 <h3 id="scene-layout"><a class="anchor" href="#scene-layout"></a>Scene Layout</h3>
 <div class="paragraph">
 <p>Inside Blender the add-on uses one scene per block.
-That&#8217;s why the block-settings are on the <a href="images/blender-scene.png">scene tab</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span> of the properties-panel.</p>
-</div>
-<div class="paragraph">
-<p>On this panel you define if the block is a large or a small block and if the export should automatically
+That&#8217;s why the block-settings are on the scene tab of the properties-panel.
+On this panel you define if the block is a large or a small block and if the export should automatically
 create a small version of your block if it is a large one.
 You also define the size of your block in in-game grid units here.</p>
 </div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<a class="image" href="images/blender-scene.png"><img src="./images/blender-scene.png" alt="blender scene" width="500"></a>
+</div>
+</div>
 <div class="paragraph">
 <p>The layers of the scene contain the different components of a block.
-This is the default layer-setup described below:</p>
+Below is the default layer-setup that is described in the following sections.</p>
 </div>
 <div class="imageblock" style="text-align: center">
 <div class="content">
-<img src="./images/layer-overview.png" alt="layer overview">
+<a class="image" href="images/layer-overview.png"><img src="./images/layer-overview.png" alt="layer overview" width="550"></a>
 </div>
 </div>
 <div class="sect3">
@@ -1200,7 +1216,7 @@ pointing towards the mirroring-plane. So there is a maximum of three independent
 <p>You can model these rotations in Blender by adding and rotating three specially named empties to the scene.
 Fittingly their names are <code>MirrorLeftRight</code>, <code>MirrorTopBottom</code> and <code>MirrorFrontBack</code>.
 They need to be placed on the layer that is designated as the mirroring layer in the export settings.
-By default this is layer four. Use the corresponding button on the Tools panel of the 3D view to quickly do so.
+By default this is the fourth layer. Use the corresponding button on the Tools panel of the 3D view to quickly do so.
 It&#8217;s okay if Blender adds a .001 suffix to the names, the add-on can handle that.</p>
 </div>
 <div class="paragraph">
@@ -1427,7 +1443,7 @@ and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Co
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-03-08 21:29:36 CET
+Last updated 2015-03-09 02:14:08 CET
 </div>
 </div>
 </body>
