@@ -4,13 +4,17 @@
 :dl: icon:download[role="keyseq"]
 
 Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
-This add-on eases the steps you need to take to get from a 3D mesh in Blender to Space Engineer's own .mwm mesh-format.
-To do that it provides property panels for all the special data Space Engineers stores inside an .mwm file
-directly in Blender.
-In addition it is able to automatically configure and run the conversion-tools you would normally run by hand.
+This add-on is a productivity tool that simplifies the steps you need to take to get from a 3D mesh in Blender to
+Space Engineer’s own .mwm mesh-format. To do that
+
+. The add-on provides property panels for all the special data SE stores inside an .mwm file directly in Blender.
+. You use Blender layers to define the main model, the collision model, mount-points, mirroring-settings,
+  level-of-detail models and construction stages.
+. The workflow that configures and runs the conversion-tools (Havok, MwmBuilder) for you is customizable
+  to suite your needs.
 
 NOTE: The add-on (and this documentation) expect you to know how to work with Blender.
-So if you are new to 3D modelling you should probably learn how to do that properly before you continue.
+So if you are new to 3D modelling you should probably learn how to do that first before you continue.
 
 // TODO Having said that, there is an addendum that should help you to get on the right track.
 

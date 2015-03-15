@@ -11,16 +11,17 @@ This layout currently cannot be changed.
 === Scene Layout
 
 Inside Blender the add-on uses one scene per block.
-That's why the block-settings are on the link:images/blender-scene.png[scene tab] {zoom} of the properties-panel.
-
+That's why the block-settings are on the scene tab of the properties-panel.
 On this panel you define if the block is a large or a small block and if the export should automatically
 create a small version of your block if it is a large one.
 You also define the size of your block in in-game grid units here.
 
-The layers of the scene contain the different components of a block.
-This is the default layer-setup described below:
+image::blender-scene.png[align=center,width=500,link=images/blender-scene.png]
 
-image::layer-overview.png[align=center]
+The layers of the scene contain the different components of a block.
+Below is the default layer-setup that is described in the following sections.
+
+image::layer-overview.png[align=center,width=550,link=images/layer-overview.png]
 
 ==== Main Model
 

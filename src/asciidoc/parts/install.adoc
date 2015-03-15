@@ -1,6 +1,6 @@
 === Getting the tools
 
-To get started first you need to download and install all the required parts.
+To get started first you need to download and install all the required tools.
 
 Blender::
 Get version {dl} http://www.blender.org/download/[2.72 or later] (90MB), 2.73 is current at the time of this writing.
@@ -29,7 +29,7 @@ This one comes with Space Engineers and is located in the game's directory under
 [.thumb]
 image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
 
-Once you got the {dl} https://github.com/harag-on-steam/se-blender/releases/latest[current version] (30kb)
+Once you got the {dl} https://github.com/harag-on-steam/se-blender/releases/latest[current version] (40kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File..." and

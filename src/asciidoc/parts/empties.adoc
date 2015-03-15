@@ -28,7 +28,7 @@ pointing towards the mirroring-plane. So there is a maximum of three independent
 You can model these rotations in Blender by adding and rotating three specially named empties to the scene.
 Fittingly their names are `MirrorLeftRight`, `MirrorTopBottom` and `MirrorFrontBack`.
 They need to be placed on the layer that is designated as the mirroring layer in the export settings.
-By default this is layer four. Use the corresponding button on the Tools panel of the 3D view to quickly do so.
+By default this is the fourth layer. Use the corresponding button on the Tools panel of the 3D view to quickly do so.
 It's okay if Blender adds a .001 suffix to the names, the add-on can handle that.
 
 The rotations you set on the empties are only valid for export if they are multiples of 90°
