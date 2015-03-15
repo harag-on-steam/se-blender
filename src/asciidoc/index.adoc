@@ -4,7 +4,7 @@
 :dl: icon:download[role="keyseq"]
 
 Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
-This add-on is a productivity tool that simplifies the steps you need to take to get from a 3D mesh in Blender to
+This add-on simplifies the steps you need to take to get from a 3D mesh in Blender to
 Space Engineer’s own .mwm mesh-format. To do that
 
 . The add-on provides property panels for all the special data SE stores inside an .mwm file directly in Blender.
@@ -15,8 +15,6 @@ Space Engineer’s own .mwm mesh-format. To do that
 
 NOTE: The add-on (and this documentation) expect you to know how to work with Blender.
 So if you are new to 3D modelling you should probably learn how to do that first before you continue.
-
-// TODO Having said that, there is an addendum that should help you to get on the right track.
 
 == Installation
 

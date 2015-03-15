@@ -6,32 +6,45 @@ Both of them have four channels (RGBA).
 
 ==== Diffuse/Emissive
 
-By convention Keen names this kind of texture-files with `_de.dds` at the end
+By convention Keen names this kind of texture-file with a suffix of `_de.dds`
 but you are allowed to ignore the convention.
-The RGB-channels of this texture represent the diffuse color of each pixel of a face --
-just like with any regular digital picture.
+The RGB-channels of this texture represent the diffuse color of a face--just like with any regular digital image.
 
 The A-channel of the texture does not represent the transparency of the pixels, though.
 Instead it tells SE how much emissive light a pixel gives off in the dark.
 Strangely a value of 0 means full brightness, a value of 255 means no emissivity.
-Theoretically the light given off could be different from the diffuse color of the pixel but in SE
+In theory the light given off could be different from the diffuse color of the pixel but in SE
 it is always the same as the diffuse color so there are no extra channels for that.
 
-NOTE: The emissivity channel is only considered if the material (see next section) that uses the texture is
-named `Emissive`.
+==== Recolorable Blocks
 
-===== Recolorable Blocks
+If instead the texture-filename ends in `_me.dds` the A-channel serves a double purpose.
+Here the values in the range 115 to 140 represent a mask that controls
+which parts of the texture can be recolored by the player.
 
-If the texture-filename ends in `_me.dds` instead the A-channel serves a double purpose.
-Here the values in the range 115 to 140 serve as a mask -- so you can't have Emissivity at these levels.
-The mask tells the game how much of the color the user has chosen for the block should be mixed in.
-A value of 140 means "only the user's color", a value of 115 means "only the block's color".
+* A value of 115 means that the pixel is fully recolored with the player-chosen color.
+* A value of 140 means that the pixel keeps its original color.
+* A value in-between mixes the colors with the corresponding ratio.
+
+Recoloring uses a link:http://en.wikipedia.org/wiki/HSL_and_HSV[HSL color-model]
+in which the player-chosen hue replaces the original hue.
+Saturation and value are added and clamped at a maximum of 100.
+
+image::alpha-channel.png[align=center,width=350,link=images/alpha-channel.png]
+
+If the value of the texture's A-channel is not in the range 115 to 140 it still controls emissivity
+but the values have a slightly different meaning.
+
+* A value of 0 still means the pixel is fully emissive. It also means it is fully recolored.
+* A value of 115 means the pixel has no emissivity. Again, it is fully recolored.
+* A value of 255 also means the pixel is fully emissive. But here the pixel is not recolored.
+* And finally a value of 140 means the pixel is neither emissive nor is it recolored.
 
 ==== Normal/Specular
 
-This kind of texture is named with `_ns.dds` at the end and contains no color information at all.
-The RGB-channels contain a standard DirectX normal-map.
-The A-channel tells the game how much of a materials maximum specularity settings it should apply to a pixel.
+This kind of texture has a suffix of `_ns.dds` and contains no color information at all.
+The RGB-channels contain a standard DirectX link:http://en.wikipedia.org/wiki/Normal_mapping[normal-map].
+The A-channel tells the game how much of a material's maximum specularity settings it should apply to a pixel.
 A value of 0 means "don't apply any specularity", a value of 255 means "apply full specularity".
 
 TIP: The A-channel normally controls transparency in tools like Gimp or Photoshop so it can be hard
@@ -115,11 +128,6 @@ on transparent materials.
 Normally you are free to choose the name of a material.
 But there are some visuals in SE that are only enabled if the material of the face has a special name
 
-===== Emissivity
-
-Emissivity is generally only enabled if the material is named `Emissive`.
-Otherwise the emissive intensity from the diffuse/emissive texture is ignored.
-
 ===== Status lights
 
 A lot of block types have some type of status indicator.
@@ -127,12 +135,12 @@ Landing Gear displays the lock state,
 several other blocks show if they are powered,
 conveyors show if the conveyor-line is established or broken, etc.
 
-Because all these are some form of lights Keen chose to also use the `Emissive` material name for this.
+Because all these are some form of lights Keen chose to use the material name `Emissive` for this.
 If a block has more than one status the materials are additionally numbered, starting with zero
 (so `Emissive0` through `Emissive3` for batteries, for example).
 
 NOTE: For status-lights you have basically no control over the color of the face.
-The game uses hard-coded values to override the color with the typical black, yellow, green or red.
+The game uses hard-coded values to override the color with the typical black, yellow, red, green or blue.
 
 TIP: It's easy to spell "Emissive" wrong. If status lights don't work the first thing you should check is
 if you named the material "Emmisive".

@@ -84,16 +84,16 @@ This should help you to position the mount points correctly.
 If you don't provide mount points none will be calculated.
 The game defaults to full mount points on all sides of the block in that case.
 
-==== Construction Phases
+==== Construction Stages
 
-Layers 11-13 are used for the construction phases of the block.
-There is one layer for each phase of construction, from earliest to latest.
-If you change the number of construction layers you increase or decrease the number of construction phases.
-A block is allowed to have no construction phases at all.
+Layers 11-13 are used for the construction stages of the block.
+There is one layer for each stage of construction, from earliest to latest.
+If you change the number of construction layers you increase or decrease the number of construction stages.
+A block is allowed to have no construction stages at all.
 
-NOTE: If you don't have meshes on a construction layer it will be skipped and your block will have one phase less.
+NOTE: If you don't have meshes on a construction layer it will be skipped and your block will have one stage less.
 
-By default the construction phases reuse the same collision shape your main block model uses.
+By default the construction stages reuse the same collision shape your main block model uses.
 It's possible to change that using different export settings.
 But keep in mind that can be dangerous to a ship or the player
 if a block changes its physical dimensions when it is welded to completion.
