@@ -5,9 +5,10 @@ import subprocess
 import tempfile
 import bpy
 from collections import OrderedDict
-from os.path import basename
+from os.path import basename, join
 from string import Template
 from xml.etree import ElementTree
+import shutil
 
 from .mount_points import mount_point_definitions, mount_points_xml
 from .mirroring import mirroringAxisFromObjectName
@@ -98,7 +99,7 @@ _FUNCTION_TYPE = type(func)
 del func
 
 class ExportSettings:
-    def __init__(self, scene, outputDir, exportNodes=None):
+    def __init__(self, scene, outputDir, exportNodes=None, mwmDir=None):
         def typeCast(data) -> SESceneProperties: # allows type inference in IDE
             return data
 
@@ -106,6 +107,7 @@ class ExportSettings:
         self.sceneData = typeCast(data(scene))
         self.exportNodes = bpy.data.node_groups[self.sceneData.export_nodes] if exportNodes is None else exportNodes
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
+        self.mwmDir = mwmDir if not mwmDir is None else self.outputDir
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
         self.isRunMwmbuilder = True
@@ -279,30 +281,33 @@ def hkt_filter(settings: ExportSettings, srcfile, dstfile, options=HAVOK_OPTION_
     finally:
         os.remove(hko.name)
 
-def mwmbuilder(settings: ExportSettings, srcfile: string, dstfile):
+def mwmbuilder(settings: ExportSettings, fbxfile: string, havokfile: string, paramsfile: string, mwmfile: string):
     if not settings.isRunMwmbuilder:
         if settings.isLogToolOutput:
-            write_to_log(dstfile+'.log', b"mwmbuilder skipped.")
+            write_to_log(mwmfile+'.log', b"mwmbuilder skipped.")
         return
 
-    cmdline = [settings.mwmbuilder, '/m:'+os.path.basename(srcfile)]
+    contentDir = join(settings.mwmDir, 'Content')
+    os.makedirs(contentDir, exist_ok = True)
+    basename = os.path.splitext(os.path.basename(mwmfile))[0]
 
-    logInspector = None
+    def copy(srcfile: string, dstfile: string):
+        if not srcfile is None and dstfile != srcfile:
+            shutil.copy2(srcfile, dstfile)
 
-    if settings.isFixDirBug:
-        # the bug cuts the first 6 characters from the source directory
-        # this prepends them again
-        fix = "/o:" + os.path.dirname(srcfile)[:6]
-        cmdline.append(fix)
+    copy(fbxfile, join(contentDir, basename + '.fbx'))
+    copy(paramsfile, join(contentDir, basename + '.xml'))
+    copy(havokfile, join(contentDir, basename + '.hkt'))
 
-        def inspectLog(logtext):
-            if b"Cannot find output path:" in logtext:
-                raise MissbehavingToolError(
-                    "MwmBuilder is bugged. You need to create folder '%s' by hand to make it happy." %
-                        os.path.dirname(srcfile)[:6] )
-        logInspector = inspectLog
+    cmdline = [settings.mwmbuilder, '/s:Content', '/m:'+basename+'.fbx', '/o:.\\']
 
-    settings.callTool(cmdline, cwd=os.path.dirname(srcfile), logfile=dstfile+'.log', logtextInspector=logInspector)
+    def checkForLoggedErrors(logtext):
+        print(logtext)
+        if b": ERROR:" in logtext:
+            raise MissbehavingToolError('MwmBuilder failed without an appropriate exit-code. Please check the log-file.')
+
+    settings.callTool(cmdline, cwd=settings.mwmDir, logfile=mwmfile+'.log', logtextInspector=checkForLoggedErrors)
+    copy(join(settings.mwmDir, basename + '.mwm'), mwmfile)
 
 def generateBlockDefXml(
         settings: ExportSettings,

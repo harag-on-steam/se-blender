@@ -1,6 +1,7 @@
 import bpy
 import shutil
 from os.path import join
+from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
 from .mirroring import mirroringAxisFromObjectName
@@ -491,13 +492,11 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
         write_pretty_xml(paramsxml, paramsfile)
 
+        havokfile = None
         socket = self.inputs['Havok']
         if socket.isReady() and socket.export(settings) == 'SUCCESS':
             sourceName = socket.getText(settings)
-            sourceFile = join(settings.outputDir, sourceName + ".hkt")
-            targetFile = join(settings.outputDir, name + ".hkt")
-            if sourceFile != targetFile:
-                shutil.copy2(sourceFile, targetFile)
+            havokfile = join(settings.outputDir, sourceName + ".hkt")
         else:
             settings.info("no collision data included", file=mwmfile, node=self)
 
@@ -505,7 +504,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         export_fbx(settings, fbxfile, objectsSource.getObjects())
 
         try:
-            mwmbuilder(settings, fbxfile, mwmfile)
+            mwmbuilder(settings, fbxfile, havokfile, paramsfile, mwmfile)
         except CalledProcessError as e:
             settings.error(str(e), file=mwmfile, node=self)
             return settings.cacheValue(mwmfile, 'FAILED')

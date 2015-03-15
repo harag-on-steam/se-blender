@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import os
 from subprocess import CalledProcessError
+from tempfile import TemporaryDirectory
 import bpy
 from .export import ExportSettings, MissbehavingToolError
 from .mirroring import setupMirrors
@@ -155,20 +156,21 @@ class ExportSceneAsBlock(bpy.types.Operator):
             else:
                 scenes = [context.scene]
 
-            wm = context.window_manager
-            wm.progress_begin(0, len(scenes))
-            try:
-                for i, scene in enumerate(scenes):
-                    settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name))
-                    settings.operator = self
-                    settings.isRunMwmbuilder = not self.skip_mwmbuilder
-                    settings.isUseTangentSpace = self.use_tspace
+            with TemporaryDirectory() as tmpDir:
+                wm = context.window_manager
+                wm.progress_begin(0, len(scenes))
+                try:
+                    for i, scene in enumerate(scenes):
+                        settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name), tmpDir)
+                        settings.operator = self
+                        settings.isRunMwmbuilder = not self.skip_mwmbuilder
+                        settings.isUseTangentSpace = self.use_tspace
 
-                    BlockExport(settings).export()
+                        BlockExport(settings).export()
 
-                    wm.progress_update(i)
-            finally:
-                wm.progress_end()
+                        wm.progress_update(i)
+                finally:
+                    wm.progress_end()
 
         except FileNotFoundError as e: # raised when the addon preferences are missing some tool paths
             self.report({'ERROR'}, "Configuration error: %s" % e)

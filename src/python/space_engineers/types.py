@@ -126,12 +126,12 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.prop(self, 'mwmbuilder')
         col.alert = False
 
-        row = col.row()
-        row.alignment = 'RIGHT'
-        row.prop(self, 'fix_dir_bug')
-
-        op = row.operator('wm.url_open', icon="URL", text="more details")
-        op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
+        # row = col.row()
+        # row.alignment = 'RIGHT'
+        # row.prop(self, 'fix_dir_bug')
+        #
+        # op = row.operator('wm.url_open', icon="URL", text="more details")
+        # op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")
@@ -332,7 +332,8 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.space_data.node_tree.bl_idname == "SEBlockExportTree"
+        nodeTree = getattr(context.space_data, 'node_tree')
+        return nodeTree and nodeTree.bl_idname == "SEBlockExportTree"
 
     def draw(self, context):
         layout = self.layout
