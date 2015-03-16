@@ -683,11 +683,14 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
                 else:
                     settings.text("socket '%s' not ready, skipped" % (socket.name), file=blockdeffile, node=self)
 
+        mirrorSettings = settings.mirrorSettings()
+
         xml = generateBlockDefXml(
             settings,
             modelFile,
             mountPointsSocket.getObjects(),
             mirroringSocket.getObjects(),
+            mirrorSettings.SubtypeId if mirrorSettings else None,
             constrModelFiles)
 
         return settings.cacheValue(blockdeffilecontent, xml)

@@ -132,6 +132,16 @@ class ExportSettings:
 
         self.cache = {}
 
+    def mirrorSettings(self):
+        mirrorSceneData = self.sceneData.getMirroringBlock()
+        if mirrorSceneData is None:
+            return None
+
+        mirrorSettings = ExportSettings(mirrorSceneData.scene, self.outputDir)
+        mirrorSettings.CubeSize = self.CubeSize
+        mirrorSettings.scaleDown = self.scaleDown
+        return mirrorSettings
+
     @property
     def CubeSize(self):
         return self._CubeSize
@@ -281,7 +291,7 @@ def hkt_filter(settings: ExportSettings, srcfile, dstfile, options=HAVOK_OPTION_
     finally:
         os.remove(hko.name)
 
-def mwmbuilder(settings: ExportSettings, fbxfile: string, havokfile: string, paramsfile: string, mwmfile: string):
+def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfile: str, mwmfile: str):
     if not settings.isRunMwmbuilder:
         if settings.isLogToolOutput:
             write_to_log(mwmfile+'.log', b"mwmbuilder skipped.")
@@ -291,7 +301,7 @@ def mwmbuilder(settings: ExportSettings, fbxfile: string, havokfile: string, par
     os.makedirs(contentDir, exist_ok = True)
     basename = os.path.splitext(os.path.basename(mwmfile))[0]
 
-    def copy(srcfile: string, dstfile: string):
+    def copy(srcfile: str, dstfile: str):
         if not srcfile is None and dstfile != srcfile:
             shutil.copy2(srcfile, dstfile)
 
@@ -311,10 +321,11 @@ def mwmbuilder(settings: ExportSettings, fbxfile: string, havokfile: string, par
 
 def generateBlockDefXml(
         settings: ExportSettings,
-        modelFile: string,
+        modelFile: str,
         mountPointObjects: iter,
         mirroringObjects: iter,
-        constrModelFiles: string):
+        mirroringBlockSubtypeId: str,
+        constrModelFiles: iter):
 
     d = data(settings.scene)
 
@@ -352,6 +363,10 @@ def generateBlockDefXml(
     mountpoints = mount_point_definitions(mountPointObjects)
     if len(mountpoints) > 0:
         block.append(mount_points_xml(mountpoints))
+
+    if mirroringBlockSubtypeId is not None:
+        mirroringBlock = ElementTree.SubElement(block, "MirroringBlock")
+        mirroringBlock.text = mirroringBlockSubtypeId
 
     mirroring = {}
     for o in mirroringObjects:

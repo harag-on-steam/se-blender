@@ -247,6 +247,9 @@ class SESceneProperties(bpy.types.PropertyGroup):
     export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
         description="Use the Node editor to create and change these settings.")
 
+    mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
+        description="The block that the game should switch to if this block is mirrored")
+
     # too bad https://developer.blender.org/D113 never made it into Blender
     def getExportNodeTree(self):
         if not self.export_nodes:
@@ -255,6 +258,22 @@ class SESceneProperties(bpy.types.PropertyGroup):
         if nodeTree is None:
             raise ValueError('scene references a non-existing export node-tree')
         return nodeTree
+
+    def getMirroringBlock(self) -> SESceneProperties:
+        if not self.mirroring_block:
+            return None
+        mirrorScene = bpy.data.scenes.get(self.mirroring_block, None)
+        if mirrorScene is None:
+            raise ValueError(
+                "scene '%s' references a non-existing mirroring block '%s'" %
+                (self.scene.name, self.mirroring_block))
+        if mirrorScene == self.scene:
+            return None
+        return data(mirrorScene)
+
+    @property
+    def scene(self) -> bpy.types.Scene:
+        return self.id_data
 
 def sceneData(scene: bpy.types.Scene) -> SESceneProperties:
     return data(scene)
@@ -311,6 +330,8 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
 
         layout.separator()
+        layout.prop_search(spceng, "mirroring_block", bpy.data, "scenes", text="Mirroring Block")
+
         layout.separator()
 
         col = layout.column(align=True)

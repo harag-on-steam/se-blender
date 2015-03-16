@@ -9,7 +9,7 @@ from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef
-from .utils import currentSceneHolder, layers, layer_bits, layer_bit
+from .utils import currentSceneHolder, layers, layer_bits, layer_bit, PinnedScene
 from .default_nodes import createDefaultTree
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
@@ -26,6 +26,7 @@ class BlockExport:
     def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
         settings = self.settings
 
+        # TODO use PinnedScene instead
         # store the scene in a thread-local for the export-nodes
         currentSceneHolder.scene = settings.scene
         try:
@@ -67,6 +68,7 @@ class BlockExport:
         skips = OrderedDict()
         failures = OrderedDict()
 
+        # TODO use PinnedScene instead
         # store the scene in a thread-local for the export-nodes
         currentSceneHolder.scene = settings.scene
         try:
@@ -305,8 +307,16 @@ class AddMirroringEmpties(bpy.types.Operator):
 
         try:
             blockDef = getBlockDef(blockData.getExportNodeTree())
-            mainObjects = blockDef.getMainObjects()
             layer = blockDef.getMirroringLayer()
+
+            mirrorData = blockData.getMirroringBlock()
+            if not mirrorData is None:
+                with PinnedScene(mirrorData.scene):
+                    mirrorBlockDef = getBlockDef(mirrorData.getExportNodeTree())
+                    mainObjects = mirrorBlockDef.getMainObjects()
+            else:
+                mainObjects = blockDef.getMainObjects()
+
         except ValueError as e:
             self.report({'ERROR'}, "Invalid export settings: " + str(e))
             return {'FINISHED'}

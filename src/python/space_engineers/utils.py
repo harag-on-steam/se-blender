@@ -339,3 +339,16 @@ currentSceneHolder = threading.local()
 def scene():
     s = getattr(currentSceneHolder, "scene", None)
     return s if s else bpy.context.scene
+
+class PinnedScene():
+    def __init__(self, scene):
+        self.scene = scene
+        self.previousScene = None
+
+    def __enter__(self):
+        self.previousScene = getattr(currentSceneHolder, "scene", None)
+        currentSceneHolder.scene = self.scene
+        return self.scene
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        currentSceneHolder.scene = self.previousScene
