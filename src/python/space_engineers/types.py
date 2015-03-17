@@ -259,7 +259,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
             raise ValueError('scene references a non-existing export node-tree')
         return nodeTree
 
-    def getMirroringBlock(self) -> SESceneProperties:
+    def getMirroringBlock(self):
         if not self.mirroring_block:
             return None
         mirrorScene = bpy.data.scenes.get(self.mirroring_block, None)
