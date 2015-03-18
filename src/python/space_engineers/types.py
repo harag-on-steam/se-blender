@@ -5,7 +5,7 @@ import requests
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
 from .versions import versionsOnGitHub, Version
-from .utils import BoundingBox, layers, layer_bits, check_path
+from .utils import BoundingBox, layers, layer_bits, check_path, scene
 
 PROP_GROUP = "space_engineers"
 
@@ -14,12 +14,12 @@ def data(obj):
     return getattr(obj, PROP_GROUP, None)
 
 def some_layers_visible(layer_mask):
-    scene_layers = layer_bits(bpy.context.scene.layers)
+    scene_layers = layer_bits(scene().layers)
     mask = layer_bits(layer_mask)
     return (scene_layers & mask) != 0
 
 def all_layers_visible(layer_mask):
-    scene_layers = layer_bits(bpy.context.scene.layers)
+    scene_layers = layer_bits(scene().layers)
     mask = layer_bits(layer_mask)
     return (scene_layers & mask) == mask
 
@@ -374,7 +374,7 @@ def block_bounds():
     """
     scale = Vector((1.25, 1.25, 1.25))
 
-    d = data(bpy.context.scene)
+    d = data(scene())
     if d:
         dim = d.block_dimensions
         scale = Vector((scale.x*dim[0], scale.y*dim[1], scale.x*dim[2]))
@@ -393,12 +393,11 @@ def block_bounds():
     )
 
 def is_small_block():
-    d = data(bpy.context.scene)
+    d = data(scene())
     return d and 'SMALL' == d.block_size
 
 def show_block_bounds():
-    scene = bpy.context.scene
-    d = data(scene)
+    d = data(scene())
     return d and d.is_block and d.show_block_bounds
          
 # -----------------------------------------  Object Data ----------------------------------------- #

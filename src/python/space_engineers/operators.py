@@ -26,10 +26,7 @@ class BlockExport:
     def mergeBlockDefs(self, cubeBlocks: CubeBlocksMerger):
         settings = self.settings
 
-        # TODO use PinnedScene instead
-        # store the scene in a thread-local for the export-nodes
-        currentSceneHolder.scene = settings.scene
-        try:
+        with PinnedScene(settings.scene):
             blockdefNode = None
             for n in settings.exportNodes.nodes:
                 if isinstance(n, BlockDefinitionNode):
@@ -57,8 +54,6 @@ class BlockExport:
                     settings.warn("CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (settings.SubtypeId))
                 elif MergeResult.MERGED in result:
                     settings.info("Updated SubtypeId [%s]" % (settings.SubtypeId))
-        finally:
-            currentSceneHolder.scene = None
 
         return not failed
 
@@ -68,10 +63,7 @@ class BlockExport:
         skips = OrderedDict()
         failures = OrderedDict()
 
-        # TODO use PinnedScene instead
-        # store the scene in a thread-local for the export-nodes
-        currentSceneHolder.scene = settings.scene
-        try:
+        with PinnedScene(settings.scene):
             for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
                 settings.cache.clear()
 
@@ -85,8 +77,6 @@ class BlockExport:
                         skips[name] = exporter
                     elif 'FAILED' == result:
                         failures[name] = exporter
-        finally:
-            currentSceneHolder.scene = None
 
         if skips:
             settings.warn("Some export-nodes were skipped: %s" % list(skips.keys()))

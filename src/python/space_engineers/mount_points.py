@@ -3,7 +3,8 @@ from xml.etree import ElementTree
 from bgl import glEnable, glDisable, glColor3f, glVertex3f, glLineWidth, glBegin, glEnd, glLineStipple, GL_LINE_STRIP, GL_LINES, GL_LINE_STIPPLE
 from mathutils import Matrix, Vector
 from math import sqrt
-from .utils import BoxCorner, bounds, sparse, X, Y, Z, transX, transY, transZ, rot, mirror, flip, layers, layer_bits
+from .utils import BoxCorner, bounds, sparse, X, Y, Z, transX, transY, transZ, rot, mirror, flip, layers, layer_bits, \
+    scene
 from .types import show_block_bounds, block_bounds, is_small_block, data
 
 import bpy
@@ -62,7 +63,7 @@ def mount_point_definitions(mount_point_objects):
         rotate_to_world = ob.matrix_world.to_3x3().normalized()
 
         # create temporary mesh with modifiers applied - including mirroring & array
-        mesh = ob.to_mesh(bpy.context.scene, True, 'PREVIEW')
+        mesh = ob.to_mesh(scene(), True, 'PREVIEW')
 
         try:
             for poly in mesh.polygons:
