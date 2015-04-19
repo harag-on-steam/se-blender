@@ -1,6 +1,5 @@
 import os
 import re
-import string
 import subprocess
 import tempfile
 import bpy
@@ -13,7 +12,7 @@ import shutil
 from .mount_points import mount_point_definitions, mount_points_xml
 from .mirroring import mirroringAxisFromObjectName
 from .utils import scaleUni, md5sum
-from .types import data, prefs, SESceneProperties
+from .types import data, prefs, getBaseDir, SESceneProperties
 from .fbx import save_single
 
 from bpy_extras.io_utils import axis_conversion, ExportHelper
@@ -106,7 +105,9 @@ class ExportSettings:
         self.scene = scene # ObjectSource.getObjects() uses .utils.scene() instead
         self.sceneData = typeCast(data(scene))
         self.exportNodes = bpy.data.node_groups[self.sceneData.export_nodes] if exportNodes is None else exportNodes
+        self.baseDir = getBaseDir(scene)
         self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
+        # temporary working directory. used as a workaround for two bugs in mwmbuilder. must be empty initially.
         self.mwmDir = mwmDir if not mwmDir is None else self.outputDir
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
@@ -124,7 +125,10 @@ class ExportSettings:
 
         # substitution parameters
         # self.BlockPairName # corresponds with element-name in CubeBlocks.sbc, see property below
-        self.ModelsDir = 'Models\\'
+        try:
+            self.ModelsDir = os.path.relpath(self.outputDir, self.baseDir) + '\\'
+        except (ValueError):
+            self.ModelsDir = 'Models\\' # fall back to old behaviour if baseDir and outputDir are on different drives
         self.IconsDir = 'Textures\\Icons\\'
         # set multiple times on export
         self._CubeSize = None # corresponds with element-name in CubeBlocks.sbc, setter also sets SubtypeId

@@ -47,6 +47,9 @@ def getExportNodeTreeFromContext(context):
 
     return tree
 
+def getBaseDir(scene):
+    # TODO make configurable
+    return bpy.path.abspath('//')
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
@@ -443,6 +446,7 @@ MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
     # there is also an ALPHA_MASK technique, but no clue how that works
+    # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
 class SEMaterialProperties(bpy.types.PropertyGroup):
@@ -488,10 +492,10 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         col = layout.column()
 
         # TODO decide if diffuse_color is needed or should always stay white
-        # if 'MESH' == d.technique:
-        #     split = col.split()
-        #     split.column().prop(d, "diffuse_color")
-        #     split.column()
+        if 'MESH' == d.technique:
+             split = col.split()
+             split.column().prop(d, "diffuse_color")
+             split.column()
             
         col.label(text="Specular")
         split = col.split()
