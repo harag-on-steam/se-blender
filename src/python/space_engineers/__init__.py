@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 5, 7),
+	"version": (0, 5, 8),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
@@ -93,12 +93,7 @@ def register():
     register_class(types.DATA_PT_spceng_material)
 
     register_class(types.CheckVersionOnline)
-    register_class(operators.AddDefaultExportNodes)
-    register_class(operators.AddMirroringEmpties)
-    register_class(operators.ExportSceneAsBlock)
-    register_class(operators.UpdateDefinitionsFromBlockScene)
-    register_class(operators.AddMountPointSkeleton)
-    register_class(operators.SetupGrid)
+    operators.register()
 
     bpy.types.INFO_MT_file_export.append(menu_func_export)
 
@@ -120,12 +115,7 @@ def unregister():
 
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
-    unregister_class(operators.SetupGrid)
-    unregister_class(operators.AddMountPointSkeleton)
-    unregister_class(operators.UpdateDefinitionsFromBlockScene)
-    unregister_class(operators.ExportSceneAsBlock)
-    unregister_class(operators.AddMirroringEmpties)
-    unregister_class(operators.AddDefaultExportNodes)
+    operators.unregister()
     unregister_class(types.CheckVersionOnline)
 
     unregister_class(types.DATA_PT_spceng_material)

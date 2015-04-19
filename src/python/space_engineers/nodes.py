@@ -112,7 +112,7 @@ class SESocket:
                     return link.from_socket
         return None
 
-    def firstSink(self, named=None):
+    def firstSink(self, named=None, type=None):
         '''Finds the first receiving socket linked to this socket with the give name and type.'''
         if self.is_linked:
             for link in self.links:

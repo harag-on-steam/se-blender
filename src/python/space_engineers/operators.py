@@ -3,12 +3,13 @@ import os
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
 import bpy
+from bpy.utils import register_class, unregister_class
 from .export import ExportSettings, MissbehavingToolError
 from .mirroring import setupMirrors
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData
-from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef
+from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode
 from .utils import currentSceneHolder, layers, layer_bits, layer_bit, PinnedScene
 from .default_nodes import createDefaultTree
 
@@ -281,6 +282,36 @@ class AddDefaultExportNodes(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class NameLayersFromExportNodes(bpy.types.Operator):
+    bl_idname = "object.space_engineers_layer_names"
+    bl_label = "Name Layers after Export Nodes"
+    bl_description = "If the Layer Manager addon is enabled, " \
+                     "this names the layers of the current scene after the export-nodes that read from them."
+
+    @classmethod
+    def poll(cls, context):
+        return getattr(context.scene, "namedlayers", None) is not None
+
+    def execute(self, context):
+        nodeTree = context.scene.space_engineers.getExportNodeTree()
+        namedLayers = context.scene.namedlayers.layers
+
+        def layer_indices(layers):
+            return (i for i, l in enumerate(layers) if l)
+
+        def node_label(node):
+            return node.label if node.label else node.name
+
+        for n in nodeTree.nodes:
+            if isinstance(n, LayerObjectsNode):
+                for li in layer_indices(n.layer_mask):
+                    namedLayers[li].name = node_label(n)
+            elif isinstance(n, SeparateLayerObjectsNode):
+                for i, li in enumerate(layer_indices(n.layer_mask)):
+                    namedLayers[li].name = "%s %d" % (node_label(n), i+1)
+
+        return {'FINISHED'}
+
 class AddMirroringEmpties(bpy.types.Operator):
     bl_idname = "object.space_engineers_mirrors"
     bl_label = "Block Mirroring"
@@ -370,3 +401,21 @@ class SetupGrid(bpy.types.Operator):
             space.grid_lines = 21
 
         return {'FINISHED'}
+
+registered = [
+    AddDefaultExportNodes,
+    AddMirroringEmpties,
+    ExportSceneAsBlock,
+    UpdateDefinitionsFromBlockScene,
+    AddMountPointSkeleton,
+    SetupGrid,
+    NameLayersFromExportNodes,
+]
+
+def register():
+    for c in registered:
+        register_class(c)
+
+def unregister():
+    for c in reversed(registered):
+        unregister_class(c)

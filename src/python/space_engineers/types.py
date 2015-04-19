@@ -369,7 +369,9 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
         col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         op.settings_name = context.space_data.node_tree.name
 
-        layout.operator("export_scene.space_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
+        col = layout.column(align=True)
+        col.operator("export_scene.space_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
+        col.operator("object.space_engineers_layer_names", text="Set Layer Names", icon='COPY_ID')
 
 def block_bounds():
     """
