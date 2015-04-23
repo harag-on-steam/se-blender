@@ -557,7 +557,15 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#updating-cubeblocks-sbc">Updating CubeBlocks.sbc</a></li>
 </ul>
 </li>
-<li><a href="#customizing-the-export">Customizing the Export</a></li>
+<li><a href="#customizing-the-export">Customizing the Export</a>
+<ul class="sectlevel2">
+<li><a href="#text-nodes-and-sockets">Text Nodes and Sockets</a></li>
+<li><a href="#object-sources">Object Sources</a></li>
+<li><a href="#havok-converter">Havok Converter</a></li>
+<li><a href="#mwmbuilder">MwmBuilder</a></li>
+<li><a href="#block-definition">Block Definition</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -565,14 +573,15 @@ table.CodeRay td.code>pre{padding:0}
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Modelling blocks for Space Engineers is a process that involves a lot of intermediary files and manual parametrization.
+<p>Modelling blocks for <a href="http://www.spaceengineersgame.com/">Space Engineers</a> is a process that
+involves a lot of intermediary files and manual parametrization.
 This add-on simplifies the steps you need to take to get from a 3D mesh in Blender to
-Space Engineer’s own .mwm mesh-format. To do that</p>
+Space Engineer&#8217;s own <code>.mwm</code> mesh-format. To do that</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>The add-on provides property panels for all the special data SE stores inside an .mwm file directly in Blender.</p>
+<p>The add-on provides property panels for all the special data SE stores inside an <code>.mwm</code> file directly in Blender.</p>
 </li>
 <li>
 <p>You use Blender layers to define the main model, the collision model, mount-points, mirroring-settings,
@@ -672,20 +681,7 @@ You can find the add-on by using the search box or going to the Category "Space 
 After you&#8217;ve enabled the add-on open its settings by clicking the arrow on the left.
 You need to provide all the paths in the list.</p>
 </div>
-<div class="admonitionblock important clearfix">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-Use the "workaround" option for MwmBuilder only if that specific bug is still present.
-You can get more information by opening the bug-thread with the button next to the option.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
+<div class="admonitionblock tip clearfix">
 <table>
 <tr>
 <td class="icon">
@@ -961,7 +957,7 @@ which parts of the texture can be recolored by the player.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>Recoloring uses a <a href="http://en.wikipedia.org/wiki/HSL_and_HSV">HSL color-model</a>
+<p>Recoloring uses a <a href="http://en.wikipedia.org/wiki/HSL_and_HSV">HSV color-model</a>
 in which the player-chosen hue replaces the original hue.
 Saturation and value are added and clamped at a maximum of 100.</p>
 </div>
@@ -1288,16 +1284,20 @@ of your main model. So modifying them will also change your main model and vice 
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>{BlockPairName}_{CubeSize}</code></p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ModelsDir</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the chosen export-path relative to the <code>.blend</code> file</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Model</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}.mwm</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Construction Model</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_Constr{n}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}_Constr{n}.mwm</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Level-of-Detail Model</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Models\{SubtypeId}_LOD{n}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}_LOD{n}.mwm</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Icon</p></td>
@@ -1423,6 +1423,19 @@ for a block&#8217;s <code>&lt;Definition&gt;</code> inside your mod&#8217;s <cod
 <span class="tag">&lt;/Definition&gt;</span></code></pre>
 </div>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+This definition is incomplete. It only contains the parts Blender knows about.
+You have to add missing properties like <code>&lt;TypeId&gt;</code> or <code>&lt;Components&gt;</code> yourself.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="updating-cubeblocks-sbc"><a class="anchor" href="#updating-cubeblocks-sbc"></a>Updating CubeBlocks.sbc</h3>
@@ -1440,8 +1453,6 @@ That saves you the trouble to do this by hand.</p>
 <td class="content">
 Updating <code>CubeBlocks.sbc</code> will only work for blocks that are already present in the file.
 The add-on searches for them by their <code>&lt;SubtypeId&gt;</code>.
-You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition
-and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Components&gt;</code> to it.
 </td>
 </tr>
 </table>
@@ -1452,8 +1463,156 @@ and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Co
 <div class="sect1">
 <h2 id="customizing-the-export"><a class="anchor" href="#customizing-the-export"></a>Customizing the Export</h2>
 <div class="sectionbody">
+<div class="imageblock thumb" style="float: right">
+<div class="content">
+<a class="image" href="images/export-nodes-setup.png"><img src="./images/export-nodes-setup.png" alt="export nodes setup" width="500"></a>
+</div>
+</div>
 <div class="paragraph">
-<p>TODO (describe the node editor)</p>
+<p>The add-on uses a custom Blender node-tree to drive the export.
+The connections between the nodes of that tree describe how the objects in the scene flow through the export.</p>
+</div>
+<div class="paragraph">
+<p>The sockets of the nodes are color-coded to quickly recognized which sockets can connect to each other.
+The color-coding also signals if the connection between two nodes is dysfunctional by turning the sockets dark-grey.
+This happens if the nodes detect that no objects would flow between them&#8201;&#8212;&#8201;most probably because there <em>are</em> no objects.
+If an illegal connection is detected the affected sockets will be colored bright red.</p>
+</div>
+<div class="sect2">
+<h3 id="text-nodes-and-sockets"><a class="anchor" href="#text-nodes-and-sockets"></a>Text Nodes and Sockets</h3>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<a class="image" href="images/nodes-text.png"><img src="./images/nodes-text.png" alt="nodes text" width="550"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>Several of the other nodes require text-input to name the files they produce.
+You can provide that text either directly via the corresponding white input-socket of each node or,
+if you want to reuse a text snippet, you can instead use a text-node and connect that to the input-socket.
+To avoid having to define an export node-tree for each scene all text-fields can use parameters that
+get substituted with information stored in the scene:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 66%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Parameter Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BlockPairName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Contains the name of the scene. The suffixes <code>.001</code>, <code>.Large</code> and <code>.Small</code> are automatically removed.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SubtypeId</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normally derived from the scene-name and the cube-size but can be explicitly configured in the scene properties.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CubeSize</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Either <code>Large</code> or <code>Small</code> depending on the configured cube-size. Will contain both values consecutively
+  if the scene is configured to automatically create a scaled-down small version.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>n</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sequence-number of the source-socket. See the next section for details.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock" style="float: right">
+<div class="content">
+<a class="image" href="images/nodes-objects.png"><img src="./images/nodes-objects.png" alt="nodes objects" width="160"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="object-sources"><a class="anchor" href="#object-sources"></a>Object Sources</h3>
+<div class="paragraph">
+<p>This kind of nodes determines meshes and empties that get exported. There are two variants.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The first variant uses a layer mask to combine all meshes and empties from the marked layers and
+provides them under a single output-socket for consumption by other nodes.</p>
+</li>
+<li>
+<p>The second variant also uses a layer mask but provides a separate output-socket for each layer.
+This is useful for a sequential groups of meshes like construction stages.
+This variant also implicitly numbers the output-sockets starting at <code>1</code>.
+This number is available for text-substitution as parameter <code>${n}</code>.</p>
+</li>
+</ol>
+</div>
+<div class="imageblock" style="float: right">
+<div class="content">
+<a class="image" href="images/nodes-havok.png"><img src="./images/nodes-havok.png" alt="nodes havok" width="150"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="havok-converter"><a class="anchor" href="#havok-converter"></a>Havok Converter</h3>
+<div class="paragraph">
+<p>This kind of node produces a <code>.hkt</code> file by taking the objects from its input-socket and running them
+first through Havok&#8217;s FBX Importer and after that through Havok&#8217;s Standalone Filter Manager.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The node ignores objects that don&#8217;t have <code>Rigid Body</code> enabled on their <code>Physics</code> property-tab.
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock" style="float: right">
+<div class="content">
+<a class="image" href="images/nodes-mwm.png"><img src="./images/nodes-mwm.png" alt="nodes mwm" width="150"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mwmbuilder"><a class="anchor" href="#mwmbuilder"></a>MwmBuilder</h3>
+<div class="paragraph">
+<p>This kind of node produces a <code>.mwm</code> file by taking the objects from its input-socket and running
+them through MwmBuilder.
+The <code>.mwm</code> will include the collision data of a Havok Converter node if it is connected to one.
+An MwmBuilder node can also receive the output of other MwmBuilder nodes.
+Those nodes will then provide the <a href="#levels-of-detail">level-of-detail</a> models that will be linked to
+from the <code>.mwm</code> file produced by the current node.</p>
+</div>
+<div class="imageblock" style="float: right">
+<div class="content">
+<a class="image" href="images/nodes-blockdef.png"><img src="./images/nodes-blockdef.png" alt="nodes blockdef" width="150"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="block-definition"><a class="anchor" href="#block-definition"></a>Block Definition</h3>
+<div class="paragraph">
+<p>An export-tree can only contain a single node of this kind.
+The node takes the output from several other nodes to generate the <a href="#block-definitions">block-definition</a> for the scene.
+Of special note are the input-sockets for <a href="#mount-points">mount-points</a> and <a href="#mirroring">mirroring-settings</a>
+which are not consumed anywhere else in the export-tree.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of this kind.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p><link href="featherlight.min.css" type="text/css" rel="stylesheet" title="Featherlight Styles" />
@@ -1464,9 +1623,10 @@ and add the missing properties like <code>&lt;TypeId&gt;</code> and <code>&lt;Co
 </div>
 </div>
 </div>
+</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-03-15 21:50:32 CET
+Last updated 2015-04-22 23:26:11 CEST
 </div>
 </div>
 </body>
