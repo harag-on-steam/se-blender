@@ -204,12 +204,12 @@ class ExportSettings:
             out = subprocess.check_output(cmdline, cwd=cwd, stderr=subprocess.STDOUT)
             if self.isLogToolOutput and logfile:
                 write_to_log(logfile, out, cmdline=cmdline, cwd=cwd, loglines=loglines)
+            if not logtextInspector is None:
+                logtextInspector(out)
 
         except subprocess.CalledProcessError as e:
             if self.isLogToolOutput and logfile:
                 write_to_log(logfile, e.output, cmdline=cmdline, cwd=cwd, loglines=loglines)
-            if not logtextInspector is None:
-                logtextInspector(e.output)
             if not e.returncode in successfulExitCodes:
                 raise
 
