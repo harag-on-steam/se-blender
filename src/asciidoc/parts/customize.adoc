@@ -1,1 +1,82 @@
-TODO (describe the node editor)
+[.thumb]
+image::export-nodes-setup.png[width=500,float=right,link=images/export-nodes-setup.png]
+
+The add-on uses a custom Blender node-tree to drive the export.
+The connections between the nodes of that tree describe how the objects in the scene flow through the export.
+
+The sockets of the nodes are color-coded to quickly recognized which sockets can connect to each other.
+The color-coding also signals if the connection between two nodes is dysfunctional by turning the sockets dark-grey.
+This happens if the nodes detect that no objects would flow between them -- most probably because there _are_ no objects.
+If an illegal connection is detected the affected sockets will be colored bright red.
+
+=== Text Nodes and Sockets
+
+image::nodes-text.png[width=550,align=center,link=images/nodes-text.png]
+
+Several of the other nodes require text-input to name the files they produce.
+You can provide that text either directly via the corresponding white input-socket of each node or,
+if you want to reuse a text snippet, you can instead use a text-node and connect that to the input-socket.
+To avoid having to define an export node-tree for each scene all text-fields can use parameters that
+get substituted with information stored in the scene:
+
+[cols="2,4"]
+|===
+| Parameter Name | Description
+
+| `BlockPairName`
+| Contains the name of the scene. The suffixes `.001`, `.Large` and `.Small` are automatically removed.
+
+| `SubtypeId`
+| Normally derived from the scene-name and the cube-size but can be explicitly configured in the scene properties.
+
+| `CubeSize`
+| Either `Large` or `Small` depending on the configured cube-size. Will contain both values consecutively
+  if the scene is configured to automatically create a scaled-down small version.
+
+| `n`
+| The sequence-number of the source-socket. See the next section for details.
+|===
+
+image::nodes-objects.png[width=160,float=right,link=images/nodes-objects.png]
+
+=== Object Sources
+
+This kind of nodes determines meshes and empties that get exported. There are two variants.
+
+. The first variant uses a layer mask to combine all meshes and empties from the marked layers and
+  provides them under a single output-socket for consumption by other nodes.
+. The second variant also uses a layer mask but provides a separate output-socket for each layer.
+  This is useful for a sequential groups of meshes like construction stages.
+  This variant also implicitly numbers the output-sockets starting at `1`.
+  This number is available for text-substitution as parameter `${n}`.
+
+image::nodes-havok.png[width=150,float=right,link=images/nodes-havok.png]
+
+=== Havok Converter
+
+This kind of node produces a `.hkt` file by taking the objects from its input-socket and running them
+first through Havok's FBX Importer and after that through Havok's Standalone Filter Manager.
+
+NOTE: The node ignores objects that don't have `Rigid Body` enabled on their `Physics` property-tab.
+
+image::nodes-mwm.png[width=150,float=right,link=images/nodes-mwm.png]
+
+=== MwmBuilder
+
+This kind of node produces a `.mwm` file by taking the objects from its input-socket and running
+them through MwmBuilder.
+The `.mwm` will include the collision data of a Havok Converter node if it is connected to one.
+An MwmBuilder node can also receive the output of other MwmBuilder nodes.
+Those nodes will then provide the link:#levels-of-detail[level-of-detail] models that will be linked to
+from the `.mwm` file produced by the current node.
+
+image::nodes-blockdef.png[width=150,float=right,link=images/nodes-blockdef.png]
+
+=== Block Definition
+
+An export-tree can only contain a single node of this kind.
+The node takes the output from several other nodes to generate the link:#block-definitions[block-definition] for the scene.
+Of special note are the input-sockets for link:#mount-points[mount-points] and link:#mirroring[mirroring-settings]
+which are not consumed anywhere else in the export-tree.
+
+NOTE: Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of this kind.

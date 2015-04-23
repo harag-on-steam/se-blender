@@ -10,14 +10,17 @@ All names that are used during export are derived from the scene name:
 | SubtypeId
 | `+++{BlockPairName}_{CubeSize}+++`
 
+| ModelsDir
+| the chosen export-path relative to the `.blend` file
+
 | Model
-| `+++Models\{SubtypeId}.mwm+++`
+| `+++{ModelsDir}\{SubtypeId}.mwm+++`
 
 | Construction Model
-| `+++Models\{SubtypeId}_Constr{n}.mwm+++`
+| `+++{ModelsDir}\{SubtypeId}_Constr{n}.mwm+++`
 
 | Level-of-Detail Model
-| `+++Models\{SubtypeId}_LOD{n}.mwm+++`
+| `+++{ModelsDir}\{SubtypeId}_LOD{n}.mwm+++`
 
 | Icon
 | `+++Textures\Icons\{BlockPairName}.dds+++`
@@ -91,6 +94,9 @@ for a block's `<Definition>` inside your mod's `CubeBlocks.sbc`:
 </Definition>
 ```
 
+IMPORTANT: This definition is incomplete. It only contains the parts Blender knows about.
+You have to add missing properties like `<TypeId>` or `<Components>` yourself.
+
 === Updating CubeBlocks.sbc
 
 You can use the "Update block definitions" operation to tell the add-on to take the same XML data
@@ -99,5 +105,3 @@ That saves you the trouble to do this by hand.
 
 NOTE: Updating `CubeBlocks.sbc` will only work for blocks that are already present in the file.
 The add-on searches for them by their `<SubtypeId>`.
-You can use the content of a .blockdef.xml file as an initial skeleton for a block-definition
-and add the missing properties like `<TypeId>` and `<Components>` to it.

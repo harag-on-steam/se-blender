@@ -57,6 +57,7 @@ WARNING: Keep in mind SE has an upper limit of 5 collision shapes per block.
 NOTE: Blender offers a `Cone` primitive shape but Havok has no support for that.
 If you use a Cone shape it will be silently converted to a Convex Hull on export.
 
+[#mount-points]
 ==== Mount Points
 
 [.thumb]

@@ -26,7 +26,7 @@ which parts of the texture can be recolored by the player.
 * A value of 140 means that the pixel keeps its original color.
 * A value in-between mixes the colors with the corresponding ratio.
 
-Recoloring uses a link:http://en.wikipedia.org/wiki/HSL_and_HSV[HSL color-model]
+Recoloring uses a link:http://en.wikipedia.org/wiki/HSL_and_HSV[HSV color-model]
 in which the player-chosen hue replaces the original hue.
 Saturation and value are added and clamped at a maximum of 100.
 

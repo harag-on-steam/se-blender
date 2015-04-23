@@ -15,6 +15,7 @@ Some blocks like doors, rotors, pistons and turrets are composed of several mode
 To link from one of those models to the next SE expects empties that have a name starting with `subpart_`.
 For those empties there is the `file` property on the Data tab of the empty that names the next part-file.
 
+[#mirroring]
 ==== Mirroring
 
 [.thumb]

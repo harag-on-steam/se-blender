@@ -41,7 +41,4 @@ After you've enabled the add-on open its settings by clicking the arrow on the l
 You need to provide all the paths in the list.
 
 [.clearfix]
-IMPORTANT: Use the "workaround" option for MwmBuilder only if that specific bug is still present.
-You can get more information by opening the bug-thread with the button next to the option.
-
 TIP: Don't forget to "Save User Settings".
