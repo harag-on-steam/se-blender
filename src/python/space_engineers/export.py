@@ -98,15 +98,15 @@ _FUNCTION_TYPE = type(func)
 del func
 
 class ExportSettings:
-    def __init__(self, scene, outputDir, exportNodes=None, mwmDir=None):
+    def __init__(self, scene, outputDir=None, exportNodes=None, mwmDir=None):
         def typeCast(data) -> SESceneProperties: # allows type inference in IDE
             return data
 
         self.scene = scene # ObjectSource.getObjects() uses .utils.scene() instead
         self.sceneData = typeCast(data(scene))
+        self.outputDir = os.path.normpath(bpy.path.abspath(self.sceneData.export_path if outputDir is None else outputDir))
         self.exportNodes = bpy.data.node_groups[self.sceneData.export_nodes] if exportNodes is None else exportNodes
         self.baseDir = getBaseDir(scene)
-        self.outputDir = os.path.normpath(bpy.path.abspath(outputDir))
         # temporary working directory. used as a workaround for two bugs in mwmbuilder. must be empty initially.
         self.mwmDir = mwmDir if not mwmDir is None else self.outputDir
         self.operator = STDOUT_OPERATOR
@@ -316,7 +316,6 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
     cmdline = [settings.mwmbuilder, '/s:Content', '/m:'+basename+'.fbx', '/o:.\\']
 
     def checkForLoggedErrors(logtext):
-        print(logtext)
         if b": ERROR:" in logtext:
             raise MissbehavingToolError('MwmBuilder failed without an appropriate exit-code. Please check the log-file.')
 

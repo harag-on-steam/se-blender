@@ -249,6 +249,8 @@ class SESceneProperties(bpy.types.PropertyGroup):
 
     export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
         description="Use the Node editor to create and change these settings.")
+    export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
+        description="The directory this block is to exported to")
 
     mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
         description="The block that the game should switch to if this block is mirrored")
@@ -338,16 +340,21 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         layout.separator()
 
         col = layout.column(align=True)
-        op = col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        col.prop(spceng, "export_path")
+
+        row = layout.row(align=True)
+        row.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export Settings")
+        if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
+            row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
+
+        layout.separator()
+
+        col = layout.column(align=True)
+        op = col.operator("export_scene.space_engineers_block", text="Export scene as block", icon="EXPORT", )
         op.settings_name = spceng.export_nodes
         op = col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         op.settings_name = spceng.export_nodes
-        layout.separator()
 
-        row = layout.row(align=True)
-        row.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export settings")
-        if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
-            row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
 
 class NODE_PT_spceng_nodes(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'

@@ -31,31 +31,27 @@ def normal_texture_path(material):
 
     return None
 
-def texture_basedir():
-    # TODO for now assume textures are relative to the .blend file
-    return os.path.normpath(bpy.path.abspath('//'))
-
-def se_content_dir():
+def se_content_dir(settings):
     se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
     if not se_dir:
-        return texture_basedir() # fallback, if unset
+        return settings.baseDir # fallback, if unset
     return os.path.join(os.path.normpath(se_dir), "Content")
 
-def derive_texture_path(filepath):
+def derive_texture_path(settings, filepath):
     def is_in_subpath(relpath):
         return not relpath.startswith('..') and not os.path.isabs(relpath)
 
     image_path = os.path.normpath(bpy.path.abspath(filepath))
 
     try:
-        relative_to_se = os.path.relpath(image_path, se_content_dir())
+        relative_to_se = os.path.relpath(image_path, se_content_dir(settings))
         if is_in_subpath(relative_to_se):
             return relative_to_se
     except ValueError:
         pass
 
     try:
-        relative_to_basedir = os.path.relpath(image_path, texture_basedir())
+        relative_to_basedir = os.path.relpath(image_path, settings.baseDir)
         if is_in_subpath(relative_to_basedir):
             return relative_to_basedir
     except ValueError:
@@ -63,14 +59,14 @@ def derive_texture_path(filepath):
 
     return image_path
 
-def derive_texture_paths(material):
+def derive_texture_paths(settings, material):
     diffuse = diffuse_texture_path(material)
     if diffuse:
-        diffuse = derive_texture_path(diffuse)
+        diffuse = derive_texture_path(settings, diffuse)
 
     normal = normal_texture_path(material)
     if normal:
-        normal = derive_texture_path(normal)
+        normal = derive_texture_path(settings, normal)
         if diffuse and _RE_DIFFUSE.sub('_ns.dds', diffuse).lower() == normal.lower():
             normal = '' # with a xyz_de.dds diffuse texture the xyz_ns.dds texture can be defaulted to <NormalTexture/>
     else:
@@ -108,7 +104,7 @@ def material_xml(settings, mat):
         param("DiffuseColorY", str(int(255 * g)))
         param("DiffuseColorZ", str(int(255 * b)))
 
-    textures = derive_texture_paths(mat)
+    textures = derive_texture_paths(settings, mat)
 
     if textures[0]:
         param("DiffuseTexture", textures[0])

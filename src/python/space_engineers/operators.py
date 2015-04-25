@@ -87,7 +87,7 @@ class BlockExport:
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
     bl_label = "Export Space Engineers Block"
-    bl_description = "Exports the current scene as a block."
+    bl_description = "Exports the current scene as a block. Hold ALT to export all scenes."
 
     directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
@@ -121,11 +121,17 @@ class ExportSceneAsBlock(bpy.types.Operator):
         return not tree is None
 
     def invoke(self, context, event):
-        if not self.directory:
-            self.directory = os.path.dirname(context.blend_data.filepath)
+        if context.space_data.type == 'INFO':
+            # exporting via the export-menu asks for an export-directory
+            if not self.directory:
+                self.directory = os.path.dirname(context.blend_data.filepath)
 
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
+        else:
+            # anywhere else the export-path uses the scene's properties
+            self.all_scenes = event.alt
+            return self.execute(context)
 
     def draw(self, context):
         lay = self.layout
@@ -154,7 +160,12 @@ class ExportSceneAsBlock(bpy.types.Operator):
                 wm.progress_begin(0, len(scenes))
                 try:
                     for i, scene in enumerate(scenes):
-                        settings = ExportSettings(scene, self.directory, getExportNodeTree(self.settings_name), tmpDir)
+                        # exporting via the export-menu explicitly asks for an export-directory
+                        outputDir = self.directory if context.space_data.type == 'INFO' else None
+                        # exporting all nodes will use their respective export-settings
+                        exportSettings = getExportNodeTree(self.settings_name) if not self.all_scenes else None
+                        settings = ExportSettings(scene, outputDir, exportSettings, tmpDir)
+
                         settings.operator = self
                         settings.isRunMwmbuilder = not self.skip_mwmbuilder
                         settings.isUseTangentSpace = self.use_tspace
@@ -234,7 +245,6 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
 
     def execute(self, context):
         path = bpy.path.abspath(self.filepath)
-        dir = os.path.dirname(path)
         merger = CubeBlocksMerger(cubeBlocksPath=path, backup=self.create_backup)
 
         if self.all_scenes:
@@ -246,7 +256,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         wm.progress_begin(0, len(scenes))
         try:
             for i, scene in enumerate(scenes):
-                settings = ExportSettings(scene, dir)
+                settings = ExportSettings(scene)
                 settings.operator = self
 
                 BlockExport(settings).mergeBlockDefs(merger)
