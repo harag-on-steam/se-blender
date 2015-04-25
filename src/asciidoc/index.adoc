@@ -1,7 +1,8 @@
 = SE Block Tools for Blender
 
-:zoom: icon:search-plus[role="keyseq"]
-:dl: icon:download[role="keyseq"]
+:zoom: icon:search-plus[role="keyseq", title="zoom/show"]
+:dl: icon:download[role="keyseq", title="download"]
+:cstmz: icon:wrench[role="keyseq", title="customizable"]
 
 Modelling blocks for http://www.spaceengineersgame.com/[Space Engineers] is a process that 
 involves a lot of intermediary files and manual parametrization. 

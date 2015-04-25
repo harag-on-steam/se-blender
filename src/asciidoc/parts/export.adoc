@@ -2,28 +2,35 @@
 
 All names that are used during export are derived from the scene name:
 
-[cols="2,4"]
+[cols="8,16,1"]
 |===
 | BlockPairName
-| `+++{Scene-Name}+++`
+| `+++{Name of the Scene}+++`
+|
 
 | SubtypeId
 | `+++{BlockPairName}_{CubeSize}+++`
+| {cstmz}
 
 | ModelsDir
-| the chosen export-path relative to the `.blend` file
+| the chosen export-path from the scene properties
+|
 
 | Model
 | `+++{ModelsDir}\{SubtypeId}.mwm+++`
+| {cstmz}
 
 | Construction Model
 | `+++{ModelsDir}\{SubtypeId}_Constr{n}.mwm+++`
+| {cstmz}
 
 | Level-of-Detail Model
 | `+++{ModelsDir}\{SubtypeId}_LOD{n}.mwm+++`
+| {cstmz}
 
 | Icon
 | `+++Textures\Icons\{BlockPairName}.dds+++`
+|
 |===
 
 WARNING: The BlockPairName and the SubtypeId are globally visible to all parts of the game.
@@ -39,13 +46,23 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 [.thumb]
 image::blender-no-nodes-yet.png[float=right]
 
-The add-on uses a custom Blender node-tree to configure the export.
+The addon needs to know which folder models should be exported into.
+You can configure this per scene via the `Export Subpath` property in the scene properties.
+
+How the meshes of your scene are exported is configured via a custom Blender node-tree.
 Initially your .blend file contains no such node-tree and your scene's default settings-name `MwmExport`
 will be displayed as invalid. You can create the default settings by clicking on the `+` next to the settings-selector.
 
+Clicking "Export scene as block" will then immediately export the scene to the chosen folder.
+Holding down `Alt` while clicking the button will export all the scenes in your .blend file.
+In this case each scene will use its own folder and settings.
+
+WARNING: The chosen export folder needs to be a subpath of the folder containing your .blend file.
+Otherwise references to your models will be calculated wrong (CubeBlocks.sbc, LODs).
+
 === Exporting .mwm files
 
-By default the export runs through theses steps once you have chosen an output directory:
+By default the export runs through theses steps:
 
  . Export the collision-meshes to a `.hkt.fbx` file
  . Convert the `.hkt.fbx` file into a `.hkt` file via Havok's FBX-importer
@@ -59,7 +76,7 @@ NOTE: The add-on logs the result of each step of the export in Blender's
 link:images/blender-report.png[info-log] {zoom}.
 In addition the output of external tools is logged to separate log files that are named like the file that is
 exported by the step with `.log` appended.
-If an external tool fails for any reason or does not produce the expected file you should consult these log-files.
+*If an external tool fails for any reason or does not produce the expected file you should consult these log-files*.
 
 === Block Definitions
 

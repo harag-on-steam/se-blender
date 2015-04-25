@@ -3,10 +3,9 @@
 The add-on makes a few assumptions about filenames and the folder layout of your mod:
 
 * The .blend file(s) are assumed to be at the root of your mod folder.
-* Models are in a subfolder `Models\`. They are not sorted into further subfolders.
 * Icons are in `Textures\Icons\`.
 
-This layout currently cannot be changed.
+This layout cannot be customized.
 
 === Scene Layout
 

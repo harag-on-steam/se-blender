@@ -41,12 +41,12 @@ image::nodes-objects.png[width=160,float=right,link=images/nodes-objects.png]
 
 === Object Sources
 
-This kind of nodes determines meshes and empties that get exported. There are two variants.
+This kind of node determines the meshes and empties that should be exported. There are two variants.
 
 . The first variant uses a layer mask to combine all meshes and empties from the marked layers and
   provides them under a single output-socket for consumption by other nodes.
 . The second variant also uses a layer mask but provides a separate output-socket for each layer.
-  This is useful for a sequential groups of meshes like construction stages.
+  This is useful for sequential groups of meshes like construction stages.
   This variant also implicitly numbers the output-sockets starting at `1`.
   This number is available for text-substitution as parameter `${n}`.
 
@@ -67,7 +67,7 @@ This kind of node produces a `.mwm` file by taking the objects from its input-so
 them through MwmBuilder.
 The `.mwm` will include the collision data of a Havok Converter node if it is connected to one.
 An MwmBuilder node can also receive the output of other MwmBuilder nodes.
-Those nodes will then provide the link:#levels-of-detail[level-of-detail] models that will be linked to
+Those nodes will then serve as the link:#levels-of-detail[level-of-detail] models that will be linked to
 from the `.mwm` file produced by the current node.
 
 image::nodes-blockdef.png[width=150,float=right,link=images/nodes-blockdef.png]
