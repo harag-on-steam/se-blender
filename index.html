@@ -620,11 +620,11 @@ So if you are new to 3D modelling you should probably learn how to do that first
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>Get version <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
-<p>Get version <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://software.intel.com/sites/havok/en/">2013.1.0</a>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="https://software.intel.com/sites/havok/en/">2013.1.0</a>
 (<a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe">64bit</a>
 or <a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe">32bit</a>, 330MB)
 This contains the filter manager <code>hctStandAloneFilterManager.exe</code> that&#8217;s used to create rigid-body physics data.
@@ -648,7 +648,7 @@ You need to get Havok 2013.1. Space Engineers is currently unable to use files c
 <dl>
 <dt class="hdlist1">The Havok FBX Importer</dt>
 <dd>
-<p>This is a <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">separate download</a> (3,5MB)
+<p>This is a <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1">separate download</a> (3,5MB)
 because I had to <a href="https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b&#8230;&#8203;master">fix a view things</a>
 in the sources and compile it against Havok 2013.1
 (the <a href="http://www.projectanarchy.com/download">official download</a> is compiled against Havok 2014).
@@ -669,7 +669,7 @@ The .zip contains just one executable file. It&#8217;s probably a good idea to p
 </div>
 </div>
 <div class="paragraph">
-<p>Once you got the <span class="icon keyseq"><i class="fa fa-download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (40kb)
+<p>Once you got the <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (40kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File&#8230;&#8203;" and
@@ -710,15 +710,12 @@ Don&#8217;t forget to "Save User Settings".
 <p>The .blend file(s) are assumed to be at the root of your mod folder.</p>
 </li>
 <li>
-<p>Models are in a subfolder <code>Models\</code>. They are not sorted into further subfolders.</p>
-</li>
-<li>
 <p>Icons are in <code>Textures\Icons\</code>.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>This layout currently cannot be changed.</p>
+<p>This layout cannot be customized.</p>
 </div>
 </div>
 <div class="sect2">
@@ -826,7 +823,7 @@ If you use a Cone shape it will be silently converted to a Convex Hull on export
 <div class="paragraph">
 <p>The third layer defines the mount points of your block.
 The meshes on this layer are not directly exported but are used instead to calculate the
-<a href="#blockdef">mount point definitions</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.</p>
+<a href="#blockdef">mount point definitions</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>.</p>
 </div>
 <div class="paragraph">
 <p>This works by creating rectangular faces that use the material <code>MountPoint</code> and are aligned to one of
@@ -834,14 +831,14 @@ six sides of the block. To quickly create the material and an object that has on
 of the six sides use the corresponding button on the Tools panel of the 3D view.
 Duplicate, resize and move those faces in edit mode to create more mount points for a side of the block.
 You can also split out faces to several objects if you want to apply
-<a href="images/blender-mp-mirror.png">modifiers like 'mirror' or 'array'</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>
+<a href="images/blender-mp-mirror.png">modifiers like 'mirror' or 'array'</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>
 to some of the mount point faces.</p>
 </div>
 <div class="paragraph">
-<p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span> (<code>Numpad 5</code>) and
+<p>For mount point editing it is a good idea to switch to <a href="images/blender-mp-ortho.png">ortho-view</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span> (<code>Numpad 5</code>) and
 turn on 'snap to grid'.
 You can also tell the add-on to show the block&#8217;s bounding box by enabling the option on the
-<a href="images/blender-scene.png">scene tab</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.
+<a href="images/blender-scene.png">scene tab</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>.
 It&#8217;s dashed, orange lines represent the space your block occupies in-game.
 This should help you to position the mount points correctly.</p>
 </div>
@@ -1271,37 +1268,45 @@ of your main model. So modifying them will also change your main model and vice 
 </div>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
-<col style="width: 33%;">
-<col style="width: 66%;">
+<col style="width: 32%;">
+<col style="width: 64%;">
+<col style="width: 4%;">
 </colgroup>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">BlockPairName</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{Scene-Name}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{Name of the Scene}</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SubtypeId</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>{BlockPairName}_{CubeSize}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon keyseq"><i class="fa fa-wrench" title="customizable"></i></span></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ModelsDir</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">the chosen export-path relative to the <code>.blend</code> file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the chosen export-path from the scene properties</p></td>
+<td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Model</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon keyseq"><i class="fa fa-wrench" title="customizable"></i></span></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Construction Model</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}_Constr{n}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon keyseq"><i class="fa fa-wrench" title="customizable"></i></span></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Level-of-Detail Model</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>{ModelsDir}\{SubtypeId}_LOD{n}.mwm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon keyseq"><i class="fa fa-wrench" title="customizable"></i></span></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Icon</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Textures\Icons\{BlockPairName}.dds</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
 </tr>
 </tbody>
 </table>
@@ -1333,15 +1338,37 @@ to remain backwards-compatible. Otherwise there is hardly a good reason to chang
 </div>
 </div>
 <div class="paragraph">
-<p>The add-on uses a custom Blender node-tree to configure the export.
+<p>The addon needs to know which folder models should be exported into.
+You can configure this per scene via the <code>Export Subpath</code> property in the scene properties.</p>
+</div>
+<div class="paragraph">
+<p>How the meshes of your scene are exported is configured via a custom Blender node-tree.
 Initially your .blend file contains no such node-tree and your scene&#8217;s default settings-name <code>MwmExport</code>
 will be displayed as invalid. You can create the default settings by clicking on the <code>+</code> next to the settings-selector.</p>
+</div>
+<div class="paragraph">
+<p>Clicking "Export scene as block" will then immediately export the scene to the chosen folder.
+Holding down <code>Alt</code> while clicking the button will export all the scenes in your .blend file.
+In this case each scene will use its own folder and settings.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+The chosen export folder needs to be a subpath of the folder containing your .blend file.
+Otherwise references to your models will be calculated wrong (CubeBlocks.sbc, LODs).
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
 <h3 id="exporting-mwm-files"><a class="anchor" href="#exporting-mwm-files"></a>Exporting .mwm files</h3>
 <div class="paragraph">
-<p>By default the export runs through theses steps once you have chosen an output directory:</p>
+<p>By default the export runs through theses steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -1380,10 +1407,10 @@ will be displayed as invalid. You can create the default settings by clicking on
 </td>
 <td class="content">
 The add-on logs the result of each step of the export in Blender&#8217;s
-<a href="images/blender-report.png">info-log</a> <span class="icon keyseq"><i class="fa fa-search-plus"></i></span>.
+<a href="images/blender-report.png">info-log</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>.
 In addition the output of external tools is logged to separate log files that are named like the file that is
 exported by the step with <code>.log</code> appended.
-If an external tool fails for any reason or does not produce the expected file you should consult these log-files.
+<strong>If an external tool fails for any reason or does not produce the expected file you should consult these log-files</strong>.
 </td>
 </tr>
 </table>
@@ -1532,7 +1559,7 @@ get substituted with information stored in the scene:</p>
 <div class="sect2">
 <h3 id="object-sources"><a class="anchor" href="#object-sources"></a>Object Sources</h3>
 <div class="paragraph">
-<p>This kind of nodes determines meshes and empties that get exported. There are two variants.</p>
+<p>This kind of node determines the meshes and empties that should be exported. There are two variants.</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -1542,7 +1569,7 @@ provides them under a single output-socket for consumption by other nodes.</p>
 </li>
 <li>
 <p>The second variant also uses a layer mask but provides a separate output-socket for each layer.
-This is useful for a sequential groups of meshes like construction stages.
+This is useful for sequential groups of meshes like construction stages.
 This variant also implicitly numbers the output-sockets starting at <code>1</code>.
 This number is available for text-substitution as parameter <code>${n}</code>.</p>
 </li>
@@ -1585,7 +1612,7 @@ The node ignores objects that don&#8217;t have <code>Rigid Body</code> enabled o
 them through MwmBuilder.
 The <code>.mwm</code> will include the collision data of a Havok Converter node if it is connected to one.
 An MwmBuilder node can also receive the output of other MwmBuilder nodes.
-Those nodes will then provide the <a href="#levels-of-detail">level-of-detail</a> models that will be linked to
+Those nodes will then serve as the <a href="#levels-of-detail">level-of-detail</a> models that will be linked to
 from the <code>.mwm</code> file produced by the current node.</p>
 </div>
 <div class="imageblock" style="float: right">
@@ -1626,7 +1653,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-04-22 23:26:11 CEST
+Last updated 2015-04-25 20:53:35 CEST
 </div>
 </div>
 </body>
