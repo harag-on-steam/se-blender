@@ -8,6 +8,7 @@ from os.path import basename, join
 from string import Template
 from xml.etree import ElementTree
 import shutil
+from mathutils import Matrix
 
 from .mount_points import mount_point_definitions, mount_points_xml
 from .mirroring import mirroringAxisFromObjectName
@@ -255,23 +256,55 @@ class ExportSettings:
 FWD = 'Z'
 UP = 'Y'
 MATRIX_NORMAL = axis_conversion(to_forward=FWD, to_up=UP).to_4x4()
-MATRIX_SCALE_DOWN = scaleUni(0.2) * MATRIX_NORMAL
+MATRIX_SCALE_DOWN = Matrix.Scale(0.2, 4) * MATRIX_NORMAL
 
 def export_fbx(settings: ExportSettings, filepath, objects):
+
+    fbxSettings = {
+        # FBX operator defaults
+        # some internals of the fbx exporter depend on them and will step out of line if they are not present
+        'version': 'BIN7400',
+        'use_selection': False,
+        'use_mesh_edges': False,
+        'use_custom_props': False,
+        'add_leaf_bones': True,
+        'primary_bone_axis': 'Y',
+        'secondary_bone_axis': 'X',
+        'use_armature_deform_only': False,
+        'bake_anim_use_all_bones': True,
+        'bake_anim_use_nla_strips': True,
+        'bake_anim_use_all_actions': True,
+        'bake_anim_step': 1.0,
+        'bake_anim_simplify_factor': 1.0,
+        'use_anim_action_all': True,
+        'use_default_take': True,
+        'use_anim_optimize': True,
+        'anim_optimize_precision': 6.0,
+        'path_mode': 'AUTO',
+        'embed_textures': False,
+        'batch_mode': 'OFF',
+        'use_batch_own_dir': True,
+        'use_metadata': True,
+
+        # important settings for SE
+        'object_types': {'MESH', 'EMPTY'},
+        'use_anim': False,
+        'bake_anim': False,
+        'global_matrix': MATRIX_SCALE_DOWN if settings.scaleDown else MATRIX_NORMAL,
+        'context_objects': objects,
+        'axis_forward': FWD,
+        'axis_up': UP,
+        'bake_space_transform': True,
+        'use_mesh_modifiers': True,
+        'mesh_smooth_type': 'OFF',
+        'use_tspace': settings.isUseTangentSpace,
+    }
+
     return save_single(
         settings.operator,
         settings.scene,
         filepath=filepath,
-        context_objects=objects,
-        object_types={'MESH', 'EMPTY'},
-        global_matrix=MATRIX_SCALE_DOWN if settings.scaleDown else MATRIX_NORMAL,
-        axis_forward=FWD,
-        axis_up=UP,
-        bake_space_transform=True,
-        use_mesh_modifiers=True,
-        mesh_smooth_type='OFF',
-        use_tspace=settings.isUseTangentSpace,
-        bake_anim=False,
+        **fbxSettings
     )
 
 def fbx_to_hkt(settings: ExportSettings, srcfile, dstfile):
