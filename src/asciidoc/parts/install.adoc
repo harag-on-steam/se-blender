@@ -24,6 +24,12 @@ The .zip contains just one executable file. It's probably a good idea to put it 
 MwmBuilder::
 This one comes with Space Engineers and is located in the game's directory under `Tools\MwmBuilder`.
 
+NOTE: If you try to export and MwmBuilder fails with the error message
+`"Error loading unmanaged library from path: Assimp32.dll"`
+this is a strong indication that you are missing a software library on your system.
+You can {dl} https://www.microsoft.com/en-us/download/details.aspx?id=30679[download that] from Microsoft.
+Get the `VSU_4\vcredist_x86.exe` package.
+
 === Installing the Add-on
 
 [.thumb]
