@@ -16,7 +16,7 @@ WARNING: You need to get Havok 2013.1. Space Engineers is currently unable to us
 
 The Havok FBX Importer::
 This is a {dl} https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1[separate download] (3,5MB)
-because I had to https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b...master[fix a view things]
+because I had to https://github.com/harag-on-steam/fbximporter/compare/abb0b1aebb842b43220525ca40ef62af4653589b%E2%80%A67ae7b96a8ef1bf9f0f4b643c16198afb89b67656[fix a view things]
 in the sources and compile it against Havok 2013.1
 (the http://www.projectanarchy.com/download[official download] is compiled against Havok 2014).
 The .zip contains just one executable file. It's probably a good idea to put it into the Havok Tools directory.

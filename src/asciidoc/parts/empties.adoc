@@ -38,5 +38,5 @@ Even if you adhere to that rule some combinations cannot be used because SE does
 To check if a rotation is valid watch the `Mirroring` property on the Data tab of the empty.
 
 NOTE: The objects that are attached to the empties are
-link:http://wiki.blender.org/index.php/Doc:2.6/Manual/Modeling/Objects/Duplication#Linked_Duplicates[linked duplicates]
+http://www.blender.org/manual/modeling/objects/duplication/introduction.html?highlight=linked%20duplicates#linked-duplicates[linked duplicates]
 of your main model. So modifying them will also change your main model and vice versa.

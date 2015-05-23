@@ -46,7 +46,7 @@ Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessary. Avoid `Mesh` collisions.
 
 IMPORTANT: Make sure you
-http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations[apply object transformations]
+http://www.blender.org/manual/getting_started/basics/transformations/transform_control/reset_object_transformations.html#apply-options[apply object transformations]
 to all collision objects before export.
 As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
 If you don't the collision shapes will most probably be rotated or positioned wrong.

@@ -59,7 +59,7 @@ For example, in Gimp you can convert the A-channel into a layer mask and edit an
 image::blender-material-simple.png[width=450,float=right,link=images/blender-material-simple.png]
 
 Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
-http://wiki.blender.org/index.php/Doc:2.6/Manual/Textures/Mapping/UV/Unwrapping[UV-mapping]
+http://www.blender.org/manual/render/blender_render/textures/mapping/uv.html[UV-mapping]
 to tell the game which _part_ of a texture to use for a face).
 
 In Blender there are several types of materials depending on the renderer you have chosen.
