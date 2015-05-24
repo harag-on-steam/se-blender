@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 5, 10),
+	"version": (0, 5, 11),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
