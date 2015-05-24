@@ -1209,15 +1209,18 @@ if you named the material "Emmisive".
 the location of the thruster flame. The purpose of each empty is determined by its name&#8201;&#8212;&#8201;i.e. <code>detector_terminal_1</code>
  or <code>detector_conveyor_1</code> for example.</p>
 </div>
-<div class="admonitionblock tip">
+<div class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
+<i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
-For empties that are used as a 'yellow interaction box' in-game it is beneficial to set the
-<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to <code>0.5</code>. This way you can preview the exact size in Blender.
+For empties that are used as a 'yellow interaction box' in-game you need to set the
+<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to <code>0.5</code>.
+This is necessary for the add-on to know it needs to scale down the empty for small blocks.
+It also also allows you to preview the exact size in Blender.<br>
+There&#8217;s a button <a href="images/empty_volumetric_handle.png">to do this</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>.
 </td>
 </tr>
 </table>
@@ -1669,7 +1672,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-21 18:45:41 CEST
+Last updated 2015-05-23 11:30:45 CEST
 </div>
 </div>
 </body>
