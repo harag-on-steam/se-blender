@@ -352,3 +352,21 @@ class PinnedScene():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         currentSceneHolder.scene = self.previousScene
+
+currentSettingsHolder = threading.local()
+
+def exportSettings():
+    return getattr(currentSettingsHolder, "settings", None)
+
+class PinnedSettings():
+    def __init__(self, settings):
+        self.settings = settings
+        self.previousSettings = None
+
+    def __enter__(self):
+        self.previousSettings = getattr(currentSettingsHolder, "settings", None)
+        currentSettingsHolder.settings = self.settings
+        return self.settings
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        currentSettingsHolder.settings = self.previousSettings

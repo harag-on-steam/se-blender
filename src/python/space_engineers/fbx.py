@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from . import types
+from .utils import exportSettings
 import bpy
 
 _experimental = (bpy.app.version[0] == 2 and bpy.app.version[1] == 72)
@@ -83,6 +84,13 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
     loc, rot, scale, matrix, matrix_rot = ob_obj.fbx_object_tx(scene_data)
     rot = tuple(_fbx.convert_rad_to_deg_iter(rot))
 
+    # ----------------------- CUSTOM PART BEGINS HERE ----------------------- #
+
+    if ob_obj.type == 'EMPTY' and shouldScaleDownEmpty(ob_obj.bdata):
+        scale = scale * 0.2
+
+    # ------------------------ CUSTOM PART ENDS HERE ------------------------ #
+
     tmpl = _fbx.elem_props_template_init(scene_data.templates, b"Model")
     # For now add only loc/rot/scale...
     props = _fbx.elem_properties(model)
@@ -143,6 +151,13 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
     _fbx.elem_props_template_finalize(tmpl, props)
 
 _fbx.fbx_data_object_elements = fbx_data_object_elements
+
+def shouldScaleDownEmpty(empty):
+    settings = exportSettings()
+    return not settings is None \
+        and settings.scaleDown \
+        and empty.empty_draw_size == 0.5 \
+        and empty.empty_draw_type == 'CUBE'
 
 # export these two functions as our own so that clients of this module don't have to depend on 
 # the cloned fbx_experimental.export_fbx_bin module

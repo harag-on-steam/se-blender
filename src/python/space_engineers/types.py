@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import re
 import bpy
 import os
 import requests
@@ -420,6 +421,8 @@ class SEObjectProperties(bpy.types.PropertyGroup):
     file = bpy.props.StringProperty(name="Link to File", 
         description="Links this empty to another model file. Only specify the base name, do not include the .mwm extension.")
 
+_RE_KNOW_VOLUME_HANDLES = re.compile(r"^(dummy_)?(detector_(terminal|conveyor|cockpit))", re.IGNORECASE)
+
 class DATA_PT_spceng_empty(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -432,7 +435,8 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
         return (ob and ob.type == 'EMPTY' and data(ob))
 
     def draw(self, context):
-        d = data(context.object)
+        ob = context.object
+        d = data(ob)
         isMirror = not mirroringAxisFromObjectName(context.active_object) is None
 
         layout = self.layout
@@ -446,6 +450,12 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
         row = layout.row()
         row.enabled = isMirror
         row.prop(context.object, "space_engineers_mirroring", icon="MOD_MIRROR" if not isMirror else 'NONE')
+
+        if ob.empty_draw_type != 'CUBE' or ob.empty_draw_size != 0.5:
+            layout.separator()
+            row = layout.row()
+            row.alert = bool(_RE_KNOW_VOLUME_HANDLES.search(ob.name))
+            row.operator('object.spceng_empty_with_volume')
 
 
 # -----------------------------------------  Material Data ----------------------------------------- #

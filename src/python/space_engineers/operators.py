@@ -10,7 +10,7 @@ from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode
-from .utils import currentSceneHolder, layers, layer_bits, layer_bit, PinnedScene
+from .utils import currentSceneHolder, layers, layer_bits, layer_bit, PinnedScene, PinnedSettings
 from .default_nodes import createDefaultTree
 
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
@@ -28,33 +28,34 @@ class BlockExport:
         settings = self.settings
 
         with PinnedScene(settings.scene):
-            blockdefNode = None
-            for n in settings.exportNodes.nodes:
-                if isinstance(n, BlockDefinitionNode):
-                    blockdefNode = n
-                    break
+            with PinnedSettings(settings):
+                blockdefNode = None
+                for n in settings.exportNodes.nodes:
+                    if isinstance(n, BlockDefinitionNode):
+                        blockdefNode = n
+                        break
 
-            if blockdefNode is None:
-                settings.error("No block-definition node in export node-tree '%s'" % (settings.exportNodes.name))
-                return False
+                if blockdefNode is None:
+                    settings.error("No block-definition node in export node-tree '%s'" % (settings.exportNodes.name))
+                    return False
 
-            failed = False
-            for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-                settings.cache.clear()
+                failed = False
+                for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+                    settings.cache.clear()
 
-                try:
-                    xml = blockdefNode.generateBlockDefXml(settings)
-                except ValueError as e:
-                    settings.error(str(e), node=blockdefNode)
-                    failed = True
-                    continue
+                    try:
+                        xml = blockdefNode.generateBlockDefXml(settings)
+                    except ValueError as e:
+                        settings.error(str(e), node=blockdefNode)
+                        failed = True
+                        continue
 
-                result = cubeBlocks.merge(xml)
-                if MergeResult.NOT_FOUND in result:
-                    failed = True
-                    settings.warn("CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (settings.SubtypeId))
-                elif MergeResult.MERGED in result:
-                    settings.info("Updated SubtypeId [%s]" % (settings.SubtypeId))
+                    result = cubeBlocks.merge(xml)
+                    if MergeResult.NOT_FOUND in result:
+                        failed = True
+                        settings.warn("CubeBlocks.sbc contained no definition for SubtypeId [%s]" % (settings.SubtypeId))
+                    elif MergeResult.MERGED in result:
+                        settings.info("Updated SubtypeId [%s]" % (settings.SubtypeId))
 
         return not failed
 
@@ -65,19 +66,20 @@ class BlockExport:
         failures = OrderedDict()
 
         with PinnedScene(settings.scene):
-            for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
-                settings.cache.clear()
+            with PinnedSettings(settings):
+                for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
+                    settings.cache.clear()
 
-                for exporter in settings.exportNodes.nodes:
-                    if not isinstance(exporter, Exporter):
-                        continue
+                    for exporter in settings.exportNodes.nodes:
+                        if not isinstance(exporter, Exporter):
+                            continue
 
-                    name = exporter.label if exporter.label else exporter.name
-                    result = exporter.export(settings)
-                    if 'SKIPPED' == result:
-                        skips[name] = exporter
-                    elif 'FAILED' == result:
-                        failures[name] = exporter
+                        name = exporter.label if exporter.label else exporter.name
+                        result = exporter.export(settings)
+                        if 'SKIPPED' == result:
+                            skips[name] = exporter
+                        elif 'FAILED' == result:
+                            failures[name] = exporter
 
         if skips:
             settings.warn("Some export-nodes were skipped: %s" % list(skips.keys()))
@@ -361,6 +363,25 @@ class AddMirroringEmpties(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class ConfigureEmptyAsVolumeHandle(bpy.types.Operator):
+    bl_idname = 'object.spceng_empty_with_volume'
+    bl_label = 'Configure as volumetric handle'
+    bl_options = {'REGISTER'}
+    bl_description = \
+        "Turns the empty into a volumetric handle (terminals, conveyor ports, etc.) " \
+        "Volumetric handles are resized when a large block is scaled down to a small block."
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.object
+        return ob and (ob.empty_draw_type != 'CUBE' or ob.empty_draw_size != 0.5)
+
+    def execute(self, context):
+        ob = context.object
+        ob.empty_draw_type = 'CUBE'
+        ob.empty_draw_size = 0.5
+        return {'FINISHED'}
+
 class AddMountPointSkeleton(bpy.types.Operator):
     bl_idname = 'object.spceng_mountpoint_add'
     bl_label = 'Mount-Points'
@@ -415,6 +436,7 @@ class SetupGrid(bpy.types.Operator):
 registered = [
     AddDefaultExportNodes,
     AddMirroringEmpties,
+    ConfigureEmptyAsVolumeHandle,
     ExportSceneAsBlock,
     UpdateDefinitionsFromBlockScene,
     AddMountPointSkeleton,
