@@ -5,6 +5,7 @@ import os
 import requests
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
+from .texture_files import imagesFromNodes, TextureType
 from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path, scene
 
@@ -381,6 +382,20 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
         col.operator("export_scene.space_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
         col.operator("object.space_engineers_layer_names", text="Set Layer Names", icon='COPY_ID')
 
+class NODE_PT_spceng_nodes_mat(bpy.types.Panel):
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Space Engineers Material"
+
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.tree_type == 'ShaderNodeTree'
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label("Export using these settings")
+        layout.operator("material.spceng_setup")
+
 def block_bounds():
     """
     The bounding-box of the scene's block.
@@ -464,20 +479,40 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
 MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
+    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
     # there is also an ALPHA_MASK technique, but no clue how that works
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
+def _texEnum(type, index, icon):
+    return (type.name, type.name + "Texture", "", 1, icon)
+
+# TODO maybe display these as enum_flags in the material panel
+DX11_TEXTURE_SET = {TextureType.ColorMetal, TextureType.NormalGloss, TextureType.AddMaps, TextureType.Alphamask}
+DX11_TEXTURE_ENUM = [
+    _texEnum(TextureType.ColorMetal,  1, 'MATCAP_19'),
+    _texEnum(TextureType.NormalGloss, 2, 'MATCAP_23'),
+    _texEnum(TextureType.AddMaps,     3, 'MATCAP_09'),
+    _texEnum(TextureType.Alphamask,   4, 'MATCAP_24'),
+]
+
+DX9_TEXTURE_SET = {TextureType.Diffuse, TextureType.Normal}
+DX9_TEXTURE_ENUM = [
+    _texEnum(TextureType.Normal,      1, 'MATCAP_04'),
+    _texEnum(TextureType.NormalGloss, 2, 'MATCAP_23'),
+]
+
 class SEMaterialProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
-    
+
+    nodes_version = bpy.props.IntProperty(default=0, options = {'SKIP_SAVE'})
     technique = bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='MESH', name="Technique")
-    
+
     # the material might be a node material and have no diffuse color, so define our own
     diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
     specular_power = bpy.props.FloatProperty( min=0.0, name="Specular Power", description="per material specular power", )
     specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )
-    
+
     glass_material_ccw = bpy.props.StringProperty(
         name="Outward Facing Material", 
         description="The material used on the side of the polygon that is facing away from the block center. Defined in TransparentMaterials.sbc",
@@ -506,20 +541,41 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         mat = context.material
         d = data(mat)
 
+        images = imagesFromNodes(mat.node_tree.nodes)
+
+        row = None
+        def msg(text, icon='INFO'):
+            nonlocal row
+            row = layout.row()
+            row.alignment = 'CENTER'
+            row.label(text, icon=icon)
+
+        alphamask = images.get(TextureType.Alphamask, None)
+        if alphamask and alphamask.image and d.technique != 'ALPHAMASK':
+            msg("The AlphamaskTexture is present. Check the Technique.", 'ERROR')
+
+        if len(images) == 0:
+            msg("Use the node-editor to choose textures.")
+        if context.scene.render.engine != 'CYCLES':
+            msg("The render engine should be 'Cycles Render'.", 'INFO')
+        if not mat.use_nodes:
+            msg("The material does not use its nodes.", 'INFO')
+
+        if row: layout.separator()
+
         layout.prop(d, "technique")
 
-        col = layout.column()
-
+        # col = layout.column()
         # TODO decide if diffuse_color is needed or should always stay white
-        if 'MESH' == d.technique:
-             split = col.split()
-             split.column().prop(d, "diffuse_color")
-             split.column()
-            
-        col.label(text="Specular")
-        split = col.split()
-        split.column().prop(d, "specular_intensity", text="Intensity")
-        split.column().prop(d, "specular_power", text="Power")
+        # if 'MESH' == d.technique:
+        #      split = col.split()
+        #      split.column().prop(d, "diffuse_color")
+        #      split.column()
+        #
+        # col.label(text="Specular")
+        # split = col.split()
+        # split.column().prop(d, "specular_intensity", text="Intensity")
+        # split.column().prop(d, "specular_power", text="Power")
 
         if 'GLASS' == d.technique:
             layout.separator()

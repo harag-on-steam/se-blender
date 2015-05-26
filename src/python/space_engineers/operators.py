@@ -8,8 +8,10 @@ from .export import ExportSettings, MissbehavingToolError
 from .mirroring import setupMirrors
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
+from .pbr_node_group import createMaterialNodeTree
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData
-from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode
+from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode, \
+    getUsedMaterials
 from .utils import currentSceneHolder, layers, layer_bits, layer_bit, PinnedScene, PinnedSettings
 from .default_nodes import createDefaultTree
 
@@ -433,14 +435,64 @@ class SetupGrid(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class CheckForUpdatableMaterials(bpy.types.Operator):
+    bl_idname = "info.spceng_check_mat_update"
+    bl_label = "SE: Check for Updatable Materials"
+
+    def execute(self, context):
+        for mat in getUsedMaterials():
+            if data(mat).nodes_version < 1:
+                self.report({'INFO'}, "Material '%s' could be updated" % (mat.name))
+        return {'FINISHED'}
+
+class DumpSpaceDataAttributes(bpy.types.Operator):
+    bl_idname = "info.spceng_dump_spacedata_attrs"
+    bl_label = "Dump space_data attributes"
+
+    # @classmethod
+    # def poll(cls, context):
+    #     s = context.space_data
+    #     runnable = s and s.type == 'NODE_EDITOR' and s.tree_type == 'ShaderNodeTree'
+    #     return runnable
+
+    def execute(self, context):
+        sd = context.space_data
+
+        print(dir(sd))
+        print(dir(context))
+        return {'FINISHED'}
+
+class SetupMaterial(bpy.types.Operator):
+    bl_idname = "material.spceng_setup"
+    bl_label = "Setup Nodes Layout"
+
+    @classmethod
+    def poll(cls, context):
+        s = context.space_data
+        return s.type == 'PROPERTIES' and s.context == 'MATERIAL' \
+            or s.type == 'NODE_EDITOR' and s.tree_type == 'ShaderNodeTree'
+
+    def execute(self, context):
+        s = context.space_data
+        if s.type == 'PROPERTIES':
+            tree = context.material.node_tree
+        elif s.type == 'NODE_EDITOR':
+            tree = context.space_data.node_tree
+        createMaterialNodeTree(tree)
+        return {'FINISHED'}
+
+
 registered = [
     AddDefaultExportNodes,
     AddMirroringEmpties,
+    CheckForUpdatableMaterials,
     ConfigureEmptyAsVolumeHandle,
+    DumpSpaceDataAttributes,
     ExportSceneAsBlock,
     UpdateDefinitionsFromBlockScene,
     AddMountPointSkeleton,
     SetupGrid,
+    SetupMaterial,
     NameLayersFromExportNodes,
 ]
 

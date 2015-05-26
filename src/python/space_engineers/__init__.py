@@ -24,6 +24,8 @@ def reload(module_name):
 
 if not reload('utils'): from . import utils
 if not reload('mirroring'): from . import mirroring
+if not reload('texture_files'): from . import texture_files
+if not reload('pbr_node_group'): from . import pbr_node_group
 if not reload('types'): from . import types
 if not reload('mount_points'): from . import mount_points
 if not reload('mwmbuilder'): from . import mwmbuilder
@@ -76,7 +78,9 @@ def menu_func_export(self, context):
 
 def register():
     from bpy.utils import register_class
-    
+
+    register_class(utils.MessageOperator)
+
     register_class(types.SEAddonPreferences)
     register_class(types.SESceneProperties)
     register_class(types.SEObjectProperties)
@@ -88,6 +92,7 @@ def register():
     bpy.types.Material.space_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
 
     register_class(types.NODE_PT_spceng_nodes)
+    register_class(types.NODE_PT_spceng_nodes_mat)
     register_class(types.DATA_PT_spceng_scene)
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
@@ -121,6 +126,7 @@ def unregister():
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)
     unregister_class(types.DATA_PT_spceng_scene)
+    unregister_class(types.NODE_PT_spceng_nodes_mat)
     unregister_class(types.NODE_PT_spceng_nodes)
     
     del bpy.types.Material.space_engineers
@@ -132,4 +138,6 @@ def unregister():
     unregister_class(types.SEObjectProperties)
     unregister_class(types.SESceneProperties)
     unregister_class(types.SEAddonPreferences)
+
+    unregister_class(utils.MessageOperator)
 

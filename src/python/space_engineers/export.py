@@ -179,7 +179,7 @@ class ExportSettings:
     @property
     def isOldMwmbuilder(self):
         if self._isOldMwmbuilder is None:
-            self._isOldMwmbuilder = (OLD_MWMBUILDER_MD5 == md5sum(self.mwmbuilder))
+            self._isOldMwmbuilder = False # (OLD_MWMBUILDER_MD5 == md5sum(self.mwmbuilder))
         return self._isOldMwmbuilder
 
     @property

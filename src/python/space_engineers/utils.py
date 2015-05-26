@@ -370,3 +370,16 @@ class PinnedSettings():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         currentSettingsHolder.settings = self.previousSettings
+
+def reportMessage(msgType: str, msg: str):
+    bpy.ops.info.spceng_reporter(msgtype=msgType, message=msg)
+
+class MessageOperator(bpy.types.Operator):
+    bl_idname = "info.spceng_reporter"
+    bl_label = "Message"
+    msgtype = bpy.props.StringProperty()
+    message = bpy.props.StringProperty()
+
+    def execute(self, context):
+        self.report({self.msgtype}, self.message)
+        return {'FINISHED'}

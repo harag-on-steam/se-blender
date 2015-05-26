@@ -1,3 +1,4 @@
+from itertools import chain
 import bpy
 import shutil
 from os.path import join
@@ -5,7 +6,8 @@ from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
 from .mirroring import mirroringAxisFromObjectName
-from .utils import layer_bits, layer_bit, scene, first
+from .types import sceneData, data
+from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
 
@@ -27,6 +29,8 @@ class BlockExportTree(bpy.types.NodeTree):
     bl_icon = "SCRIPTPLUGINS"
     type = "CUSTOM"
 
+    def getAllMwmObjects(self):
+        return chain.from_iterable((n.inputs['Objects'].getObjects() for n in self.nodes if isinstance(n, MwmFileNode)))
 
 class ObjectSource:
     '''
@@ -724,6 +728,28 @@ def getBlockDef(nodeTree: bpy.types.NodeTree) -> BlockDefinitionNode:
      if blockDef is None:
          raise ValueError('export settings contain no block-definition')
      return blockDef
+
+def getUsedMaterials(scene: bpy.types.Scene = None):
+    materials = set()
+
+    scenes = [scene] if not scene is None else bpy.data.scenes
+    for scene in scenes:
+        with PinnedScene(scene):
+            data = sceneData(scene)
+            if not data or not data.is_block:
+                continue
+
+            try:
+                exportTree = data.getExportNodeTree()
+            except ValueError:
+                continue
+
+            for ob in exportTree.getAllMwmObjects():
+                for slot in ob.material_slots:
+                    if slot.material:
+                        materials.add(slot.material)
+
+    return materials
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
