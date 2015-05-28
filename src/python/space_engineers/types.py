@@ -552,7 +552,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
 
         alphamask = images.get(TextureType.Alphamask, None)
         if alphamask and alphamask.image and d.technique != 'ALPHAMASK':
-            msg("The AlphamaskTexture is present. Check the Technique.", 'ERROR')
+            msg("The AlphamaskTexture is used. Check the Technique.", 'ERROR')
 
         if len(images) == 0:
             msg("Use the node-editor to choose textures.")
