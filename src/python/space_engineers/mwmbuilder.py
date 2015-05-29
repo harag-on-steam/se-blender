@@ -1,33 +1,10 @@
 from collections import OrderedDict
 import os
 import bpy
-
 from xml.etree import ElementTree
-from .texture_files import _RE_DIFFUSE, _RE_NORMAL
-from .types import data
+from .texture_files import TextureType
+from .types import data, SEMaterialInfo, rgb
 
-
-def diffuse_texture_path(material):
-    for slot in material.texture_slots:
-        if not slot or not slot.texture or not slot.texture.image:
-            continue
-
-        filepath = slot.texture.image.filepath
-        if slot.use_map_color_diffuse or _RE_DIFFUSE.search(filepath):
-            return filepath
-
-    return None
-
-def normal_texture_path(material):
-    for slot in material.texture_slots:
-        if not slot or not slot.texture or not slot.texture.image:
-            continue
-
-        filepath = slot.texture.image.filepath
-        if slot.use_map_normal or _RE_NORMAL.search(filepath):
-            return filepath
-
-    return None
 
 def se_content_dir(settings):
     se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
@@ -57,28 +34,13 @@ def derive_texture_path(settings, filepath):
 
     return image_path
 
-def derive_texture_paths(settings, material):
-    diffuse = diffuse_texture_path(material)
-    if diffuse:
-        diffuse = derive_texture_path(settings, diffuse)
-
-    normal = normal_texture_path(material)
-    if normal:
-        normal = derive_texture_path(settings, normal)
-        if diffuse and _RE_DIFFUSE.sub('_ns.dds', diffuse).lower() == normal.lower():
-            normal = '' # with a xyz_de.dds diffuse texture the xyz_ns.dds texture can be defaulted to <NormalTexture/>
-    else:
-        if diffuse and _RE_DIFFUSE.search(diffuse):
-            normal = '' # assume the _ns.dds just is not configured in Blender
-
-    return (diffuse, normal)
-
 def _floatstr(f):
     return str(round(f, 2))
 
 def material_xml(settings, mat):
     d = data(mat)
     e = ElementTree.Element("Material", Name=mat.name)
+    m = SEMaterialInfo(mat)
 
     def param(name, value):
         se = ElementTree.SubElement(e, 'Parameter', Name=name)
@@ -86,8 +48,8 @@ def material_xml(settings, mat):
             se.text = value
 
     param("Technique", d.technique)
-    param("SpecularIntensity", _floatstr(d.specular_intensity))
-    param("SpecularPower", _floatstr(d.specular_power))
+    param("SpecularIntensity", _floatstr(m.specularIntensity))
+    param("SpecularPower", _floatstr(m.specularPower))
 
     if 'GLASS' == d.technique:
         param("DiffuseColorX", '255')
@@ -97,22 +59,21 @@ def material_xml(settings, mat):
         param("GlassMaterialCW", d.glass_material_cw)
         param("GlassSmooth", str(d.glass_smooth))
     else:
-        r, g, b = d.diffuse_color
+        r, g, b = rgb(m.diffuseColor)
         param("DiffuseColorX", str(int(255 * r)))
         param("DiffuseColorY", str(int(255 * g)))
         param("DiffuseColorZ", str(int(255 * b)))
 
-    textures = derive_texture_paths(settings, mat)
+    # only for legacy materials
+    if m.couldDefaultNormalTexture and not TextureType.Normal in m.images:
+        m.images[TextureType.Normal] = ''
 
-    if textures[0]:
-        param("DiffuseTexture", textures[0])
-    else:
-        e.append(ElementTree.Comment("material has no diffuse-texture"))
-
-    if None != textures[1]: # normal-texture might be defaulted ('')
-        param("NormalTexture", textures[1])
-    else:
-        e.append(ElementTree.Comment("material has no normal-texture"))
+    for texType in TextureType:
+        filepath = m.images.get(texType, None)
+        if not filepath is None:
+            param(texType.name + "Texture", derive_texture_path(settings, filepath))
+        else:
+            e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
     return e
 
