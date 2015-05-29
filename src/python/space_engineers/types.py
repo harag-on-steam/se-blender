@@ -532,13 +532,24 @@ class SEMaterialInfo:
     def __init__(self, material: bpy.types.Material):
         self.material = material
 
-        self.textureNodes = imageNodes(material.node_tree.nodes)
-        self.diffuseColorNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
-        self.specularIntensityNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
-        self.specularPowerNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeValue, "SpecularPower")
+        if (material.node_tree): # the material might not have a node_tree, yet
+            nodes = material.node_tree.nodes
+            self.textureNodes = imageNodes(nodes)
+            self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
+            self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
+            self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
+        else:
+            self.textureNodes = {}
+            self.diffuseColorNode = None
+            self.specularIntensityNode = None
+            self.specularPowerNode = None
 
         self.images = {t : n.image.filepath for t, n in self.textureNodes.items() if n.image and n.image.filepath}
         self.couldDefaultNormalTexture = False
+
+        self.isOldMaterial = (len(self.textureNodes) == 0)
+        if self.isOldMaterial:
+            self._imagesFromLegacyMaterial()
 
         def val(n):
             return n.outputs[0].default_value
@@ -547,10 +558,6 @@ class SEMaterialInfo:
         self.diffuseColor = tuple(c for c in val(self.diffuseColorNode)) if self.diffuseColorNode else d.diffuse_color
         self.specularIntensity = val(self.specularIntensityNode) if self.specularIntensityNode else d.specular_intensity
         self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
-
-        self.isOldMaterial = (len(self.textureNodes) == 0)
-        if self.isOldMaterial:
-            self._imagesFromLegacyMaterial()
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
         self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
@@ -586,6 +593,11 @@ def rgb(color: tuple):
     return (r,g,b)
 
 def upgradeToNodeMaterial(material: bpy.types.Material):
+    # the material might not have a node_tree, yet
+    if material.node_tree is None and not material.use_nodes:
+        material.use_nodes = True
+        material.use_nodes = False
+
     matInfoBefore = SEMaterialInfo(material)
     createMaterialNodeTree(material.node_tree)
     matInfo = SEMaterialInfo(material)
