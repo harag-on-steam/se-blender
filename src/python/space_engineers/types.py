@@ -5,7 +5,11 @@ import os
 import requests
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
-from .texture_files import imagesFromNodes, TextureType
+from .pbr_node_group import firstMatching
+from space_engineers.pbr_node_group import createMaterialNodeTree
+from space_engineers.utils import data
+from .texture_files import TextureType, textureFileNameFromPath, _RE_DIFFUSE, \
+    matchingFileNamesFromFilePath, imageFromFilePath, imageNodes
 from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path, scene
 
@@ -393,8 +397,7 @@ class NODE_PT_spceng_nodes_mat(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("Export using these settings")
-        layout.operator("material.spceng_setup")
+        layout.operator("material.spceng_material_setup", icon='NODETREE')
 
 def block_bounds():
     """
@@ -525,6 +528,86 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     
     # texture paths are derived from the material textures
 
+class SEMaterialInfo:
+    def __init__(self, material: bpy.types.Material):
+        self.material = material
+
+        self.textureNodes = imageNodes(material.node_tree.nodes)
+        self.diffuseColorNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
+        self.specularIntensityNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
+        self.specularPowerNode = firstMatching(material.node_tree.nodes, bpy.types.ShaderNodeValue, "SpecularPower")
+
+        self.images = {t : n.image.filepath for t, n in self.textureNodes.items() if n.image and n.image.filepath}
+        self.couldDefaultNormalTexture = False
+
+        def val(n):
+            return n.outputs[0].default_value
+
+        d = data(self.material)
+        self.diffuseColor = tuple(c for c in val(self.diffuseColorNode)) if self.diffuseColorNode else d.diffuse_color
+        self.specularIntensity = val(self.specularIntensityNode) if self.specularIntensityNode else d.specular_intensity
+        self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
+
+        self.isOldMaterial = (len(self.textureNodes) == 0)
+        if self.isOldMaterial:
+            self._imagesFromLegacyMaterial()
+
+        alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
+        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
+        self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
+
+    def _imagesFromLegacyMaterial(self):
+        for slot in self.material.texture_slots:
+            # getattr() because sometimes bpy.types.Texture has no attribute image (Blender bug?)
+            if slot and getattr(slot, 'texture') and getattr(slot.texture, 'image'):
+                image = slot.texture.image
+                filename = textureFileNameFromPath(image.filepath)
+                if filename:
+                    if slot.use_map_color_diffuse or filename.textureType == TextureType.Diffuse:
+                        self.images[TextureType.Diffuse] = image.filepath
+                        self.couldDefaultNormalTexture = bool(_RE_DIFFUSE.search(image.filepath))
+                    if slot.use_map_normal or filename.textureType == TextureType.Normal:
+                        self.images[TextureType.Normal] = image.filepath
+        if TextureType.Normal in self.images:
+            self.couldDefaultNormalTexture = False
+
+
+def rgba(color: tuple, alpha=1.0):
+    if len(color) == 4:
+        return color
+    r,g,b = color
+    return (r,g,b,alpha)
+
+
+def rgb(color: tuple):
+    if len(color) == 3:
+        return color
+    r,g,b,_ = color
+    return (r,g,b)
+
+def upgradeToNodeMaterial(material: bpy.types.Material):
+    matInfoBefore = SEMaterialInfo(material)
+    createMaterialNodeTree(material.node_tree)
+    matInfo = SEMaterialInfo(material)
+
+    matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
+    matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
+    matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
+
+    imagesToSet = {}
+    for texType in [TextureType.ColorMetal, TextureType.Diffuse]:
+        if texType in matInfoBefore.images:
+            for mTexType, mTexFileName in matchingFileNamesFromFilePath(matInfoBefore.images[texType]).items():
+                if not mTexType in imagesToSet:
+                    imagesToSet[mTexType] = imageFromFilePath(mTexFileName.filepath)
+
+    for texType, node in imageNodes(material.node_tree.nodes).items():
+        if not node.image and texType in imagesToSet:
+            node.image = imagesToSet[texType]
+
+    material.use_nodes = True
+
+
 class DATA_PT_spceng_material(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -539,49 +622,62 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         layout = self.layout
 
         mat = context.material
+        matInfo = SEMaterialInfo(mat)
         d = data(mat)
 
-        images = imagesFromNodes(mat.node_tree.nodes)
-
-        row = None
-        def msg(text, icon='INFO'):
-            nonlocal row
+        def msg(msg, icon='INFO', layout=layout, align='CENTER'):
             row = layout.row()
-            row.alignment = 'CENTER'
-            row.label(text, icon=icon)
+            row.alignment = align
+            row.label(msg, icon=icon)
 
-        alphamask = images.get(TextureType.Alphamask, None)
-        if alphamask and alphamask.image and d.technique != 'ALPHAMASK':
-            msg("The AlphamaskTexture is used. Check the Technique.", 'ERROR')
+        if not matInfo.isOldMaterial and context.scene.render.engine != 'CYCLES':
+            msg("The render engine should be 'Cycles Render'.")
+            layout.separator()
 
-        if len(images) == 0:
-            msg("Use the node-editor to choose textures.")
-        if context.scene.render.engine != 'CYCLES':
-            msg("The render engine should be 'Cycles Render'.", 'INFO')
-        if not mat.use_nodes:
-            msg("The material does not use its nodes.", 'INFO')
+        col = layout.column()
+        col.alert = matInfo.warnAlphaMask
+        col.prop(d, "technique")
+        if matInfo.warnAlphaMask:
+            msg("The AlphamaskTexture is used.", 'ERROR', col, 'RIGHT')
 
-        if row: layout.separator()
+        col = layout.column()
+        if d.technique in {'MESH', 'ALPHAMASK'}:
+             split = col.split()
+             if matInfo.diffuseColorNode:
+                 split.column().prop(matInfo.diffuseColorNode.outputs[0], "default_value", text="Diffuse Color")
+             else:
+                split.column().prop(d, "diffuse_color")
+             split.column()
 
-        layout.prop(d, "technique")
+        col.label(text="Specular")
+        split = col.split()
+        if matInfo.specularIntensityNode:
+            split.column().prop(matInfo.specularIntensityNode.outputs[0], "default_value", text="Intensity")
+        else:
+            split.column().prop(d, "specular_intensity", text="Intensity")
+        if matInfo.specularPowerNode:
+            split.column().prop(matInfo.specularPowerNode.outputs[0], "default_value", text="Power")
+        else:
+            split.column().prop(d, "specular_power", text="Power")
+
+        if matInfo.isOldMaterial:
+            layout.separator()
+            layout.operator("material.spceng_material_setup", "Upgrade to Nodes Material", icon="RECOVER_AUTO")
+        else:
+            if matInfo.shouldUseNodes:
+                layout.separator()
+                layout.operator("cycles.use_shading_nodes", icon="NODETREE")
 
         # col = layout.column()
         # TODO decide if diffuse_color is needed or should always stay white
-        # if 'MESH' == d.technique:
-        #      split = col.split()
-        #      split.column().prop(d, "diffuse_color")
-        #      split.column()
-        #
-        # col.label(text="Specular")
-        # split = col.split()
-        # split.column().prop(d, "specular_intensity", text="Intensity")
-        # split.column().prop(d, "specular_power", text="Power")
 
         if 'GLASS' == d.technique:
             layout.separator()
             layout.prop(d, "glass_smooth")
-            
+
             col = layout.column()
             # col.label(text="Glass settings")
             col.prop(d, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
             col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
+
+

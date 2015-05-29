@@ -1,13 +1,11 @@
 from collections import OrderedDict
 import os
-import re
 import bpy
 
 from xml.etree import ElementTree
+from .texture_files import _RE_DIFFUSE, _RE_NORMAL
 from .types import data
 
-_RE_DIFFUSE = re.compile(r"_[dm]e\.dds$", re.IGNORECASE)
-_RE_NORMAL = re.compile(r"_ns\.dds$", re.IGNORECASE)
 
 def diffuse_texture_path(material):
     for slot in material.texture_slots:

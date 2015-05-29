@@ -340,6 +340,12 @@ def scene():
     s = getattr(currentSceneHolder, "scene", None)
     return s if s else bpy.context.scene
 
+PROP_GROUP = "space_engineers"
+
+def data(obj):
+    # avoids AttributeError
+    return getattr(obj, PROP_GROUP, None)
+
 class PinnedScene():
     def __init__(self, scene):
         self.scene = scene

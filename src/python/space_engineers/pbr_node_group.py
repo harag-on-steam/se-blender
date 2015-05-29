@@ -1,4 +1,3 @@
-from collections import namedtuple
 from enum import Enum
 import re
 import bpy
@@ -80,12 +79,10 @@ class ShaderNodesBuilder:
     def __init__(self, tree: bpy.types.NodeTree, defaultCreate=CreateMode.ADD):
         self.tree = tree
         self.defaultCreate = defaultCreate
-        self.node = None
 
     def newNode(self, nodeType, name=None, label=None, location=None, width=None, create=None):
         if name is None and label:
             name = _RE_WHITESPACE.sub("", label)
-            print("substituted " + name)
         if create is None: create = self.defaultCreate
 
         node = None
@@ -97,14 +94,11 @@ class ShaderNodesBuilder:
         if node is None:
             node = self.tree.nodes.new(blId(nodeType))
 
-        print(str(name) + ": "+ str(label))
-
         if not label is None: node.label = label
         if not name is None: node.name = name
         if not location is None: node.location = location
         if not width is None: node.width = width
 
-        self.node = node
         return node
 
     def connectSockets(self, pairs):
@@ -187,7 +181,7 @@ class ShaderNodesBuilder:
                 unmatched = i
                 break
 
-        # prune beginning with the first non-matching socket and add missing sockets after that according to spec
+        # prune, beginning with the first non-matching socket and add missing sockets after that according to spec
         while (unmatched < len(socketCollection)):
             socketCollection.remove(socketCollection[len(socketCollection)-1])
         for spec in socketSpecs[unmatched:]:
@@ -311,6 +305,14 @@ def createDx9ShaderGroup():
     pbr.use_fake_user = True
 
 
+def getDx11Shader():
+    nodeTrees = (tree for tree in bpy.data.node_groups if tree.name.startswith(DX11_NAME))
+    try:
+        return max(nodeTrees, key=lambda t: t.name) # get the latest version
+    except ValueError:
+        createDx11ShaderGroup()
+        return getDx11Shader()
+
 def getDx9Shader():
     nodeTrees = (tree for tree in bpy.data.node_groups if tree.name.startswith(DX9_NAME))
     try:
@@ -319,13 +321,11 @@ def getDx9Shader():
         createDx9ShaderGroup()
         return getDx9Shader()
 
-def getDx11Shader():
-    nodeTrees = (tree for tree in bpy.data.node_groups if tree.name.startswith(DX11_NAME))
-    try:
-        return max(nodeTrees, key=lambda t: t.name) # get the latest version
-    except ValueError:
-        createDx11ShaderGroup()
-        return getDx11Shader()
+def getDx11ShaderGroup(tree: bpy.types.ShaderNodeTree):
+    return firstMatching(tree.nodes, bpy.types.ShaderNodeGroup, "DX11Shader")
+
+def getDx9ShaderGroup(tree: bpy.types.ShaderNodeTree):
+    return firstMatching(tree.nodes, bpy.types.ShaderNodeGroup, "DX9Shader")
 
 def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     builder = ShaderNodesBuilder(tree, defaultCreate=CreateMode.REUSE)
@@ -352,12 +352,16 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     for n in (cmC.node, ngC.node, addC.node, alphaC.node, dx11):
         n.parent = frameDx11
 
-    deC , deA  = builder.newImageTexture(None, label(TextureType.Diffuse), (-200, -100), ImageColorspace.COLOR)
-    nsC , nsA  = builder.newImageTexture(None, label(TextureType.Normal),  (   0, -200), ImageColorspace.NONE)
+    deC , deA  = builder.newImageTexture(None, label(TextureType.Diffuse), (-600, -100), ImageColorspace.COLOR)
+    nsC , nsA  = builder.newImageTexture(None, label(TextureType.Normal),  (-400, -200), ImageColorspace.NONE)
+
+    uniColor = builder.newRgbValue  (None, "Diffuse Color",      (-200, -300), (1,1,1,1))
+    specInt  = builder.newFloatValue(None, "Specular Intensity", (   0, -300), 0.0)
+    specPow  = builder.newFloatValue(None, "Specular Power",     (   0, -400), 0.0)
 
     dx9 = builder.newNode(bpy.types.ShaderNodeGroup, "DX9Shader", None, (250, -50))
     dx9.node_tree = getDx9Shader()
-    builder.connectSockets(pair for pair in zip([deC, deA, nsC, nsA], dx9.inputs[0:4]))
+    builder.connectSockets(pair for pair in zip([deC, deA, nsC, nsA, uniColor, specInt, specPow], dx9.inputs[0:7]))
     dx9.width = 207
 
     frameDx9 = builder.newNode(bpy.types.NodeFrame, "DX9Frame", 'DirectX 9 Textures')
@@ -365,7 +369,7 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     frameDx9.use_custom_color = True
     frameDx9.shrink = True
     frameDx9.label_size = 25
-    for n in (deC.node, nsC.node, dx9):
+    for n in (deC.node, nsC.node, uniColor.node, specInt.node, specPow.node, dx9):
         n.parent = frameDx9
 
     shaderToggle = builder.newMix(None, "Shader Toggle", (600, 150), 0.0, dx11.outputs[0], dx9.outputs[0])
@@ -380,3 +384,4 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
             and not any(input for input in diffuseShader.inputs if len(input.links) > 0) \
             and not any(output for output in diffuseShader.outputs if len(output.links) > 0):
         tree.nodes.remove(diffuseShader)
+
