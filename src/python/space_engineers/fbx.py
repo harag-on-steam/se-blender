@@ -47,6 +47,12 @@ def fbx_template_def_model(scene, settings, override_defaults=None, nbr_users=0)
 
 _fbx.fbx_template_def_model = fbx_template_def_model
 
+def check_skip_material(mat):
+    """Simple helper to check whether we actually support exporting that material or not"""
+    return mat.type not in {'SURFACE'} # or mat.use_nodes
+
+_fbx.check_skip_material = check_skip_material
+
 HAVOK_SHAPE_NAMES = {
     'CONVEX_HULL': 'Hull',
     'BOX': 'Box',

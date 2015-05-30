@@ -72,6 +72,8 @@ class BlockExport:
                 for settings.CubeSize, settings.scaleDown in SIZES[settings.sceneData.block_size]:
                     settings.cache.clear()
 
+                    self.ensureAtLeastOneTextureSlot(getUsedMaterials())
+
                     for exporter in settings.exportNodes.nodes:
                         if not isinstance(exporter, Exporter):
                             continue
@@ -87,6 +89,37 @@ class BlockExport:
             settings.warn("Some export-nodes were skipped: %s" % list(skips.keys()))
         if failures:
             settings.error("Some export-nodes failed: %s" % list(failures.keys()))
+
+    def ensureAtLeastOneTextureSlot(self, materials):
+        """
+        MwmBuilder or AssImp require at least one image-texture in a texture-slot per material.
+        Node materials may not have one so this method adds a dummy texture for those.
+        Yes, this is an ugly hack.
+        """
+        for mat in materials:
+            if mat.texture_slots[0] is None: # Texture slots are strange. Index 0 always exists but may be None.
+                mat.texture_slots.add()
+            if mat.texture_slots[0].texture is None:
+                mat.texture_slots[0].texture = self.getDummyTexture()
+                self.settings.text("Added dummy texture", "Material: "+mat.name)
+
+    def getDummyTexture(self):
+        for tex in bpy.data.textures:
+            if tex and tex.type == 'IMAGE' and tex.image and tex.image.filepath == '//Dummy.dds':
+                return tex
+        self.settings.text("Creating dummy texture")
+        dummyImage = None
+        for img in bpy.data.images:
+            if img.filepath == '//Dummy.dds':
+                dummyImage = img
+                break
+        if not dummyImage:
+            dummyImage = bpy.data.images.new("Dummy", 8, 8)
+            dummyImage.filepath = "//Dummy.dds"
+        tex = bpy.data.textures.new("Dummy", 'IMAGE')
+        tex.image = dummyImage
+        return tex
+
 
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
