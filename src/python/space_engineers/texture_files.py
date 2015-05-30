@@ -106,7 +106,11 @@ def imageFromFilePath(filepath):
     for image in bpy.data.images:
         if image.filepath and os.path.samefile(bpy.path.abspath(image.filepath), filepath):
             return image
-    image = bpy.data.images.load(bpy.path.relpath(filepath))
+    try:
+        filepath = bpy.path.relpath(filepath)
+    except ValueError:
+        pass # .blend and image are on different drives, so fall back to using the absolute path
+    image = bpy.data.images.load(filepath)
     return image
 
 def matchingFileNamesFromFilePath(filepath):
