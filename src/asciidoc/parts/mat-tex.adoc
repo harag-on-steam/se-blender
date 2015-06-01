@@ -1,13 +1,13 @@
-=== Textures
+=== DirectX 9 Textures
 
 This is a small excursion into how SE textures a block.
-The game currently uses a maximum of two textures per face of a mesh.
+In DirectX 9 rendering mode the game uses two textures per face of a mesh.
 Both of them have four channels (RGBA).
 
 ==== Diffuse/Emissive
 
-By convention Keen names this kind of texture-file with a suffix of `_de.dds`
-but you are allowed to ignore the convention.
+The internal name of this texture is `DiffuseTexture`.
+By convention Keen names texture-files of this kind with a suffix of `_de.dds`.
 The RGB-channels of this texture represent the diffuse color of a face--just like with any regular digital image.
 
 The A-channel of the texture does not represent the transparency of the pixels, though.
@@ -42,7 +42,7 @@ but the values have a slightly different meaning.
 
 ==== Normal/Specular
 
-This kind of texture has a suffix of `_ns.dds` and contains no color information at all.
+Internally named `NormalTexture` this kind of texture has a suffix of `_ns.dds` and contains no color information at all.
 The RGB-channels contain a standard DirectX link:http://en.wikipedia.org/wiki/Normal_mapping[normal-map].
 The A-channel tells the game how much of a material's maximum specularity settings it should apply to a pixel.
 A value of 0 means "don't apply any specularity", a value of 255 means "apply full specularity".
@@ -51,32 +51,60 @@ TIP: The A-channel normally controls transparency in tools like Gimp or Photosho
 to edit SE's textures. It's therefor a good idea to separate the channels in those tools.
 For example, in Gimp you can convert the A-channel into a layer mask and edit and view that separately.
 
+=== DirectX 11 Textures
+
+In DirectX 11 mode SE employs https://www.allegorithmic.com/pbr-guide[Physically Based Rendering (PBR)]
+to render 3D objects. In this mode it uses a different set of 3--4 textures.
+The `ColorMetalTexture` (`_cm`) and `NormalGlossTexture` (`_ng`) correspond with the common metal/roughness workflow
+where glossiness is just the inverse of roughness.
+`Needs verification:` Here the normal map uses the OpenGL convention,
+i.e. in comparison to the DirectX convention the green channel is inverted.
+
+The `AddMapsTexture` (`_add`) combines additional greyscale maps in its four channels:
+
+* The R-channel contains a baked Ambient Occlusion (AO) map where a value of 255 means 'no occlusion' and 0 means 'fully occluded'.
+* The G-channel contains the emissivity. 255 is fully emissive, 0 is non-emissive.
+* The B-channel is currently unused.
+* The A-channel contains the re-coloring mask. The difference with the DirectX 9 equivalent is that the parts of the
+  ColorMetalTexture that are selected by this mask are usually colorless.
+
+The `AlphamaskTexture` (`_alphamask`) is optionally used to make parts of a texture transparent.
+It has a single greyscale channel which really only differentiates between two states:
+fully transparent below a value of 128 or fully opaque at 128 or above.
+This is most useful for things like foliage and small details like facial hair.
+If you want to use this texture you need to also set the technique of the material that uses it to `Alphamask`.
+
 === Materials
 
 ==== Texturing
 
 [.thumb]
-image::blender-material-simple.png[width=450,float=right,link=images/blender-material-simple.png]
+image::blender-material-v2.png[width=450,float=right,link=images/blender-material-v2.png]
 
 Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
 http://www.blender.org/manual/render/blender_render/textures/mapping/uv.html[UV-mapping]
 to tell the game which _part_ of a texture to use for a face).
 
 In Blender there are several types of materials depending on the renderer you have chosen.
-If you choose `Blender Render` as the renderer you can switch between simple and node-based materials.
-If you choose `Cycles` as the renderer you are forced to use node-based materials.
+If you choose Blender Render as the renderer you can switch between simple and node-based materials.
+If you choose Cycles as the renderer you can only use node-based materials.
 
-This addon needs you to use simple materials because these are the only ones where it can reliably know
-it can find the texture-files in the slots on the Texture property tab.
+This add-on needs you to use node-based materials because it sets up several nodes to preview the textures in Blender.
+It also requires the use of Cycles because the nodes it sets up are meant for this renderer.
+So to set a material up for use with SE first switch the scene to use `Cycles Render`
+and then use the `Upgrade to Nodes Material` button on the Material property tab.
 
-It distinguishes between the diffuse/emissive and the normal/specular textures by looking at the influence levels
-of the textures. If the 'Diffuse' influence is above 0.0 the texture is considered to be the diffuse/emissive texture.
-If the 'Normal' influence level is above 0.0 it is considered to be the normal/specular texture.
+Afterwards you can find the list of SE-textures on the Texture property tab.
+Just select each texture from the drop-down box and point it to the texture-file corresponding with its name.
 
-TIP: If you configure no normal/specular texture and your diffuse/emissive texture's filename uses Keen's convention
-to end in `_de.dds` or `_me.dds` the addon assumes there is a normal/specular texture-file that ends with `_ns.dds`
-and will export that to SE automatically. So following the convention saves you some work if you are not interested
-in viewing the normal map or specularity in Blender.
+TIP: You won't be able to see any textures on your meshes until you set your
+http://www.blender.org/manual/getting_started/basics/navigating/introduction.html[viewport-shading] to Material.
+Setting it to Rendered looks even better but requires a lamp in the scene or everything will be black.
+
+NOTE: In a previous version of the add-on the `Blender Render` and its texture-slots were used.
+This setup still works but only for DirectX 9 textures. If your .blend still uses it there is an operator
+`Upgrade All Materials to use Nodes` you can use to get to the new material setup.
+It's not available on any panel, you need to use Blender's quicksearch (`Space`) to access it.
 
 ===== Texture Paths
 
@@ -96,23 +124,19 @@ But it's easy to spot missing texture-files when you configure the 3D view to di
 
 ==== Specularity
 
-Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
+Specularity is a DirectX 9 mode-only setting and is configured per material.
+You do that in the "Space Engineers" panel of the material.
 The values you set there are the maximum values for that material.
 How much of those maximum values are actually applied to a pixel of a face
 is determined by the A-channel of the normal/specular texture.
-
-WARNING: There is also a "Specular" panel. This is the wrong panel.
-With that you control specularity as it is rendered by Blender.
-The algorithm Blender uses is similar to the one SE uses but the values have different meanings.
-Because of that the add-on cannot reuse Blender's settings and you have to provide them separately for SE.
 
 The effect of the two values `Intensity` and `Power` are hard to describe so it is best if you play with them
 and watch the results in-game. Just know that at high values (30.0 / 30.0) the game's specularity shader
 also starts to mirror the environment like smooth metal would do.
 
-==== Transparent Materials
+==== Glass Materials
 
-Transparent materials like glass are handled specially by the game.
+Glass materials are handled specially by the game.
 They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called `TransparentMaterials.sbc`.
 It makes no sense for this add-on to support editing the content of this file

@@ -6,11 +6,16 @@ SE uses empties to represent predefined points of interest on a model like termi
 the location of the thruster flame. The purpose of each empty is determined by its name -- i.e. `detector_terminal_1`
  or `detector_conveyor_1` for example.
 
-WARNING: For empties that are used as a 'yellow interaction box' in-game you need to set the
-`Display` property to `Cube` and the `Size` property to `0.5`.
-This is necessary for the add-on to know it needs to scale down the empty for small blocks.
-It also allows you to preview the exact size in Blender. +
-There's a button link:images/empty_volumetric_handle.png[to do this] {zoom}.
+===== Volumetric Handles
+
+Some empties only serve as location markers. Some others like the aforementioned `detector_terminal_1`
+have some volume to them and you need to point your crosshair inside the volume to interact with the empty in the game.
+The size of that volume is determined by the scaling of the empty.
+
+The add-on needs to know if an empty is a volumetric handle because it needs to scale it down in size
+if the option is used to create a small block version from a large block.
+To turn an empty into a volumetric handle use the link:images/empty_volumetric_handle.png[corresponding button] {zoom}
+This will display the empty as a box with the exact size it will have in-game.
 
 ===== Linking Model Files
 
