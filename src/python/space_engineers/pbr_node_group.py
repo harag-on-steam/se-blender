@@ -231,7 +231,7 @@ def createDx11ShaderGroup():
         SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Metalness", 0.0, 0.0, 1.0),
         # NormalGlossTexture
         SocketSpec(bpy.types.NodeSocketColor,         "Normal Map", (0.5, 0.5, 1.0, 1.0)), # straight up
-        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Metalness", 0.0, 0.0, 1.0),
+        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Glossiness", 0.0, 0.0, 1.0),
         # AddMapsTexture
         SocketSpec(bpy.types.NodeSocketColor,         "AO/Emissivity", (1, 0, 0, 1)), # R: no AO, G: no emis, B: unused
         SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Coloring Mask", 0.0, 0.0, 1.0),
