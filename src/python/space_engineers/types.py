@@ -646,23 +646,38 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             msg("The render engine should be 'Cycles Render'.")
             layout.separator()
 
+        splitPercent = 0.25
+
         col = layout.column()
         col.alert = matInfo.warnAlphaMask
         col.prop(d, "technique")
         if matInfo.warnAlphaMask:
             msg("The AlphamaskTexture is used.", 'ERROR', col, 'RIGHT')
 
-        col = layout.column()
-        if d.technique in {'MESH', 'ALPHAMASK'}:
-             split = col.split()
-             if matInfo.diffuseColorNode:
-                 split.column().prop(matInfo.diffuseColorNode.outputs[0], "default_value", text="Diffuse Color")
-             else:
-                split.column().prop(d, "diffuse_color")
-             split.column()
+        if 'GLASS' == d.technique:
+            layout.separator()
+            layout.prop(d, "glass_smooth")
 
-        col.label(text="Specular")
-        split = col.split()
+            col = layout.column()
+            col.prop(d, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
+            col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
+
+        layout.separator()
+        if not matInfo.isOldMaterial:
+            layout.label('DirectX 9', icon="IMAGE_COL")
+
+        if d.technique != 'GLASS':
+            split = layout.split(splitPercent)
+            split.label("Diffuse Color")
+            if matInfo.diffuseColorNode:
+                split.prop(matInfo.diffuseColorNode.outputs[0], "default_value", text="")
+            else:
+                split.column().prop(d, "diffuse_color", text="")
+            split.column()
+
+        split = layout.split(splitPercent)
+        split.label("Specular")
+        split = split.split()
         if matInfo.specularIntensityNode:
             split.column().prop(matInfo.specularIntensityNode.outputs[0], "default_value", text="Intensity")
         else:
@@ -672,24 +687,26 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         else:
             split.column().prop(d, "specular_power", text="Power")
 
+        def image(texType: TextureType):
+            if texType in matInfo.textureNodes:
+                split = layout.split(splitPercent)
+                split.label(texType.name)
+                split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
+
         if matInfo.isOldMaterial:
             layout.separator()
-            layout.operator("material.spceng_material_setup", "Upgrade to Nodes Material", icon="RECOVER_AUTO")
+            layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
         else:
+            layout.separator()
+            image(TextureType.Diffuse)
+            image(TextureType.Normal)
+
+            layout.separator()
+            layout.label('DirectX 11', icon="IMAGE_COL")
+            image(TextureType.ColorMetal)
+            image(TextureType.NormalGloss)
+            image(TextureType.AddMaps)
+            image(TextureType.Alphamask)
             if matInfo.shouldUseNodes:
                 layout.separator()
                 layout.operator("cycles.use_shading_nodes", icon="NODETREE")
-
-        # col = layout.column()
-        # TODO decide if diffuse_color is needed or should always stay white
-
-        if 'GLASS' == d.technique:
-            layout.separator()
-            layout.prop(d, "glass_smooth")
-
-            col = layout.column()
-            # col.label(text="Glass settings")
-            col.prop(d, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
-            col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
-
-

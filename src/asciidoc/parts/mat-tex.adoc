@@ -92,7 +92,7 @@ If you choose Cycles as the renderer you can only use node-based materials.
 This add-on needs you to use node-based materials because it sets up several nodes to preview the textures in Blender.
 It also requires the use of Cycles because the nodes it sets up are meant for this renderer.
 So to set a material up for use with SE first switch the scene to use `Cycles Render`
-and then use the `Upgrade to Nodes Material` button on the Material property tab.
+and then use the `Convert to Nodes Material` button on the Material property tab.
 
 Afterwards you can find the list of SE-textures on the Texture property tab.
 Just select each texture from the drop-down box and point it to the texture-file corresponding with its name.
