@@ -79,7 +79,7 @@ If you want to use this texture you need to also set the technique of the materi
 ==== Texturing
 
 [.thumb]
-image::blender-material-v2.png[width=450,float=right,link=images/blender-material-v2.png]
+image::blender-material-v3.png[width=450,float=right,link=images/blender-material-v3.png]
 
 Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
 http://www.blender.org/manual/render/blender_render/textures/mapping/uv.html[UV-mapping]
@@ -92,10 +92,11 @@ If you choose Cycles as the renderer you can only use node-based materials.
 This add-on needs you to use node-based materials because it sets up several nodes to preview the textures in Blender.
 It also requires the use of Cycles because the nodes it sets up are meant for this renderer.
 So to set a material up for use with SE first switch the scene to use `Cycles Render`
-and then use the `Convert to Nodes Material` button on the Material property tab.
+and then use the image:convert-material-button.png[title="Convert to Nodes Material"] button
+on the Material property tab. You need to repeat that for each new material you define.
 
-Afterwards you can find the list of SE-textures on the Texture property tab.
-Just select each texture from the drop-down box and point it to the texture-file corresponding with its name.
+By doing that you get six texture-slots for the different kinds of textures SE expects.
+Point them each to the texture-file corresponding with its name.
 
 TIP: You won't be able to see any textures on your meshes until you set your
 http://www.blender.org/manual/getting_started/basics/navigating/introduction.html[viewport-shading] to Material.
