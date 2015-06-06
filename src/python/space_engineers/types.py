@@ -606,7 +606,8 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
     matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
 
-    imagesToSet = {}
+    imagesToSet = {k : imageFromFilePath(v) for k, v in matInfoBefore.images.items()}
+
     for texType in [TextureType.ColorMetal, TextureType.Diffuse]:
         if texType in matInfoBefore.images:
             for mTexType, mTexFileName in matchingFileNamesFromFilePath(matInfoBefore.images[texType]).items():
