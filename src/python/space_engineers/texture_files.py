@@ -89,7 +89,10 @@ def textureFilesFromPath(dirpath: str, acceptedExtensions={'dds'}) -> dict:
     Builds a map of maps {basename -> {TextureType -> TextureFileName}} for all the files in the given directory.
     Files for which no Texture
     """
-    files = (textureFileNameFromPath(os.path.join(dirpath, f)) for f in os.listdir(dirpath))
+    try:
+        files = (textureFileNameFromPath(os.path.join(dirpath, f)) for f in os.listdir(dirpath))
+    except FileNotFoundError:
+        return {} # an image.filepath might not actually exist
     files = filter(lambda f: f and f.textureType and f.extension in acceptedExtensions, files)
     # for files with equal basename and equivalent texture-type this chooses the longest filename (as most descriptive)
     files = sorted(files, key=lambda f: (f.basename, len(f.filepath)))
@@ -104,7 +107,7 @@ def imageFromFilePath(filepath):
     """
     filepath = bpy.path.abspath(filepath)
     for image in bpy.data.images:
-        if image.filepath and os.path.samefile(bpy.path.abspath(image.filepath), filepath):
+        if image.filepath and bpy.path.abspath(image.filepath) == filepath:
             return image
     try:
         filepath = bpy.path.relpath(filepath)
