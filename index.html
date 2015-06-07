@@ -525,18 +525,19 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#levels-of-detail">Levels of Detail</a></li>
 </ul>
 </li>
-<li><a href="#textures">Textures</a>
+<li><a href="#directx-9-textures">DirectX 9 Textures</a>
 <ul class="sectlevel3">
 <li><a href="#diffuse-emissive">Diffuse/Emissive</a></li>
 <li><a href="#recolorable-blocks">Recolorable Blocks</a></li>
 <li><a href="#normal-specular">Normal/Specular</a></li>
 </ul>
 </li>
+<li><a href="#directx-11-textures">DirectX 11 Textures</a></li>
 <li><a href="#materials">Materials</a>
 <ul class="sectlevel3">
 <li><a href="#texturing">Texturing</a></li>
 <li><a href="#specularity">Specularity</a></li>
-<li><a href="#transparent-materials">Transparent Materials</a></li>
+<li><a href="#glass-materials">Glass Materials</a></li>
 <li><a href="#special-material-names">Special Material Names</a></li>
 </ul>
 </li>
@@ -928,17 +929,17 @@ the game will not switch models at that distance.
 </div>
 </div>
 <div class="sect2">
-<h3 id="textures"><a class="anchor" href="#textures"></a>Textures</h3>
+<h3 id="directx-9-textures"><a class="anchor" href="#directx-9-textures"></a>DirectX 9 Textures</h3>
 <div class="paragraph">
 <p>This is a small excursion into how SE textures a block.
-The game currently uses a maximum of two textures per face of a mesh.
+In DirectX 9 rendering mode the game uses two textures per face of a mesh.
 Both of them have four channels (RGBA).</p>
 </div>
 <div class="sect3">
 <h4 id="diffuse-emissive"><a class="anchor" href="#diffuse-emissive"></a>Diffuse/Emissive</h4>
 <div class="paragraph">
-<p>By convention Keen names this kind of texture-file with a suffix of <code>_de.dds</code>
-but you are allowed to ignore the convention.
+<p>The internal name of this texture is <code>DiffuseTexture</code>.
+By convention Keen names texture-files of this kind with a suffix of <code>_de.dds</code>.
 The RGB-channels of this texture represent the diffuse color of a face&#8212;&#8203;just like with any regular digital image.</p>
 </div>
 <div class="paragraph">
@@ -1003,7 +1004,7 @@ but the values have a slightly different meaning.</p>
 <div class="sect3">
 <h4 id="normal-specular"><a class="anchor" href="#normal-specular"></a>Normal/Specular</h4>
 <div class="paragraph">
-<p>This kind of texture has a suffix of <code>_ns.dds</code> and contains no color information at all.
+<p>Internally named <code>NormalTexture</code> this kind of texture has a suffix of <code>_ns.dds</code> and contains no color information at all.
 The RGB-channels contain a standard DirectX <a href="http://en.wikipedia.org/wiki/Normal_mapping">normal-map</a>.
 The A-channel tells the game how much of a material&#8217;s maximum specularity settings it should apply to a pixel.
 A value of 0 means "don&#8217;t apply any specularity", a value of 255 means "apply full specularity".</p>
@@ -1025,12 +1026,50 @@ For example, in Gimp you can convert the A-channel into a layer mask and edit an
 </div>
 </div>
 <div class="sect2">
+<h3 id="directx-11-textures"><a class="anchor" href="#directx-11-textures"></a>DirectX 11 Textures</h3>
+<div class="paragraph">
+<p>In DirectX 11 mode SE employs <a href="https://www.allegorithmic.com/pbr-guide">Physically Based Rendering (PBR)</a>
+to render 3D objects. In this mode it uses a different set of 3&#8212;&#8203;4 textures.
+The <code>ColorMetalTexture</code> (<code>_cm</code>) and <code>NormalGlossTexture</code> (<code>_ng</code>) correspond with the common metal/roughness workflow
+where glossiness is just the inverse of roughness.
+<code>Needs verification:</code> Here the normal map uses the OpenGL convention,
+i.e. in comparison to the DirectX convention the green channel is inverted.</p>
+</div>
+<div class="paragraph">
+<p>The <code>AddMapsTexture</code> (<code>_add</code>) combines additional greyscale maps in its four channels:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The R-channel contains a baked Ambient Occlusion (AO) map where a value of 255 means 'no occlusion' and 0 means 'fully occluded'.</p>
+</li>
+<li>
+<p>The G-channel contains the emissivity. 255 is fully emissive, 0 is non-emissive.</p>
+</li>
+<li>
+<p>The B-channel is currently unused.</p>
+</li>
+<li>
+<p>The A-channel contains the re-coloring mask. The difference with the DirectX 9 equivalent is that the parts of the
+ColorMetalTexture that are selected by this mask are usually colorless.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The <code>AlphamaskTexture</code> (<code>_alphamask</code>) is optionally used to make parts of a texture transparent.
+It has a single greyscale channel which really only differentiates between two states:
+fully transparent below a value of 128 or fully opaque at 128 or above.
+This is most useful for things like foliage and small details like facial hair.
+If you want to use this texture you need to also set the technique of the material that uses it to <code>Alphamask</code>.</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="materials"><a class="anchor" href="#materials"></a>Materials</h3>
 <div class="sect3">
 <h4 id="texturing"><a class="anchor" href="#texturing"></a>Texturing</h4>
 <div class="imageblock thumb" style="float: right">
 <div class="content">
-<a class="image" href="images/blender-material-simple.png"><img src="./images/blender-material-simple.png" alt="blender material simple" width="450"></a>
+<a class="image" href="images/blender-material-v3.png"><img src="./images/blender-material-v3.png" alt="blender material v3" width="450"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -1040,17 +1079,19 @@ to tell the game which <em>part</em> of a texture to use for a face).</p>
 </div>
 <div class="paragraph">
 <p>In Blender there are several types of materials depending on the renderer you have chosen.
-If you choose <code>Blender Render</code> as the renderer you can switch between simple and node-based materials.
-If you choose <code>Cycles</code> as the renderer you are forced to use node-based materials.</p>
+If you choose Blender Render as the renderer you can switch between simple and node-based materials.
+If you choose Cycles as the renderer you can only use node-based materials.</p>
 </div>
 <div class="paragraph">
-<p>This addon needs you to use simple materials because these are the only ones where it can reliably know
-it can find the texture-files in the slots on the Texture property tab.</p>
+<p>This add-on needs you to use node-based materials because it sets up several nodes to preview the textures in Blender.
+It also requires the use of Cycles because the nodes it sets up are meant for this renderer.
+So to set a material up for use with SE first switch the scene to use <code>Cycles Render</code>
+and then use the <span class="image"><img src="./images/convert-material-button.png" alt="convert-material-button" title="Convert to Nodes Material"></span> button
+on the Material property tab. You need to repeat that for each new material you define.</p>
 </div>
 <div class="paragraph">
-<p>It distinguishes between the diffuse/emissive and the normal/specular textures by looking at the influence levels
-of the textures. If the 'Diffuse' influence is above 0.0 the texture is considered to be the diffuse/emissive texture.
-If the 'Normal' influence level is above 0.0 it is considered to be the normal/specular texture.</p>
+<p>By doing that you get six texture-slots for the different kinds of textures SE expects.
+Point them each to the texture-file corresponding with its name.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1059,10 +1100,24 @@ If the 'Normal' influence level is above 0.0 it is considered to be the normal/s
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-If you configure no normal/specular texture and your diffuse/emissive texture&#8217;s filename uses Keen&#8217;s convention
-to end in <code>_de.dds</code> or <code>_me.dds</code> the addon assumes there is a normal/specular texture-file that ends with <code>_ns.dds</code>
-and will export that to SE automatically. So following the convention saves you some work if you are not interested
-in viewing the normal map or specularity in Blender.
+You won&#8217;t be able to see any textures on your meshes until you set your
+<a href="http://www.blender.org/manual/getting_started/basics/navigating/introduction.html">viewport-shading</a> to Material.
+Setting it to Rendered looks even better but requires a lamp in the scene or everything will be black.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+In a previous version of the add-on the <code>Blender Render</code> and its texture-slots were used.
+This setup still works but only for DirectX 9 textures. If your .blend still uses it there is an operator
+<code>Upgrade All Materials to use Nodes</code> you can use to get to the new material setup.
+It&#8217;s not available on any panel, you need to use Blender&#8217;s quicksearch (<code>Space</code>) to access it.
 </td>
 </tr>
 </table>
@@ -1110,25 +1165,11 @@ But it&#8217;s easy to spot missing texture-files when you configure the 3D view
 <div class="sect3">
 <h4 id="specularity"><a class="anchor" href="#specularity"></a>Specularity</h4>
 <div class="paragraph">
-<p>Specularity is configured per material. You do that in the "Space Engineers" panel of the material.
+<p>Specularity is a DirectX 9 mode-only setting and is configured per material.
+You do that in the "Space Engineers" panel of the material.
 The values you set there are the maximum values for that material.
 How much of those maximum values are actually applied to a pixel of a face
 is determined by the A-channel of the normal/specular texture.</p>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-There is also a "Specular" panel. This is the wrong panel.
-With that you control specularity as it is rendered by Blender.
-The algorithm Blender uses is similar to the one SE uses but the values have different meanings.
-Because of that the add-on cannot reuse Blender&#8217;s settings and you have to provide them separately for SE.
-</td>
-</tr>
-</table>
 </div>
 <div class="paragraph">
 <p>The effect of the two values <code>Intensity</code> and <code>Power</code> are hard to describe so it is best if you play with them
@@ -1137,9 +1178,9 @@ also starts to mirror the environment like smooth metal would do.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="transparent-materials"><a class="anchor" href="#transparent-materials"></a>Transparent Materials</h4>
+<h4 id="glass-materials"><a class="anchor" href="#glass-materials"></a>Glass Materials</h4>
 <div class="paragraph">
-<p>Transparent materials like glass are handled specially by the game.
+<p>Glass materials are handled specially by the game.
 They have some extra settings that are not contained in an .mwm file
 but are instead stored in a file called <code>TransparentMaterials.sbc</code>.
 It makes no sense for this add-on to support editing the content of this file
@@ -1209,21 +1250,19 @@ if you named the material "Emmisive".
 the location of the thruster flame. The purpose of each empty is determined by its name&#8201;&#8212;&#8201;i.e. <code>detector_terminal_1</code>
  or <code>detector_conveyor_1</code> for example.</p>
 </div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-For empties that are used as a 'yellow interaction box' in-game you need to set the
-<code>Display</code> property to <code>Cube</code> and the <code>Size</code> property to <code>0.5</code>.
-This is necessary for the add-on to know it needs to scale down the empty for small blocks.
-It also also allows you to preview the exact size in Blender.<br>
-There&#8217;s a button <a href="images/empty_volumetric_handle.png">to do this</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>.
-</td>
-</tr>
-</table>
+<div class="sect4">
+<h5 id="volumetric-handles"><a class="anchor" href="#volumetric-handles"></a>Volumetric Handles</h5>
+<div class="paragraph">
+<p>Some empties only serve as location markers. Some others like the aforementioned <code>detector_terminal_1</code>
+have some volume to them and you need to point your crosshair inside the volume to interact with the empty in the game.
+The size of that volume is determined by the scaling of the empty.</p>
+</div>
+<div class="paragraph">
+<p>The add-on needs to know if an empty is a volumetric handle because it needs to scale it down in size
+if the option is used to create a small block version from a large block.
+To turn an empty into a volumetric handle use the <a href="images/empty_volumetric_handle.png">corresponding button</a> <span class="icon keyseq"><i class="fa fa-search-plus" title="zoom/show"></i></span>
+This will display the empty as a box with the exact size it will have in-game.</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="linking-model-files"><a class="anchor" href="#linking-model-files"></a>Linking Model Files</h5>
@@ -1672,7 +1711,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-23 11:30:45 CEST
+Last updated 2015-05-24 17:36:36 CEST
 </div>
 </div>
 </body>
