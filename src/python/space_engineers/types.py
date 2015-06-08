@@ -525,7 +525,42 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
         description="The material used on the side of the polygon that is facing towards the block center. Defined in TransparentMaterials.sbc",
     )
     glass_smooth = bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
-    
+
+    def getDxToggle(self):
+        if not self.id_data:
+            print("no mat")
+            return None
+        if not self.id_data.node_tree:
+            print("no tree")
+            return None
+        return firstMatching(self.id_data.node_tree.nodes, bpy.types.ShaderNodeMixShader, "ShaderToggle")
+
+    def getDx9(self):
+        toggle = self.getDxToggle()
+        return True if toggle and 1.0 == toggle.inputs[0].default_value else False
+
+    def setDx9(self, value):
+        toggle = self.getDxToggle()
+        if toggle:
+            toggle.inputs[0].default_value = 1.0 if value else 0.0
+
+    display_dx9 = bpy.props.BoolProperty(
+        default=True, get=getDx9, set=setDx9,
+        description="Should the material display DirectX9 textures?"
+    )
+
+    def getDx11(self):
+        toggle = self.getDxToggle()
+        return True if toggle and 0.0 == toggle.inputs[0].default_value else False
+
+    def setDx11(self, value):
+        self.setDx9(not value)
+
+    display_dx11 = bpy.props.BoolProperty(
+        default=True, get=getDx11, set=setDx11,
+        description="Should the material display DirectX11 textures?"
+    )
+
     # texture paths are derived from the material textures
 
 class SEMaterialInfo:
@@ -665,7 +700,9 @@ class DATA_PT_spceng_material(bpy.types.Panel):
 
         layout.separator()
         if not matInfo.isOldMaterial:
-            layout.label('DirectX 9', icon="IMAGE_COL")
+            row = layout.row(align=True)
+            row.prop(d, "display_dx9", text='', icon="IMAGE_COL")
+            row.label('DirectX 9')
 
         if d.technique != 'GLASS':
             split = layout.split(splitPercent)
@@ -703,7 +740,9 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             image(TextureType.Normal)
 
             layout.separator()
-            layout.label('DirectX 11', icon="IMAGE_COL")
+            row = layout.row(align=True)
+            row.prop(d, "display_dx11", text='', icon="IMAGE_COL")
+            row.label('DirectX 11')
             image(TextureType.ColorMetal)
             image(TextureType.NormalGloss)
             image(TextureType.AddMaps)
