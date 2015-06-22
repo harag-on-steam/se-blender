@@ -532,7 +532,13 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#normal-specular">Normal/Specular</a></li>
 </ul>
 </li>
-<li><a href="#directx-11-textures">DirectX 11 Textures</a></li>
+<li><a href="#directx-11-textures">DirectX 11 Textures</a>
+<ul class="sectlevel3">
+<li><a href="#pbr-textures">PBR textures</a></li>
+<li><a href="#ao-emissivity-and-recoloring">AO, Emissivity and Recoloring</a></li>
+<li><a href="#transparency">Transparency</a></li>
+</ul>
+</li>
 <li><a href="#materials">Materials</a>
 <ul class="sectlevel3">
 <li><a href="#texturing">Texturing</a></li>
@@ -621,7 +627,7 @@ So if you are new to 3D modelling you should probably learn how to do that first
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.73 is current at the time of this writing.</p>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.74 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
@@ -686,7 +692,7 @@ Get the <code>VSU_4\vcredist_x86.exe</code> package.
 </div>
 </div>
 <div class="paragraph">
-<p>Once you got the <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (40kb)
+<p>Once you got the <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="https://github.com/harag-on-steam/se-blender/releases/latest">current version</a> (50kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File&#8230;&#8203;" and
@@ -1029,12 +1035,18 @@ For example, in Gimp you can convert the A-channel into a layer mask and edit an
 <h3 id="directx-11-textures"><a class="anchor" href="#directx-11-textures"></a>DirectX 11 Textures</h3>
 <div class="paragraph">
 <p>In DirectX 11 mode SE employs <a href="https://www.allegorithmic.com/pbr-guide">Physically Based Rendering (PBR)</a>
-to render 3D objects. In this mode it uses a different set of 3&#8212;&#8203;4 textures.
-The <code>ColorMetalTexture</code> (<code>_cm</code>) and <code>NormalGlossTexture</code> (<code>_ng</code>) correspond with the common metal/roughness workflow
-where glossiness is just the inverse of roughness.
-<code>Needs verification:</code> Here the normal map uses the OpenGL convention,
+to render 3D objects. In this mode it uses a different set of three or four textures.</p>
+</div>
+<div class="sect3">
+<h4 id="pbr-textures"><a class="anchor" href="#pbr-textures"></a>PBR textures</h4>
+<div class="paragraph">
+<p>The <code>ColorMetalTexture</code> (<code>_cm</code>) and <code>NormalGlossTexture</code> (<code>_ng</code>) correspond with the common metal/roughness workflow
+where glossiness is just the inverse of roughness. Here the normal map uses the OpenGL convention,
 i.e. in comparison to the DirectX convention the green channel is inverted.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="ao-emissivity-and-recoloring"><a class="anchor" href="#ao-emissivity-and-recoloring"></a>AO, Emissivity and Recoloring</h4>
 <div class="paragraph">
 <p>The <code>AddMapsTexture</code> (<code>_add</code>) combines additional greyscale maps in its four channels:</p>
 </div>
@@ -1055,12 +1067,16 @@ ColorMetalTexture that are selected by this mask are usually colorless.</p>
 </li>
 </ul>
 </div>
+</div>
+<div class="sect3">
+<h4 id="transparency"><a class="anchor" href="#transparency"></a>Transparency</h4>
 <div class="paragraph">
 <p>The <code>AlphamaskTexture</code> (<code>_alphamask</code>) is optionally used to make parts of a texture transparent.
 It has a single greyscale channel which really only differentiates between two states:
 fully transparent below a value of 128 or fully opaque at 128 or above.
 This is most useful for things like foliage and small details like facial hair.
 If you want to use this texture you need to also set the technique of the material that uses it to <code>Alphamask</code>.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1711,7 +1727,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-05-24 17:36:36 CEST
+Last updated 2015-06-07 10:45:39 CEST
 </div>
 </div>
 </body>
