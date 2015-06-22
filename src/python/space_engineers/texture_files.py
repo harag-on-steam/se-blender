@@ -76,7 +76,7 @@ def textureFileNameFromPath(filepath: str) -> TextureFileName:
     filename = os.path.basename(filepath)
     match = _RE_TEXTURE_FILENAME.match(filename)
     if not match:
-        return TextureFileName(filepath, filename, None, None)
+        return TextureFileName(filepath, filename.lower(), None, None)
     return TextureFileName(
         filepath = filepath,
         basename = match.group('basename').lower(),
@@ -87,7 +87,7 @@ def textureFileNameFromPath(filepath: str) -> TextureFileName:
 def textureFilesFromPath(dirpath: str, acceptedExtensions={'dds'}) -> dict:
     """
     Builds a map of maps {basename -> {TextureType -> TextureFileName}} for all the files in the given directory.
-    Files for which no Texture
+    Files for which no TextureType can be determined will not be included.
     """
     try:
         files = (textureFileNameFromPath(os.path.join(dirpath, f)) for f in os.listdir(dirpath))
@@ -118,7 +118,7 @@ def imageFromFilePath(filepath):
 
 def matchingFileNamesFromFilePath(filepath):
     """
-    Provides a map {TextureType -> bpy.types.Image} for images that reside in the same directory as
+    Provides a map {TextureType -> TextureFileName} for images that reside in the same directory as
     the file given by filepath and that share the same basename.
     """
     filepath = bpy.path.abspath(filepath)

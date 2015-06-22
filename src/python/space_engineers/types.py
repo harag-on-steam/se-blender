@@ -601,7 +601,7 @@ class SEMaterialInfo:
     def _imagesFromLegacyMaterial(self):
         for slot in self.material.texture_slots:
             # getattr() because sometimes bpy.types.Texture has no attribute image (Blender bug?)
-            if slot and getattr(slot, 'texture') and getattr(slot.texture, 'image'):
+            if slot and getattr(slot, 'texture', None) and getattr(slot.texture, 'image', None):
                 image = slot.texture.image
                 filename = textureFileNameFromPath(image.filepath)
                 if filename:
