@@ -3,7 +3,7 @@
 To get started first you need to download and install all the required tools.
 
 Blender::
-Get version {dl} http://www.blender.org/download/[2.72 or later] (90MB), 2.73 is current at the time of this writing.
+Get version {dl} http://www.blender.org/download/[2.72 or later] (90MB), 2.74 is current at the time of this writing.
 
 The Havok "Content Tools for Game Artists and Designers"::
 Get version {dl} https://software.intel.com/sites/havok/en/[2013.1.0]
@@ -35,7 +35,7 @@ Get the `VSU_4\vcredist_x86.exe` package.
 [.thumb]
 image::blender-setup.png[width=450,float=right,link=images/blender-setup.png]
 
-Once you got the {dl} https://github.com/harag-on-steam/se-blender/releases/latest[current version] (40kb)
+Once you got the {dl} https://github.com/harag-on-steam/se-blender/releases/latest[current version] (50kb)
 install it in Blender like any other third-party addon by going to the user preferences,
 switch to the "Add-Ons" tab,
 click on "Install from File..." and
