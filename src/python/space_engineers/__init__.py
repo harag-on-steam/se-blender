@@ -55,20 +55,27 @@ class SEView3DToolsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(self, context):
-        blockData = types.sceneData(context.scene)
-        return blockData and blockData.is_block
+        return True
 
     def draw(self, context):
         layout = self.layout
 
-        col = layout.column(align=True)
+        data = types.sceneData(context.scene)
 
+        col = layout.column(align=True)
+        col.enabled = data.is_block
         space = context.space_data
         if space.grid_scale != 1.25 or space.grid_subdivisions != 5:
             col.operator(operators.SetupGrid.bl_idname, icon='GRID')
 
         col.operator(operators.AddMountPointSkeleton.bl_idname, icon='FACESEL')
         col.operator(operators.AddMirroringEmpties.bl_idname, icon='MOD_MIRROR')
+
+        if not data.is_block:
+            col.separator()
+            row = col.row()
+            row.alignment = 'CENTER'
+            row.label("Mark the scene as a block.", icon="INFO")
 
 def menu_func_export(self, context):
     self.layout.operator(operators.ExportSceneAsBlock.bl_idname,

@@ -9,11 +9,14 @@ This layout cannot be customized.
 
 === Scene Layout
 
-Inside Blender the add-on uses one scene per block.
-That's why the block-settings are on the scene tab of the properties-panel.
-On this panel you define if the block is a large or a small block and if the export should automatically
-create a small version of your block if it is a large one.
-You also define the size of your block in in-game grid units here.
+The addon only provides its tools to scenes that are marked as containing a block. +
+You do that on the Space Engineers Block panel of the Scene properties-tab.
+
+Here you also find the settings that are relevant for the basic layout of the block:
+
+* Is the block a large or a small block?
+* Should the export automatically create a small version of your block if it is a large one?
+* What is the dimension of you block in in-game grid-units?
 
 image::blender-scene.png[align=center,width=500,link=images/blender-scene.png]
 

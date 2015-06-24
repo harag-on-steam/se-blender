@@ -58,7 +58,8 @@ to render 3D objects. In this mode it uses a different set of three or four text
 
 ==== PBR textures
 
-The `ColorMetalTexture` (`_cm`) and `NormalGlossTexture` (`_ng`) correspond with the common metal/roughness workflow
+The `ColorMetalTexture` (`_cm`) and `NormalGlossTexture` (`_ng`) correspond with the common
+link:http://www.marmoset.co/toolbag/learn/pbr-practice#refl[metal/roughness workflow]
 where glossiness is just the inverse of roughness. Here the normal map uses the OpenGL convention,
 i.e. in comparison to the DirectX convention the green channel is inverted.
 
@@ -68,7 +69,7 @@ The `AddMapsTexture` (`_add`) combines additional greyscale maps in its four cha
 
 * The R-channel contains a baked Ambient Occlusion (AO) map where a value of 255 means 'no occlusion' and 0 means 'fully occluded'.
 * The G-channel contains the emissivity. 255 is fully emissive, 0 is non-emissive.
-* The B-channel is currently unused.
+* The B-channel is currently unused and should always be 0.
 * The A-channel contains the re-coloring mask. The difference with the DirectX 9 equivalent is that the parts of the
   ColorMetalTexture that are selected by this mask are usually colorless.
 
