@@ -744,11 +744,24 @@ Don&#8217;t forget to "Save User Settings".
 <div class="sect2">
 <h3 id="scene-layout"><a class="anchor" href="#scene-layout"></a>Scene Layout</h3>
 <div class="paragraph">
-<p>Inside Blender the add-on uses one scene per block.
-That&#8217;s why the block-settings are on the scene tab of the properties-panel.
-On this panel you define if the block is a large or a small block and if the export should automatically
-create a small version of your block if it is a large one.
-You also define the size of your block in in-game grid units here.</p>
+<p>The addon only provides its tools to scenes that are marked as containing a block.<br>
+You do that on the Space Engineers Block panel of the Scene properties-tab.</p>
+</div>
+<div class="paragraph">
+<p>Here you also find the settings that are relevant for the basic layout of the block:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Is the block a large or a small block?</p>
+</li>
+<li>
+<p>Should the export automatically create a small version of your block if it is a large one?</p>
+</li>
+<li>
+<p>What is the dimension of you block in in-game grid-units?</p>
+</li>
+</ul>
 </div>
 <div class="imageblock" style="text-align: center">
 <div class="content">
@@ -1040,7 +1053,8 @@ to render 3D objects. In this mode it uses a different set of three or four text
 <div class="sect3">
 <h4 id="pbr-textures"><a class="anchor" href="#pbr-textures"></a>PBR textures</h4>
 <div class="paragraph">
-<p>The <code>ColorMetalTexture</code> (<code>_cm</code>) and <code>NormalGlossTexture</code> (<code>_ng</code>) correspond with the common metal/roughness workflow
+<p>The <code>ColorMetalTexture</code> (<code>_cm</code>) and <code>NormalGlossTexture</code> (<code>_ng</code>) correspond with the common
+<a href="http://www.marmoset.co/toolbag/learn/pbr-practice#refl">metal/roughness workflow</a>
 where glossiness is just the inverse of roughness. Here the normal map uses the OpenGL convention,
 i.e. in comparison to the DirectX convention the green channel is inverted.</p>
 </div>
@@ -1059,7 +1073,7 @@ i.e. in comparison to the DirectX convention the green channel is inverted.</p>
 <p>The G-channel contains the emissivity. 255 is fully emissive, 0 is non-emissive.</p>
 </li>
 <li>
-<p>The B-channel is currently unused.</p>
+<p>The B-channel is currently unused and should always be 0.</p>
 </li>
 <li>
 <p>The A-channel contains the re-coloring mask. The difference with the DirectX 9 equivalent is that the parts of the
@@ -1727,7 +1741,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-06-07 10:45:39 CEST
+Last updated 2015-06-23 01:52:02 CEST
 </div>
 </div>
 </body>
