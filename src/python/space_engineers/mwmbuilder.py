@@ -37,6 +37,10 @@ def derive_texture_path(settings, filepath):
 def _floatstr(f):
     return str(round(f, 2))
 
+# fixes the misspelled constant in types.py without the need to update the value
+def _material_technique(technique):
+    return "ALPHA_MASKED" if "ALPHAMASK" == technique else technique
+
 def material_xml(settings, mat):
     d = data(mat)
     e = ElementTree.Element("Material", Name=mat.name)
@@ -47,7 +51,7 @@ def material_xml(settings, mat):
         if value:
             se.text = value
 
-    param("Technique", d.technique)
+    param("Technique", _material_technique(d.technique))
     param("SpecularIntensity", _floatstr(m.specularIntensity))
     param("SpecularPower", _floatstr(m.specularPower))
 
