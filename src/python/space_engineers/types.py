@@ -638,7 +638,7 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     # the material might not have a node_tree, yet
     if material.node_tree is None and not material.use_nodes:
         material.use_nodes = True
-        material.use_nodes = False
+        material.use_nodes = False # retain the original setting in case the following raises an exception
 
     matInfoBefore = SEMaterialInfo(material)
     createMaterialNodeTree(material.node_tree)

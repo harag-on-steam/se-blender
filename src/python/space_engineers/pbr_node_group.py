@@ -111,6 +111,9 @@ class ShaderNodesBuilder:
                 self.tree.links.new(source, target)
             else:
                 target.default_value = source
+        elif isinstance(target, bpy.types.NodeSocket):
+            for l in target.links:
+                self.tree.links.remove(l)
 
     def newMath(self, name=None, label=None, location=None, op=None, clamp=None, op1=None, op2=None):
         n = self.newNode(bpy.types.ShaderNodeMath, name, label, location)
@@ -663,13 +666,14 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     _, addA    = builder.newImageTexture(None, label2(TextureType.AddMaps),     (-200, 350), ImageColorspace.NONE)
     alphaC, _  = builder.newImageTexture(None, label1(TextureType.Alphamask),   (-200, 300), ImageColorspace.NONE)
 
-    ao, em, _  = builder.newSeparateRgb(None, "Split AddMaps", (0, 400), addC)
+    addR, addG, _ = builder.newSeparateRgb(None, "Split AddMaps", (0, 400), addC)
+    addR.node.inputs[0].default_value = (1, 0, 0, 1) # R: no AO, G: no emissivity, B and A unused
 
-    dx11 = builder.newNode(bpy.types.ShaderNodeGroup, "DX11Shader", None, (250, 600))
+    dx11 = builder.newNode(bpy.types.ShaderNodeGroup, "DX11Shader", None, (250, 600), create=CreateMode.REPLACE)
     dx11.node_tree = getDx11Shader()
     builder.connectSockets(pair for pair in zip(
-        [cmC, cmA, ngC, ngA, ao, em, addA],
-        [dx11.inputs[i] for i in (0, 1, 2, 4, 6, 8, 12)]))
+        [cmC, cmA, ngC, None, ngA, None, addR, None, addG, None, None, None, addA, None],
+        dx11.inputs))
     dx11.width = 207
 
     frameDx11 = builder.newNode(bpy.types.NodeFrame, "DX11Frame", 'DirectX 11 Textures')
@@ -677,7 +681,7 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     frameDx11.use_custom_color = True
     frameDx11.shrink = True
     frameDx11.label_size = 25
-    for n in (cmC.node, cmA.node, ngC.node, ngA.node, addC.node, addA.node, ao.node, alphaC.node):
+    for n in (cmC.node, cmA.node, ngC.node, ngA.node, addC.node, addA.node, addR.node, alphaC.node):
         n.parent = frameDx11
         n.hide = True
         n.width_hidden = 100
@@ -692,7 +696,7 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     specInt  = builder.newFloatValue(None, "Specular Intensity", (   0, -300), 0.0)
     specPow  = builder.newFloatValue(None, "Specular Power",     (   0, -400), 0.0)
 
-    dx9 = builder.newNode(bpy.types.ShaderNodeGroup, "DX9Shader", None, (250, -50))
+    dx9 = builder.newNode(bpy.types.ShaderNodeGroup, "DX9Shader", None, (250, -50), create=CreateMode.REPLACE)
     dx9.node_tree = getDx9Shader()
     builder.connectSockets(pair for pair in zip(
         [deC, deA, nsC, nsA, uniColor, specInt, specPow],
