@@ -19,7 +19,7 @@ _RE_TEXTURE_TYPE = re.compile(
 )
 
 _RE_TEXTURE_LABEL = re.compile(
-    r"(?:" + _RE_TEXTURE_TYPE.pattern + r")_?(?:Tex(?:ture)?)?(?:\.\d+)?",
+    r"^(?:" + _RE_TEXTURE_TYPE.pattern + r")_?(?:(?P<alt>2|Alt)_?)?(?:Tex(?:ture)?)?(?:\.\d+)?$",
     re.IGNORECASE)
 
 _RE_TEXTURE_FILENAME = re.compile(
@@ -38,33 +38,40 @@ class TextureType(Enum):
 
 TextureFileName = namedtuple('TextureFileName', ('filepath', 'basename', 'textureType', 'extension'))
 
-def _textureTypeFromMatch(match) -> TextureType:
+def _textureTypeFromMatch(match, alt=False) -> TextureType:
     if match is None:
         return None
-    return next((t for t in TextureType if match.group(t.value)), None)
+    for t in TextureType:
+        if match.group(t.value):
+            try:
+                if alt == bool(match.group('alt')):
+                    return t
+            except IndexError:
+                return t # if there's no matching group 'alt' we already found our match
+    return None
 
-def textureTypeFromLabel(label: str) -> TextureType:
-    return _textureTypeFromMatch(_RE_TEXTURE_LABEL.match(label))
+def textureTypeFromLabel(label: str, alt=False) -> TextureType:
+    return _textureTypeFromMatch(_RE_TEXTURE_LABEL.match(label), alt=alt)
 
-def textureTypeFromObjectName(obj) -> TextureType:
-    textureType = textureTypeFromLabel(obj.name)
-    return textureType if textureType else textureTypeFromLabel(obj.label)
+def textureTypeFromObjectName(obj, alt=False) -> TextureType:
+    textureType = textureTypeFromLabel(obj.name, alt=alt)
+    return textureType if textureType else textureTypeFromLabel(obj.label, alt=alt)
 
-def imageNodes(nodes):
+def imageNodes(nodes, alt=False):
     """
     Extracts a map {TextureType -> bpy.types.ShaderNodeTexImage} from the given nodes.
     The map will only contain keys for which there actually are texture-nodes.
     The nodes do not necessarily have images, use imagesFromNodes() for that.
     """
-    pairs = ((textureTypeFromObjectName(img), img) for img in nodes if isinstance(img, bpy.types.ShaderNodeTexImage))
+    pairs = ((textureTypeFromObjectName(img, alt=alt), img) for img in nodes if isinstance(img, bpy.types.ShaderNodeTexImage))
     return {t : n for t, n in pairs if t}
 
-def imagesFromNodes(nodes):
+def imagesFromNodes(nodes, alt=False):
     """
     Extracts a map {TextureType -> bpy.types.Image} from the given nodes.
     The map will only contain keys for which there actually are images.
     """
-    return {t : n.image for t, n in imageNodes(nodes).items() if n.image}
+    return {t : n.image for t, n in imageNodes(nodes, alt=alt).items() if n.image}
 
 def textureFileNameFromPath(filepath: str) -> TextureFileName:
     """
@@ -129,3 +136,4 @@ def matchingFileNamesFromFilePath(filepath):
     allFilesInDir = textureFilesFromPath(os.path.dirname(filepath))
     matchingFiles = allFilesInDir.get(textureFileName.basename, None)
     return matchingFiles if matchingFiles else {}
+

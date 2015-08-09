@@ -8,7 +8,8 @@ from .export import ExportSettings, MissbehavingToolError
 from .mirroring import setupMirrors
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
-from space_engineers.types import upgradeToNodeMaterial
+from .pbr_node_group import getDx11Shader, createDx11ShaderGroup
+from .types import upgradeToNodeMaterial
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData, SEMaterialInfo
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode, \
     getUsedMaterials
@@ -498,21 +499,24 @@ class UpdatableToNodesMaterials(bpy.types.Operator):
         self.report({'INFO'}, "%d materials upgraded to use nodes." % (count))
         return {'FINISHED'}
 
-class DumpSpaceDataAttributes(bpy.types.Operator):
-    bl_idname = "info.spceng_dump_spacedata_attrs"
-    bl_label = "Dump space_data attributes"
-
-    # @classmethod
-    # def poll(cls, context):
-    #     s = context.space_data
-    #     runnable = s and s.type == 'NODE_EDITOR' and s.tree_type == 'ShaderNodeTree'
-    #     return runnable
+class UpdateShadersAndNodesMaterials(bpy.types.Operator):
+    bl_idname = "info.spceng_node_mat_upgrade"
+    bl_label = "SE: Update Shaders and Node Materials"
 
     def execute(self, context):
-        sd = context.space_data
+        dx11Shader = getDx11Shader(create=False)
+        if not dx11Shader is None and len(dx11Shader.inputs) != 14:
+            createDx11ShaderGroup()
+            self.report({'INFO'}, "DX11 shader updated.")
 
-        print(dir(sd))
-        print(dir(context))
+        count = 0
+        for mat in getUsedMaterials():
+            matInfo = SEMaterialInfo(mat)
+            if not matInfo.isOldMaterial:
+                count += 1
+                upgradeToNodeMaterial(mat)
+                self.report({'OPERATOR'}, "Material '%s' updated." % (mat.name))
+        self.report({'INFO'}, "%d node materials updated." % (count))
         return {'FINISHED'}
 
 class SetupMaterial(bpy.types.Operator):
@@ -540,7 +544,6 @@ registered = [
     AddDefaultExportNodes,
     AddMirroringEmpties,
     ConfigureEmptyAsVolumeHandle,
-    DumpSpaceDataAttributes,
     ExportSceneAsBlock,
     UpdateDefinitionsFromBlockScene,
     AddMountPointSkeleton,
@@ -548,6 +551,7 @@ registered = [
     SetupMaterial,
     CheckForUpdatableMaterials,
     UpdatableToNodesMaterials,
+    UpdateShadersAndNodesMaterials,
     NameLayersFromExportNodes,
 ]
 

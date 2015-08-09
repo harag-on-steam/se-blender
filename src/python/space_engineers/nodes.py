@@ -6,7 +6,8 @@ from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
 from .mirroring import mirroringAxisFromObjectName
-from .types import sceneData, data
+from .texture_files import TextureType
+from .types import sceneData, data, SEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
@@ -801,6 +802,7 @@ def upgradeNodesAfterLoad(dummy):
             for node in nodeTree.nodes:
                 if isinstance(node, Upgradable):
                     node.upgrade()
+
 
 from bpy.utils import register_class, unregister_class
 

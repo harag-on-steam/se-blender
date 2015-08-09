@@ -104,6 +104,9 @@ def register():
     register_class(types.DATA_PT_spceng_empty)
     register_class(types.DATA_PT_spceng_material)
 
+    types.register()
+    pbr_node_group.register()
+
     register_class(types.CheckVersionOnline)
     operators.register()
 
@@ -129,6 +132,9 @@ def unregister():
 
     operators.unregister()
     unregister_class(types.CheckVersionOnline)
+
+    pbr_node_group.unregister()
+    types.unregister()
 
     unregister_class(types.DATA_PT_spceng_material)
     unregister_class(types.DATA_PT_spceng_empty)

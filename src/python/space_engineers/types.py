@@ -5,9 +5,9 @@ import os
 import requests
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
-from .pbr_node_group import firstMatching
-from space_engineers.pbr_node_group import createMaterialNodeTree
-from space_engineers.utils import data
+from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11ShaderGroup, getDx11Shader, \
+    getDx11ShaderGroup, getDx9ShaderGroup
+from .utils import data
 from .texture_files import TextureType, textureFileNameFromPath, _RE_DIFFUSE, \
     matchingFileNamesFromFilePath, imageFromFilePath, imageNodes
 from .versions import versionsOnGitHub, Version
@@ -568,13 +568,20 @@ class SEMaterialInfo:
         self.material = material
 
         if (material.node_tree): # the material might not have a node_tree, yet
+            tree = material.node_tree
             nodes = material.node_tree.nodes
             self.textureNodes = imageNodes(nodes)
+            self.altTextureNodes = imageNodes(nodes, alt=True)
+            self.dx11Shader = getDx11ShaderGroup(tree)
+            self.dx9Shader = getDx9ShaderGroup(tree)
             self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
             self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
             self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
         else:
             self.textureNodes = {}
+            self.altTextureNodes = {}
+            self.dx11Shader = None
+            self.dx9Shader = None
             self.diffuseColorNode = None
             self.specularIntensityNode = None
             self.specularPowerNode = None
@@ -750,3 +757,38 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             if matInfo.shouldUseNodes:
                 layout.separator()
                 layout.operator("cycles.use_shading_nodes", icon="NODETREE")
+
+@bpy.app.handlers.persistent
+def syncTextureNodes(dummy):
+    """
+    This handler adresses https://github.com/harag-on-steam/se-blender/issues/6
+    by syncing the image of <TextureType>Texture nodes with <TextureType>2Texture nodes.
+    """
+    for mat in bpy.data.materials:
+        if mat.node_tree and mat.node_tree.is_updated:
+            matInfo = SEMaterialInfo(mat)
+            for t in TextureType:
+                node = matInfo.textureNodes.get(t, None)
+                altNode = matInfo.altTextureNodes.get(t, None)
+                if not node is None and not altNode is None:
+                    if node.image != altNode.image:
+                        altNode.image = node.image
+
+@bpy.app.handlers.persistent
+def upgradeShadersAndMaterials(dummy):
+    shaderTree = getDx11Shader(create=False)
+    if shaderTree is None or len(shaderTree.inputs) == 14:
+        return
+    createDx11ShaderGroup() # recreate
+
+def register():
+    if not syncTextureNodes in bpy.app.handlers.scene_update_pre:
+        bpy.app.handlers.scene_update_pre.append(syncTextureNodes)
+    #if not upgradeShadersAndMaterials in bpy.app.handlers.load_post:
+    #    bpy.app.handlers.load_post.append(upgradeShadersAndMaterials)
+
+def unregister():
+    if syncTextureNodes in bpy.app.handlers.scene_update_pre:
+        bpy.app.handlers.scene_update_pre.remove(syncTextureNodes)
+    #if upgradeShadersAndMaterials in bpy.app.handlers.load_post:
+    #    bpy.app.handlers.load_post.remove(upgradeShadersAndMaterials)
