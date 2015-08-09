@@ -6,7 +6,7 @@
 	
 	<groupId>net.cortexx</groupId>
 	<artifactId>se-blender</artifactId>
-	<version>0.6.0</version>
+	<version>0.6.1</version>
 	<name>SE Block Tools for Blender</name>
 
 	<properties>

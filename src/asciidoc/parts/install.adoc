@@ -3,7 +3,7 @@
 To get started first you need to download and install all the required tools.
 
 Blender::
-Get version {dl} http://www.blender.org/download/[2.72 or later] (90MB), 2.74 is current at the time of this writing.
+Get version {dl} http://www.blender.org/download/[2.72 or later] (100MB), 2.75 is current at the time of this writing.
 
 The Havok "Content Tools for Game Artists and Designers"::
 Get version {dl} https://software.intel.com/sites/havok/en/[2013.1.0]
