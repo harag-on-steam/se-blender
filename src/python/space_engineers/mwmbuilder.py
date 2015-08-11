@@ -37,7 +37,7 @@ def derive_texture_path(settings, filepath):
 def _floatstr(f):
     return str(round(f, 2))
 
-# fixes the misspelled constant in types.py without the need to update the value
+# fixes the misspelled constant in types.py without the need to update the value in existing .blend files
 def _material_technique(technique):
     return "ALPHA_MASKED" if "ALPHAMASK" == technique else technique
 

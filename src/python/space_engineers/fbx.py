@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from . import types
-from .utils import exportSettings
+from .utils import exportSettings, data
 import bpy
 
 _experimental = (bpy.app.version[0] == 2 and bpy.app.version[1] == 72)
@@ -160,10 +160,10 @@ _fbx.fbx_data_object_elements = fbx_data_object_elements
 
 def shouldScaleDownEmpty(empty):
     settings = exportSettings()
-    return not settings is None \
-        and settings.scaleDown \
-        and empty.empty_draw_size == 0.5 \
-        and empty.empty_draw_type == 'CUBE'
+    return not settings is None and settings.scaleDown and (
+               (empty.empty_draw_size == 0.5 and empty.empty_draw_type == 'CUBE') or
+               (data(empty).scaleDown)
+    )
 
 # export these two functions as our own so that clients of this module don't have to depend on 
 # the cloned fbx_experimental.export_fbx_bin module

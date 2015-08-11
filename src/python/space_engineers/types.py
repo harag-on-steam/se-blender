@@ -438,6 +438,8 @@ class SEObjectProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     file = bpy.props.StringProperty(name="Link to File", 
         description="Links this empty to another model file. Only specify the base name, do not include the .mwm extension.")
+    scaleDown = bpy.props.BoolProperty(name="Scale Down", default=False,
+        description="Should the empty be scaled down when exporting a small block from a large block model?")
 
 _RE_KNOW_VOLUME_HANDLES = re.compile(r"^(dummy_)?(detector_(terminal|conveyor|cockpit))", re.IGNORECASE)
 
@@ -469,11 +471,17 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
         row.enabled = isMirror
         row.prop(context.object, "space_engineers_mirroring", icon="MOD_MIRROR" if not isMirror else 'NONE')
 
-        if ob.empty_draw_type != 'CUBE' or ob.empty_draw_size != 0.5:
+        isVolumetric = ob.empty_draw_type == 'CUBE' and ob.empty_draw_size == 0.5
+
+        row = layout.row()
+        row.enabled = not isVolumetric
+        row.prop(d, "scaleDown")
+
+        if not isVolumetric or not d.scaleDown:
             layout.separator()
             row = layout.row()
             row.alert = bool(_RE_KNOW_VOLUME_HANDLES.search(ob.name))
-            row.operator('object.spceng_empty_with_volume')
+            row.operator('object.spceng_empty_with_volume', icon='BBOX')
 
 
 # -----------------------------------------  Material Data ----------------------------------------- #
@@ -482,8 +490,8 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
 MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
+    # 'ALPHAMASK' is missspelled. But it's already in use so fix it on export in .mwmbuilder._material_technique()
     ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
-    # there is also an ALPHA_MASK technique, but no clue how that works
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
