@@ -384,7 +384,10 @@ def generateBlockDefXml(
     eOffset = ElementTree.SubElement(block, 'ModelOffset')
     eOffset.attrib = OrderedDict([('x', '0'), ('y', '0'), ('z', '0'), ])
 
-    modelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(modelFile))
+    try:
+        modelpath = os.path.relpath(os.path.join(settings.outputDir, modelFile), settings.baseDir)
+    except ValueError:
+        modelpath = settings.template(settings.names.modelpath, modelfile=modelFile)
     ElementTree.SubElement(block, 'Model').text = modelpath
 
     numConstr = len(constrModelFiles)
@@ -392,7 +395,10 @@ def generateBlockDefXml(
         constr = ElementTree.SubElement(block, 'BuildProgressModels')
         for i, constrModelFile in enumerate(constrModelFiles):
             upperBound = "%.2f" % (1.0 * (i+1) / numConstr)
-            constrModelpath = settings.template(settings.names.modelpath, modelfile=os.path.basename(constrModelFile))
+            try:
+                constrModelpath = os.path.relpath(os.path.join(settings.outputDir, constrModelFile), settings.baseDir)
+            except ValueError:
+                constrModelpath = settings.template(settings.names.modelpath, modelfile=constrModelFile)
             eModel = ElementTree.SubElement(constr, 'Model')
             eModel.attrib = OrderedDict([('BuildPercentUpperBound', upperBound), ('File', constrModelpath), ])
 
