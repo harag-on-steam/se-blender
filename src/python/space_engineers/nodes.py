@@ -1,5 +1,6 @@
 from itertools import chain
 import bpy
+import re
 import shutil
 from os.path import join
 from os import makedirs
@@ -544,6 +545,36 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         settings.info("export successful", file=mwmfile, node=self)
         return settings.cacheValue(mwmfile, 'SUCCESS')
 
+PATTERN_NAME = re.compile(r"^(.*?)(\.\d+)?$")
+
+def object_basename(name: str) -> str:
+    return PATTERN_NAME.match(name).group(1)
+
+class GroupFilterObjectsNode(bpy.types.Node, SENode, ObjectSource):
+    bl_idname = "SEGroupFilterObjectsNode"
+    bl_label = "Group Filter"
+    bl_icon = "GROUP"
+    bl_width_default = 170.0
+
+    def init(self, context):
+        self.inputs.new(TemplateStringSocket.bl_idname, "Group Name")
+        pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1 # TODO find a way to inherit n from the input socket
+        self.use_custom_color = True
+        self.color = COLOR_OBJECTS_WND
+
+    def getObjects(self, socket: ObjectListSocket = None):
+        groupName = self.inputs['Group Name'].getText(ExportSettings(scene()))
+        if not groupName:
+            return []
+
+        inSocket = self.inputs['Objects']
+        return (obj for obj in inSocket.getObjects()
+            if any(g for g in obj.users_group
+                   if g.name == groupName or object_basename(g.name) == groupName))
+
 class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
     bl_idname = "SELayerObjectsNode"
     bl_label = "Combined Layers"
@@ -779,6 +810,7 @@ categories = [
     SENodeCategory(BlockExportTree.bl_idname, "Block Export", items=[
         NodeItem(LayerObjectsNode.bl_idname, LayerObjectsNode.bl_label),
         NodeItem(SeparateLayerObjectsNode.bl_idname, SeparateLayerObjectsNode.bl_label),
+        NodeItem(GroupFilterObjectsNode.bl_idname, GroupFilterObjectsNode.bl_label),
         NodeItem(TemplateStringNode.bl_idname, TemplateStringNode.bl_label),
         NodeItem(MwmFileNode.bl_idname, MwmFileNode.bl_label),
         NodeItem(HavokFileNode.bl_idname, HavokFileNode.bl_label),
@@ -800,6 +832,7 @@ registered = [
 
     LayerObjectsNode,
     SeparateLayerObjectsNode,
+    GroupFilterObjectsNode,
     HavokFileNode,
     MwmFileNode,
     TemplateStringNode,
