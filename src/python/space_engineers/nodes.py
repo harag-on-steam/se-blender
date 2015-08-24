@@ -624,12 +624,16 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
     def upgrade(self):
         inputs = self.inputs
 
-        # new in v0.5.0
-        if inputs.get('Mirroring', None) is None:
-            inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
+        # new in v0.6.3
         if inputs.get('Icon Path', None) is None:
             icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
             icon.text = "//Textures/Icons/${BlockPairName}"
+            inputs.move(len(inputs)-1, 1)
+
+        # new in v0.5.0
+        if inputs.get('Mirroring', None) is None:
+            inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
+            inputs.move(len(inputs)-1, 3)
 
     def update(self):
         pins = [p for p in self.inputs.values() if p.name.startswith('Constr')]

@@ -380,7 +380,7 @@ def generateBlockDefXml(
         if not os.path.splitext(iconFile)[1]:
             iconFile += ".dds"
         try:
-            icon.text = os.path.relpath(bpy.path.abspath(iconFile), settings.baseDir)
+            icon.text = os.path.relpath(os.path.join(settings.baseDir, bpy.path.abspath(iconFile)), settings.baseDir)
         except ValueError:
             icon.text = settings.template(settings.names.icon, iconfile=iconFile)
 
