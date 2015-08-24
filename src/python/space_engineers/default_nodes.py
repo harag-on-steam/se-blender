@@ -69,6 +69,7 @@ def newText(tree, label=None, location=(0,0), text=""):
 def newBlockDef(tree, label=None, location=(0,0), model=None, mountPoints=None, mirroring=None, constrs=[]):
     bd = tree.nodes.new(BlockDefinitionNode.bl_idname)
     bd.location = Vector(location)
+    bd.width = 220.0
     if not label is None:
         bd.label = label
     if not model is None:
@@ -81,7 +82,7 @@ def newBlockDef(tree, label=None, location=(0,0), model=None, mountPoints=None, 
     for constr, socket in zip(constrs, constrSockets):
         tree.links.new(constr, socket)
     for s in bd.inputs:
-        if not s.is_linked:
+        if s.name.startswith("Constr") and not s.is_linked:
             s.hide = True
 
 def createDefaultTree(tree: BlockExportTree):

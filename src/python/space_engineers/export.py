@@ -88,7 +88,7 @@ class Names:
     main = '${SubtypeId}'
     construction = '${SubtypeId}_Constr${n}'
     lod = '${SubtypeId}_LOD${n}'
-    icon = '${IconsDir}${BlockPairName}.dds'
+    icon = '${IconsDir}\\${iconfile}'
     modelpath = '${ModelsDir}${modelfile}'
 
 _RE_BLOCK_NAME = re.compile(r"^(.+)\.(Large|Small|\d+)$", re.IGNORECASE)
@@ -130,7 +130,10 @@ class ExportSettings:
             self.ModelsDir = os.path.relpath(self.outputDir, self.baseDir) + '\\'
         except (ValueError):
             self.ModelsDir = 'Models\\' # fall back to old behaviour if baseDir and outputDir are on different drives
-        self.IconsDir = 'Textures\\Icons\\'
+        try:
+            self.IconsDir = bpy.path.relpath('//Textures/Icons', self.baseDir)
+        except (ValueError):
+            self.IconsDir = '//Textures/Icons' # fall back to old behaviour if baseDir and outputDir are on different drives
         # set multiple times on export
         self._CubeSize = None # corresponds with element-name in CubeBlocks.sbc, setter also sets SubtypeId
         self.SubtypeId = None # corresponds with element-name in CubeBlocks.sbc
@@ -358,6 +361,7 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
 def generateBlockDefXml(
         settings: ExportSettings,
         modelFile: str,
+        iconFile: str,
         mountPointObjects: iter,
         mirroringObjects: iter,
         mirroringBlockSubtypeId: str,
@@ -371,8 +375,14 @@ def generateBlockDefXml(
     subtypeId = ElementTree.SubElement(id, 'SubtypeId')
     subtypeId.text = settings.SubtypeId
 
-    icon = ElementTree.SubElement(block, 'Icon')
-    icon.text = settings.template(settings.names.icon)
+    if iconFile: # only change the icon if there's actually an iconFile
+        icon = ElementTree.SubElement(block, 'Icon')
+        if not os.path.splitext(iconFile)[1]:
+            iconFile += ".dds"
+        try:
+            icon.text = os.path.relpath(bpy.path.abspath(iconFile), settings.baseDir)
+        except ValueError:
+            icon.text = settings.template(settings.names.icon, iconfile=iconFile)
 
     ElementTree.SubElement(block, 'CubeSize').text = settings.CubeSize
     ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'

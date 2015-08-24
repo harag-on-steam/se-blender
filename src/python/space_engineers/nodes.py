@@ -8,7 +8,7 @@ from string import Template
 from .mirroring import mirroringAxisFromObjectName
 from .texture_files import TextureType
 from .types import sceneData, data, SEMaterialInfo
-from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage
+from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
 
@@ -610,6 +610,8 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
     def init(self, context):
         inputs = self.inputs
         inputs.new(MwmFileSocket.bl_idname, "Main Model")
+        icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
+        icon.text = "//Textures/Icons/${BlockPairName}"
         inputs.new(MountPointObjectsSocket.bl_idname, "Mount Points")
         inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
 
@@ -625,6 +627,9 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
         # new in v0.5.0
         if inputs.get('Mirroring', None) is None:
             inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
+        if inputs.get('Icon Path', None) is None:
+            icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
+            icon.text = "//Textures/Icons/${BlockPairName}"
 
     def update(self):
         pins = [p for p in self.inputs.values() if p.name.startswith('Constr')]
@@ -673,6 +678,9 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
 
         modelFile = name + ".mwm"
 
+        iconPath = self.inputs['Icon Path'].getText(settings)
+        iconFile = iconPath if iconPath else None
+
         mountPointsSocket = self.inputs['Mount Points']
         if mountPointsSocket.is_linked and mountPointsSocket.isEmpty():
             settings.text("no mount-points included", file=blockdeffile, node=self)
@@ -693,6 +701,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
         xml = generateBlockDefXml(
             settings,
             modelFile,
+            iconFile,
             mountPointsSocket.getObjects(),
             mirroringSocket.getObjects(),
             mirrorSettings.SubtypeId if mirrorSettings else None,
