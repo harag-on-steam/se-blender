@@ -72,7 +72,7 @@ class ReadyState:
         return True
 
 class Upgradable:
-    def upgrade(self):
+    def upgrade(self, tree):
         pass
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -357,7 +357,17 @@ class RigidBodyObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     type = 'CUSTOM'
 
     def getObjects(self, socket: bpy.types.NodeSocket=None):
-        return (o for o in super().getObjects(socket) if not o.rigid_body is None)
+        return (o for o in super().getObjects(socket) if o.type == 'MESH' and not o.rigid_body is None)
+
+class ExportableObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
+    '''selects only objects that are of an exportable type'''
+    bl_idname = "SEExportableObjectsSocket"
+    bl_label = "Objects"
+    bl_color = COLOR_OBJECTS_SKT
+    type = 'CUSTOM'
+
+    def getObjects(self, socket: bpy.types.NodeSocket=None):
+        return (o for o in super().getObjects(socket) if o.type in OBJECT_TYPES)
 
 class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     '''selects only objects that have a 'MountPoint' material'''
@@ -453,14 +463,14 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         return settings.cacheValue(hktfile, 'SUCCESS')
 
 
-class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
+class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEMwmFileNode"
     bl_label = "MwmBuilder"
     bl_icon = "EXPORT"
 
     def init(self, context):
         self.inputs.new(TemplateStringSocket.bl_idname, "Name")
-        self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        self.inputs.new(ExportableObjectsSocket.bl_idname, "Objects")
         self.inputs.new(HktFileSocket.bl_idname, "Havok")
         self.outputs.new(MwmFileSocket.bl_idname, "Mwm").node_input = "Name"
 
@@ -469,6 +479,17 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
 
         self.use_custom_color = True
         self.color = COLOR_MWM_WND
+
+    def upgrade(self, tree):
+        # changed in 0.6.4
+        if not isinstance(self.inputs["Objects"], ExportableObjectsSocket):
+            oldSocket = self.inputs["Objects"]
+            newSocket = self.inputs.new(ExportableObjectsSocket.bl_idname, "Objects")
+            linkedSource = oldSocket.firstSource()
+            if linkedSource:
+                tree.links.new(linkedSource, newSocket)
+            self.inputs.remove(oldSocket)
+            self.inputs.move(len(self.inputs)-1, 1)
 
     def update(self):
         pins = [p for p in self.inputs.values() if p.name.startswith('LOD')]
@@ -550,34 +571,168 @@ PATTERN_NAME = re.compile(r"^(.*?)(\.\d+)?$")
 def object_basename(name: str) -> str:
     return PATTERN_NAME.match(name).group(1)
 
-class GroupFilterObjectsNode(bpy.types.Node, SENode, ObjectSource):
+class TextFilterNode:
+    def updateIsMalformedRegeEx(self, context):
+        try:
+            if (self.use_regex):
+                re.compile(self.pattern)
+            self.is_malformed_regex = ""
+        except Exception as e:
+            self.is_malformed_regex = str(e)
+
+    pattern = bpy.props.StringProperty(
+        name="Text Pattern",
+        description="The text pattern to filter with",
+        update=updateIsMalformedRegeEx)
+    use_inverted_match = bpy.props.BoolProperty(
+        name="Invert Match",
+        description="Only keep objects that do *not* match the pattern?")
+    use_regex = bpy.props.BoolProperty(
+        name="Use Regular Expression", default=False,
+        description="Is the text pattern a Python regular expression?",
+        update=updateIsMalformedRegeEx)
+    is_malformed_regex = bpy.props.StringProperty()
+    use_case_sensitive = bpy.props.BoolProperty(
+        name="Match Case Sensitively", default=False,
+        description="Only match case-sensitively?")
+
+    def drawFilterWidgets(self, layout):
+        row = layout.row(align=True)
+        row2 = row.row(align=True)
+        row2.alert = bool(self.is_malformed_regex)
+        row2.prop(self, "pattern", text="")
+        row.prop(self, "use_regex", text="", icon="SCRIPTPLUGINS")
+        row.prop(self, "use_case_sensitive", text="", icon="FONT_DATA")
+        invert_icon = "ZOOMOUT" if self.use_inverted_match else "ZOOMIN"
+        row.prop(self, "use_inverted_match", text="", icon=invert_icon)
+        if self.is_malformed_regex:
+            layout.label(text=self.is_malformed_regex, icon="ERROR")
+
+    def drawFilterWidgetsExt(self, layout):
+        row = layout.column()
+        row.alert = bool(self.is_malformed_regex)
+        row.prop(self, "pattern", text="")
+        if self.is_malformed_regex:
+            row.label(text=self.is_malformed_regex, icon="ERROR")
+        else:
+            row.label(text="")
+        layout.prop(self, "use_regex")
+        layout.prop(self, "use_case_sensitive")
+        layout.prop(self, "use_inverted_match")
+
+    def newMatcher(self):
+        txt = self.pattern
+        regex = None
+        matcher = None
+        def matchCase(text):
+            return object_basename(text) == txt
+        def matchIgnoreCase(text):
+            return object_basename(text).lower() == txt
+        def matchAny(text):
+            return True
+        def matchNone(text):
+            return False
+        def matchRegEx(text):
+            return bool(regex.search(text))
+        def matchInverted(text):
+            return not matcher(text)
+
+        if not txt:
+            return matchAny
+        elif self.use_regex:
+            if self.is_malformed_regex:
+                matcher = matchNone
+            else:
+                regex = re.compile(self.pattern, 0 if self.use_case_sensitive else re.IGNORECASE)
+                matcher = matchRegEx
+        else:
+            if self.use_case_sensitive:
+                matcher = matchCase
+            else:
+                txt = txt.lower()
+                matcher = matchIgnoreCase
+
+        return matchInverted if self.use_inverted_match else matcher
+
+class GroupFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
     bl_idname = "SEGroupFilterObjectsNode"
-    bl_label = "Group Filter"
+    bl_label = "Group Name Filter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
 
     def init(self, context):
-        self.inputs.new(TemplateStringSocket.bl_idname, "Group Name")
         pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
         pin.n = -1
         pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
-        pin.n = -1 # TODO find a way to inherit n from the input socket
+        pin.n = -1
         self.use_custom_color = True
         self.color = COLOR_OBJECTS_WND
 
     def getObjects(self, socket: ObjectListSocket = None):
-        groupName = self.inputs['Group Name'].getText(ExportSettings(scene()))
-        if not groupName:
-            return []
-
         inSocket = self.inputs['Objects']
-        return (obj for obj in inSocket.getObjects()
-            if any(g for g in obj.users_group
-                   if g.name == groupName or object_basename(g.name) == groupName))
+        objects = inSocket.getObjects() if inSocket.is_linked else scene().objects
+        matcher = self.newMatcher()
+        return (obj for obj in objects
+            if any(g for g in obj.users_group if matcher(g.name))
+                or (self.use_inverted_match and len(obj.users_group) == 0))
 
-class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
+    def draw_buttons(self, context, layout):
+        self.drawFilterWidgets(layout)
+
+    def draw_buttons_ext(self, context, layout):
+        self.drawFilterWidgetsExt(layout)
+
+class NameFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
+    bl_idname = "SENameFilterObjectsNode"
+    bl_label = "Object Name Filter"
+    bl_icon = "COPY_ID"
+    bl_width_default = 170.0
+
+    def init(self, context):
+        pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
+        self.use_custom_color = True
+        self.color = COLOR_OBJECTS_WND
+
+    def getObjects(self, socket: ObjectListSocket = None):
+        inSocket = self.inputs['Objects']
+        objects = inSocket.getObjects() if inSocket.is_linked else scene().objects
+        matcher = self.newMatcher()
+        return (obj for obj in objects if matcher(obj.name))
+
+    def draw_buttons(self, context, layout):
+        self.drawFilterWidgets(layout)
+
+    def draw_buttons_ext(self, context, layout):
+        self.drawFilterWidgetsExt(layout)
+
+class BlockSizeFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
+    bl_idname = "SEBlockSizeFilterObjectsNode"
+    bl_label = "Block Size Filter"
+    bl_icon = "META_BALL"
+    bl_width_default = 170.0
+
+    def init(self, context):
+        pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Large Block Objects")
+        pin.n = -1
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Small Block Objects")
+        pin.n = -1
+        self.use_custom_color = True
+        self.color = COLOR_OBJECTS_WND
+
+    def getObjects(self, socket: ObjectListSocket = None):
+        settings = exportSettings()
+        isSmall = (settings.CubeSize == 'Small') if settings else (data(scene()).block_size == 'SMALL')
+        inSocket = self.inputs["Small Block Objects"] if isSmall else self.inputs["Large Block Objects"]
+        return inSocket.getObjects() if inSocket.is_linked else scene().objects
+
+class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
     bl_idname = "SELayerObjectsNode"
-    bl_label = "Combined Layers"
+    bl_label = "Layer Mask Filter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
 
@@ -586,20 +741,31 @@ class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
     def init(self, context):
         pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
         pin.n = -1
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
         self.use_custom_color = True
         self.color = COLOR_OBJECTS_WND
+
+    def upgrade(self, tree):
+        inputs = self.inputs
+        # new in 0.6.4
+        if inputs.get('Objects', None) is None:
+            pin = inputs.new(ObjectListSocket.bl_idname, "Objects")
+            pin.n = -1
 
     def draw_buttons(self, context, layout):
         layout.prop(self, 'layer_mask')
 
     def getObjects(self, socket: ObjectListSocket):
         mask = layer_bits(self.layer_mask)
-        return (obj for obj in scene().objects
+        inputSocket = self.inputs["Objects"]
+        objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
+        return (obj for obj in objects
             if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
 
-class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
+class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
     bl_idname = "SESeparateLayerObjectsNode"
-    bl_label = "Separate Layers"
+    bl_label = "Layer Splitter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
 
@@ -622,15 +788,26 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource):
             pin = self.outputs.new(ObjectListSocket.bl_idname, "Layer %02d" % (i+1))
             pin.enabled = False
             pin.layer = i
+        pin = self.inputs.new(ObjectListSocket.bl_idname, "Objects")
+        pin.n = -1
         self.use_custom_color = True
         self.color = COLOR_OBJECTS_WND
+
+    def upgrade(self, tree):
+        inputs = self.inputs
+        # new in 0.6.4
+        if inputs.get('Objects', None) is None:
+            pin = inputs.new(ObjectListSocket.bl_idname, "Objects")
+            pin.n = -1
 
     def draw_buttons(self, context, layout):
         layout.prop(self, 'layer_mask')
 
     def getObjects(self, socket: ObjectListSocket):
         mask = layer_bit(socket.layer)
-        return (obj for obj in scene().objects
+        inputSocket = self.inputs["Objects"]
+        objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
+        return (obj for obj in objects
             if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
 
 class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
@@ -652,7 +829,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
         self.use_custom_color = True
         self.color = COLOR_BLOCKDEF_WND
 
-    def upgrade(self):
+    def upgrade(self, tree):
         inputs = self.inputs
 
         # new in v0.6.3
@@ -808,9 +985,11 @@ class SENodeCategory(NodeCategory):
 
 categories = [
     SENodeCategory(BlockExportTree.bl_idname, "Block Export", items=[
+        NodeItem(NameFilterObjectsNode.bl_idname, NameFilterObjectsNode.bl_label),
+        NodeItem(GroupFilterObjectsNode.bl_idname, GroupFilterObjectsNode.bl_label),
+        NodeItem(BlockSizeFilterObjectsNode.bl_idname, BlockSizeFilterObjectsNode.bl_label),
         NodeItem(LayerObjectsNode.bl_idname, LayerObjectsNode.bl_label),
         NodeItem(SeparateLayerObjectsNode.bl_idname, SeparateLayerObjectsNode.bl_label),
-        NodeItem(GroupFilterObjectsNode.bl_idname, GroupFilterObjectsNode.bl_label),
         NodeItem(TemplateStringNode.bl_idname, TemplateStringNode.bl_label),
         NodeItem(MwmFileNode.bl_idname, MwmFileNode.bl_label),
         NodeItem(HavokFileNode.bl_idname, HavokFileNode.bl_label),
@@ -827,12 +1006,15 @@ registered = [
     TemplateStringSocket,
     ObjectListSocket,
     RigidBodyObjectsSocket,
+    ExportableObjectsSocket,
     MountPointObjectsSocket,
     MirroringObjectsSocket,
 
     LayerObjectsNode,
     SeparateLayerObjectsNode,
+    NameFilterObjectsNode,
     GroupFilterObjectsNode,
+    BlockSizeFilterObjectsNode,
     HavokFileNode,
     MwmFileNode,
     TemplateStringNode,
@@ -847,7 +1029,7 @@ def upgradeNodesAfterLoad(dummy):
         if isinstance(nodeTree, BlockExportTree):
             for node in nodeTree.nodes:
                 if isinstance(node, Upgradable):
-                    node.upgrade()
+                    node.upgrade(nodeTree)
 
 
 from bpy.utils import register_class, unregister_class

@@ -86,12 +86,12 @@ def newBlockDef(tree, label=None, location=(0,0), model=None, mountPoints=None, 
             s.hide = True
 
 def createDefaultTree(tree: BlockExportTree):
-    layerMain   = newCombinedLayers(tree, "Main Model",          (-777,  491), 0b10000000000000000000)
+    layerMain   = newCombinedLayers(tree, "Main Model",          (-777,  506), 0b10000000000000000000)
     layerPhys   = newCombinedLayers(tree, "Collision",           (-777,  361), 0b01000000000000000000)
-    layerLOD    = newSeparateLayers(tree, "Level of Detail",     (-777,  229), 0b00000111000000000000)
+    layerLOD    = newSeparateLayers(tree, "Level of Detail",     (-777,  216), 0b00000111000000000000)
     layerConstr = newSeparateLayers(tree, "Construction Phases", (-777, - 96), 0b00000000001110000000)
     layerMP     = newCombinedLayers(tree, "Mount Points",        ( 173,  283), 0b00100000000000000000)
-    layerMirror = newCombinedLayers(tree, "Mirroring",           ( 173,  143), 0b00010000000000000000)
+    layerMirror = newCombinedLayers(tree, "Mirroring",           ( 173,  134), 0b00010000000000000000)
 
     physics = newHavokConverter(tree, "Havok", (-516, 412), '${SubtypeId}', layerPhys)
 
