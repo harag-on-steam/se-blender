@@ -596,38 +596,51 @@ class TextFilterNode:
         name="Match Case Sensitively", default=False,
         description="Only match case-sensitively?")
 
-    def drawFilterWidgets(self, layout):
+    def getSearchSource(self):
+        return None
+
+    def drawPatternWidget(self, layout):
+        if not self.use_regex:
+            search_from = self.getSearchSource()
+            if search_from:
+                layout.prop_search(self, "pattern", search_from[0], search_from[1], text="")
+                return
+        layout.prop(self, "pattern", text="")
+
+    def draw_buttons(self, context, layout):
         row = layout.row(align=True)
         row2 = row.row(align=True)
         row2.alert = bool(self.is_malformed_regex)
-        row2.prop(self, "pattern", text="")
+        self.drawPatternWidget(row2)
         row.prop(self, "use_regex", text="", icon="SCRIPTPLUGINS")
-        row.prop(self, "use_case_sensitive", text="", icon="FONT_DATA")
+        row2 = row.row(align=True)
+        row2.enabled = self.use_regex
+        row2.prop(self, "use_case_sensitive", text="", icon="FONT_DATA")
         invert_icon = "ZOOMOUT" if self.use_inverted_match else "ZOOMIN"
         row.prop(self, "use_inverted_match", text="", icon=invert_icon)
         if self.is_malformed_regex:
             layout.label(text=self.is_malformed_regex, icon="ERROR")
 
-    def drawFilterWidgetsExt(self, layout):
+    def draw_buttons_ext(self, context, layout):
         row = layout.column()
         row.alert = bool(self.is_malformed_regex)
-        row.prop(self, "pattern", text="")
+        self.drawPatternWidget(row)
         if self.is_malformed_regex:
             row.label(text=self.is_malformed_regex, icon="ERROR")
         else:
             row.label(text="")
         layout.prop(self, "use_regex")
-        layout.prop(self, "use_case_sensitive")
+        row = layout.row()
+        row.enabled = self.use_regex
+        row.prop(self, "use_case_sensitive")
         layout.prop(self, "use_inverted_match")
 
     def newMatcher(self):
         txt = self.pattern
         regex = None
         matcher = None
-        def matchCase(text):
-            return object_basename(text) == txt
-        def matchIgnoreCase(text):
-            return object_basename(text).lower() == txt
+        def matchExact(text):
+            return txt == text
         def matchAny(text):
             return True
         def matchNone(text):
@@ -638,19 +651,15 @@ class TextFilterNode:
             return not matcher(text)
 
         if not txt:
-            return matchAny
+            matcher = matchAny
         elif self.use_regex:
             if self.is_malformed_regex:
-                matcher = matchNone
+                return matchNone
             else:
                 regex = re.compile(self.pattern, 0 if self.use_case_sensitive else re.IGNORECASE)
                 matcher = matchRegEx
         else:
-            if self.use_case_sensitive:
-                matcher = matchCase
-            else:
-                txt = txt.lower()
-                matcher = matchIgnoreCase
+            matcher = matchExact
 
         return matchInverted if self.use_inverted_match else matcher
 
@@ -676,11 +685,8 @@ class GroupFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSourc
             if any(g for g in obj.users_group if matcher(g.name))
                 or (self.use_inverted_match and len(obj.users_group) == 0))
 
-    def draw_buttons(self, context, layout):
-        self.drawFilterWidgets(layout)
-
-    def draw_buttons_ext(self, context, layout):
-        self.drawFilterWidgetsExt(layout)
+    def getSearchSource(self):
+        return (bpy.data, "groups")
 
 class NameFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
     bl_idname = "SENameFilterObjectsNode"
@@ -702,13 +708,10 @@ class NameFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource
         matcher = self.newMatcher()
         return (obj for obj in objects if matcher(obj.name))
 
-    def draw_buttons(self, context, layout):
-        self.drawFilterWidgets(layout)
+    def getSearchSource(self):
+        return (scene(), "objects")
 
-    def draw_buttons_ext(self, context, layout):
-        self.drawFilterWidgetsExt(layout)
-
-class BlockSizeFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
+class BlockSizeFilterObjectsNode(bpy.types.Node, SENode, ObjectSource):
     bl_idname = "SEBlockSizeFilterObjectsNode"
     bl_label = "Block Size Filter"
     bl_icon = "META_BALL"
@@ -984,12 +987,14 @@ class SENodeCategory(NodeCategory):
         return context.space_data.tree_type == BlockExportTree.bl_idname
 
 categories = [
-    SENodeCategory(BlockExportTree.bl_idname, "Block Export", items=[
+    SENodeCategory(BlockExportTree.bl_idname+"Filters", "Object Filters", items=[
         NodeItem(NameFilterObjectsNode.bl_idname, NameFilterObjectsNode.bl_label),
         NodeItem(GroupFilterObjectsNode.bl_idname, GroupFilterObjectsNode.bl_label),
         NodeItem(BlockSizeFilterObjectsNode.bl_idname, BlockSizeFilterObjectsNode.bl_label),
         NodeItem(LayerObjectsNode.bl_idname, LayerObjectsNode.bl_label),
         NodeItem(SeparateLayerObjectsNode.bl_idname, SeparateLayerObjectsNode.bl_label),
+    ]),
+    SENodeCategory(BlockExportTree.bl_idname+"Exporters", "Block Export", items=[
         NodeItem(TemplateStringNode.bl_idname, TemplateStringNode.bl_label),
         NodeItem(MwmFileNode.bl_idname, MwmFileNode.bl_label),
         NodeItem(HavokFileNode.bl_idname, HavokFileNode.bl_label),
