@@ -477,7 +477,7 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
         row.enabled = not isVolumetric
         row.prop(d, "scaleDown")
 
-        if not isVolumetric or not d.scaleDown:
+        if not isVolumetric:
             layout.separator()
             row = layout.row()
             row.alert = bool(_RE_KNOW_VOLUME_HANDLES.search(ob.name))
