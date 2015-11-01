@@ -567,7 +567,15 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#customizing-the-export">Customizing the Export</a>
 <ul class="sectlevel2">
 <li><a href="#text-nodes-and-sockets">Text Nodes and Sockets</a></li>
-<li><a href="#object-sources">Object Sources</a></li>
+<li><a href="#object-filters">Object Filters</a>
+<ul class="sectlevel3">
+<li><a href="#layer-mask-filter">Layer Mask Filter</a></li>
+<li><a href="#object-name-filter">Object Name Filter</a></li>
+<li><a href="#group-name-filter">Group Name Filter</a></li>
+<li><a href="#block-size-filter">Block Size Filter</a></li>
+<li><a href="#layer-splitter">Layer Splitter</a></li>
+</ul>
+</li>
 <li><a href="#havok-converter">Havok Converter</a></li>
 <li><a href="#mwmbuilder">MwmBuilder</a></li>
 <li><a href="#block-definition">Block Definition</a></li>
@@ -627,7 +635,7 @@ So if you are new to 3D modelling you should probably learn how to do that first
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (90MB), 2.74 is current at the time of this writing.</p>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (100MB), 2.75 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
@@ -725,20 +733,22 @@ Don&#8217;t forget to "Save User Settings".
 <div class="sect2">
 <h3 id="file-layout"><a class="anchor" href="#file-layout"></a>File layout</h3>
 <div class="paragraph">
-<p>The add-on makes a few assumptions about filenames and the folder layout of your mod:</p>
+<p>The add-on only has one mandatory requirement in regards to the folder layout:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>The .blend file(s) are assumed to be at the root of your mod folder.</p>
-</li>
-<li>
-<p>Icons are in <code>Textures\Icons\</code>.</p>
-</li>
-</ul>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The .blend file(s) must be in the base-folder of your mod.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>This layout cannot be customized.</p>
+<p>This is necessary so that all relative paths (textures, models, etc.) are calculated correctly.</p>
 </div>
 </div>
 <div class="sect2">
@@ -794,8 +804,8 @@ If it&#8217;s useful to split your block into several objects&#8201;&#8212;&#820
 </div>
 <div class="paragraph">
 <p>The second layer contains the simplified meshes that represent the block&#8217;s collision shape.
-If you don&#8217;t provide any collision meshes or unmark the layer the resulting .mwm file
-will not contain collision data and SE will default to a simple collision box that encompasses the whole block.</p>
+If you don&#8217;t provide any collision meshes the resulting .mwm file will not contain collision data
+and SE will default to a simple collision box that encompasses the whole block.</p>
 </div>
 <div class="paragraph">
 <p>Havok, the physics engine of SE, requires some settings to do its work.
@@ -830,7 +840,7 @@ If you don&#8217;t the collision shapes will most probably be rotated or positio
 <i class="fa icon-warning" title="Warning"></i>
 </td>
 <td class="content">
-Keep in mind SE has an upper limit of 5 collision shapes per block.
+Keep in mind SE has a limit for the maximum number of collision shapes per block.
 </td>
 </tr>
 </table>
@@ -1299,7 +1309,7 @@ This will display the empty as a box with the exact size it will have in-game.</
 <div class="paragraph">
 <p>Some blocks like doors, rotors, pistons and turrets are composed of several models each of which is in a separate file.
 To link from one of those models to the next SE expects empties that have a name starting with <code>subpart_</code>.
-For those empties there is the <code>file</code> property on the Data tab of the empty that names the next part-file.</p>
+For those empties there is the <code>file</code> property on the Data tab of the empty that names the next subpart-file.</p>
 </div>
 </div>
 </div>
@@ -1645,27 +1655,57 @@ get substituted with information stored in the scene:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="object-sources"><a class="anchor" href="#object-sources"></a>Object Sources</h3>
+<h3 id="object-filters"><a class="anchor" href="#object-filters"></a>Object Filters</h3>
 <div class="paragraph">
-<p>This kind of node determines the meshes and empties that should be exported. There are two variants.</p>
+<p>This kind of node determines the objects that should get processed. There are several variants.
+They all have an object-input socket so that you can build filter chains with them.
+If that input socket is not connected to anything it will use all objects in the scene as input.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The first variant uses a layer mask to combine all meshes and empties from the marked layers and
-provides them under a single output-socket for consumption by other nodes.</p>
-</li>
-<li>
-<p>The second variant also uses a layer mask but provides a separate output-socket for each layer.
+<div class="sect3">
+<h4 id="layer-mask-filter"><a class="anchor" href="#layer-mask-filter"></a>Layer Mask Filter</h4>
+<div class="paragraph">
+<p>This node uses a layer mask to filter out objects that are not on the marked layers.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="object-name-filter"><a class="anchor" href="#object-name-filter"></a>Object Name Filter</h4>
+<div class="paragraph">
+<p>This filter matches objects by their name.
+You can either choose an exact name or switch the node to use a <a href="http://pythex.org">regular expression</a>.
+You can also invert the match so only objects get included that do <em>not</em> match the pattern.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="group-name-filter"><a class="anchor" href="#group-name-filter"></a>Group Name Filter</h4>
+<div class="paragraph">
+<p>This filter works just like an Object Name filter, only on the names of groups the object is in.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="block-size-filter"><a class="anchor" href="#block-size-filter"></a>Block Size Filter</h4>
+<div class="paragraph">
+<p>This node has two input sockets and selects between them depending on the currently exported block-size.
+This is useful if you have objects in your scene that should only be exported for one block-size but not for the other:</p>
+</div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<a class="image" href="images/nodes-large-small-conveyor.png"><img src="./images/nodes-large-small-conveyor.png" alt="nodes large small conveyor" width="450"></a>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="layer-splitter"><a class="anchor" href="#layer-splitter"></a>Layer Splitter</h4>
+<div class="paragraph">
+<p>This node adds one output-socket for every layer you select.
+Each of those sockets only provides the objects from the corresponding layer.
 This is useful for sequential groups of meshes like construction stages.
-This variant also implicitly numbers the output-sockets starting at <code>1</code>.
-This number is available for text-substitution as parameter <code>${n}</code>.</p>
-</li>
-</ol>
+The node also implicitly numbers the output-sockets starting at <code>1</code>.
+The number is available for text-substitution as parameter <code>${n}</code>.</p>
 </div>
 <div class="imageblock" style="float: right">
 <div class="content">
 <a class="image" href="images/nodes-havok.png"><img src="./images/nodes-havok.png" alt="nodes havok" width="150"></a>
+</div>
 </div>
 </div>
 </div>
@@ -1697,15 +1737,16 @@ The node ignores objects that don&#8217;t have <code>Rigid Body</code> enabled o
 <h3 id="mwmbuilder"><a class="anchor" href="#mwmbuilder"></a>MwmBuilder</h3>
 <div class="paragraph">
 <p>This kind of node produces a <code>.mwm</code> file by taking the objects from its input-socket and running
-them through MwmBuilder.
+them through MwmBuilder. The node only processes mesh-objects and empties,
+other object types like curves, surfaces or metaballs are ignored.
 The <code>.mwm</code> will include the collision data of a Havok Converter node if it is connected to one.
 An MwmBuilder node can also receive the output of other MwmBuilder nodes.
-Those nodes will then serve as the <a href="#levels-of-detail">level-of-detail</a> models that will be linked to
-from the <code>.mwm</code> file produced by the current node.</p>
+Those nodes will then serve as the <a href="#levels-of-detail">level-of-detail</a> models and the produced <code>.mwm</code>
+will contain references to them.</p>
 </div>
 <div class="imageblock" style="float: right">
 <div class="content">
-<a class="image" href="images/nodes-blockdef.png"><img src="./images/nodes-blockdef.png" alt="nodes blockdef" width="150"></a>
+<a class="image" href="images/nodes-blockdef.png"><img src="./images/nodes-blockdef.png" alt="nodes blockdef" width="250"></a>
 </div>
 </div>
 </div>
@@ -1741,7 +1782,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-06-23 01:52:02 CEST
+Last updated 2015-08-10 06:34:04 +02:00
 </div>
 </div>
 </body>
