@@ -1,11 +1,10 @@
 === File layout
 
-The add-on makes a few assumptions about filenames and the folder layout of your mod:
+The add-on only has one mandatory requirement in regards to the folder layout:
 
-* The .blend file(s) are assumed to be at the root of your mod folder.
-* Icons are in `Textures\Icons\`.
+IMPORTANT: The .blend file(s) must be in the base-folder of your mod.
 
-This layout cannot be customized.
+This is necessary so that all relative paths (textures, models, etc.) are calculated correctly.
 
 === Scene Layout
 
@@ -37,8 +36,8 @@ If it's useful to split your block into several objects -- probably to apply mod
 image::blender-physics.png[width=450,float=right,link=images/blender-physics.png]
 
 The second layer contains the simplified meshes that represent the block's collision shape.
-If you don't provide any collision meshes or unmark the layer the resulting .mwm file
-will not contain collision data and SE will default to a simple collision box that encompasses the whole block.
+If you don't provide any collision meshes the resulting .mwm file will not contain collision data
+and SE will default to a simple collision box that encompasses the whole block.
 
 Havok, the physics engine of SE, requires some settings to do its work.
 You provide those on Blender's Physics tab by enabling `Rigid Bodies` for your collision meshes.
@@ -54,7 +53,7 @@ to all collision objects before export.
 As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
 If you don't the collision shapes will most probably be rotated or positioned wrong.
 
-WARNING: Keep in mind SE has an upper limit of 5 collision shapes per block.
+WARNING: Keep in mind SE has a limit for the maximum number of collision shapes per block.
 
 NOTE: Blender offers a `Cone` primitive shape but Havok has no support for that.
 If you use a Cone shape it will be silently converted to a Convex Hull on export.

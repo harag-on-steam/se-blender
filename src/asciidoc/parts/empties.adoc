@@ -21,7 +21,7 @@ This will display the empty as a box with the exact size it will have in-game.
 
 Some blocks like doors, rotors, pistons and turrets are composed of several models each of which is in a separate file.
 To link from one of those models to the next SE expects empties that have a name starting with `subpart_`.
-For those empties there is the `file` property on the Data tab of the empty that names the next part-file.
+For those empties there is the `file` property on the Data tab of the empty that names the next subpart-file.
 
 [#mirroring]
 ==== Mirroring

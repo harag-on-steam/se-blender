@@ -39,16 +39,40 @@ get substituted with information stored in the scene:
 
 image::nodes-objects.png[width=160,float=right,link=images/nodes-objects.png]
 
-=== Object Sources
+=== Object Filters
 
-This kind of node determines the meshes and empties that should be exported. There are two variants.
+This kind of node determines the objects that should get processed. There are several variants.
+They all have an object-input socket so that you can build filter chains with them.
+If that input socket is not connected to anything it will use all objects in the scene as input.
 
-. The first variant uses a layer mask to combine all meshes and empties from the marked layers and
-  provides them under a single output-socket for consumption by other nodes.
-. The second variant also uses a layer mask but provides a separate output-socket for each layer.
-  This is useful for sequential groups of meshes like construction stages.
-  This variant also implicitly numbers the output-sockets starting at `1`.
-  This number is available for text-substitution as parameter `${n}`.
+==== Layer Mask Filter
+
+This node uses a layer mask to filter out objects that are not on the marked layers.
+
+==== Object Name Filter
+
+This filter matches objects by their name.
+You can either choose an exact name or switch the node to use a http://pythex.org[regular expression].
+You can also invert the match so only objects get included that do _not_ match the pattern.
+
+==== Group Name Filter
+
+This filter works just like an Object Name filter, only on the names of groups the object is in.
+
+==== Block Size Filter
+
+This node has two input sockets and selects between them depending on the currently exported block-size.
+This is useful if you have objects in your scene that should only be exported for one block-size but not for the other:
+
+image::nodes-large-small-conveyor.png[width=450,align=center,link=images/nodes-large-small-conveyor.png]
+
+==== Layer Splitter
+
+This node adds one output-socket for every layer you select.
+Each of those sockets only provides the objects from the corresponding layer.
+This is useful for sequential groups of meshes like construction stages.
+The node also implicitly numbers the output-sockets starting at `1`.
+The number is available for text-substitution as parameter `${n}`.
 
 image::nodes-havok.png[width=150,float=right,link=images/nodes-havok.png]
 
@@ -64,13 +88,14 @@ image::nodes-mwm.png[width=150,float=right,link=images/nodes-mwm.png]
 === MwmBuilder
 
 This kind of node produces a `.mwm` file by taking the objects from its input-socket and running
-them through MwmBuilder.
+them through MwmBuilder. The node only processes mesh-objects and empties,
+other object types like curves, surfaces or metaballs are ignored.
 The `.mwm` will include the collision data of a Havok Converter node if it is connected to one.
 An MwmBuilder node can also receive the output of other MwmBuilder nodes.
-Those nodes will then serve as the link:#levels-of-detail[level-of-detail] models that will be linked to
-from the `.mwm` file produced by the current node.
+Those nodes will then serve as the link:#levels-of-detail[level-of-detail] models and the produced `.mwm`
+will contain references to them.
 
-image::nodes-blockdef.png[width=150,float=right,link=images/nodes-blockdef.png]
+image::nodes-blockdef.png[width=250,float=right,link=images/nodes-blockdef.png]
 
 === Block Definition
 
