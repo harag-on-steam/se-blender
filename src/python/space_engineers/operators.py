@@ -67,6 +67,7 @@ class BlockExport:
 
         skips = OrderedDict()
         failures = OrderedDict()
+        problems = OrderedDict()
 
         with PinnedScene(settings.scene):
             with PinnedSettings(settings):
@@ -85,11 +86,16 @@ class BlockExport:
                             skips[name] = exporter
                         elif 'FAILED' == result:
                             failures[name] = exporter
+                        elif 'PROBLEMS' == result:
+                            problems[name] = exporter
 
         if skips:
-            settings.warn("Some export-nodes were skipped: %s" % list(skips.keys()))
+            settings.info("Some export-nodes were skipped: %s" % list(skips.keys()))
+        if problems:
+            settings.warn("Some export-nodes reported serious issues: %s" % list(problems.keys()))
         if failures:
             settings.error("Some export-nodes failed: %s" % list(failures.keys()))
+
 
     def ensureAtLeastOneTextureSlot(self, materials):
         """

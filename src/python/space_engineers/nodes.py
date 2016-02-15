@@ -25,6 +25,8 @@ COLOR_BLOCKDEF_WND = (  1, .98, .52)
 
 OBJECT_TYPES = {'EMPTY', 'MESH'}
 
+ACCEPTABLE_OUTCOME = {'SUCCESS', 'PROBLEMS'}
+
 class BlockExportTree(bpy.types.NodeTree):
     bl_idname = "SEBlockExportTree"
     bl_label = "Block Export Settings"
@@ -506,6 +508,8 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         return hasObjects and hasName
 
     def export(self, settings: ExportSettings):
+        _ = settings.hadErrors # reset error tracking
+
         name = self.inputs['Name'].getText(settings)
         if not name:
             settings.error("no name to export under", node=self)
@@ -520,19 +524,12 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             settings.text("layers had no objects for export", file=mwmfile, node=self)
             return settings.cacheValue(mwmfile, 'SKIPPED')
 
-        materials = {}
-        for o in objectsSource.getObjects():
-            for ms in o.material_slots:
-                if not ms is None and not ms.material is None:
-                    materials[ms.material.name] = ms.material
-        materials_xml = [material_xml(settings, m) for m in materials.values()]
-
         sockets = [s for s in self.inputs if s.name.startswith("LOD") and s.enabled and s.is_linked]
         lods_xml = []
         msgs = []
         for i, socket in enumerate(sockets):
             lodName = socket.getText(settings)
-            if socket.isReady() and socket.export(settings) == 'SUCCESS':
+            if socket.isReady() and socket.export(settings) in ACCEPTABLE_OUTCOME:
                 lodDistance = socket.distance
                 renderQualities = socket.qualities if socket.use_qualities else None
                 lods_xml.append(lod_xml(settings, lodName, lodDistance, renderQualities))
@@ -542,17 +539,26 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         for msg in msgs:
             settings.text(msg, file=mwmfile, node=self)
 
-        paramsfile = join(settings.outputDir, name + ".xml")
-        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
-        write_pretty_xml(paramsxml, paramsfile)
-
         havokfile = None
         socket = self.inputs['Havok']
-        if socket.isReady() and socket.export(settings) == 'SUCCESS':
+        if socket.isReady() and socket.export(settings) in ACCEPTABLE_OUTCOME:
             sourceName = socket.getText(settings)
             havokfile = join(settings.outputDir, sourceName + ".hkt")
         else:
             settings.info("no collision data included", file=mwmfile, node=self)
+
+        materials = {}
+        for o in objectsSource.getObjects():
+            for ms in o.material_slots:
+                if not ms is None and not ms.material is None:
+                    materials[ms.material.name] = ms.material
+            if isinstance(o.data, bpy.types.Mesh) and len(o.data.uv_layers) == 0:
+                settings.error("Mesh-object '%s' has no UV-map. This will crash SE's DirectX 11 renderer." % o.name, file=mwmfile, node=self)
+        materials_xml = [material_xml(settings, m, mwmfile, self) for m in materials.values()]
+
+        paramsfile = join(settings.outputDir, name + ".xml")
+        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
+        write_pretty_xml(paramsxml, paramsfile)
 
         fbxfile = join(settings.outputDir, name + ".fbx")
         export_fbx(settings, fbxfile, objectsSource.getObjects())
@@ -563,8 +569,12 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             settings.error(str(e), file=mwmfile, node=self)
             return settings.cacheValue(mwmfile, 'FAILED')
 
-        settings.info("export successful", file=mwmfile, node=self)
-        return settings.cacheValue(mwmfile, 'SUCCESS')
+        if not settings.hadErrors:
+            settings.info("export successful", file=mwmfile, node=self)
+            return settings.cacheValue(mwmfile, 'SUCCESS')
+        else:
+            settings.warn("export completed with problems", file=mwmfile, node=self)
+            return settings.cacheValue(mwmfile, 'PROBLEMS')
 
 PATTERN_NAME = re.compile(r"^(.*?)(\.\d+)?$")
 

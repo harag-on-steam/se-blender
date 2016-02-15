@@ -123,6 +123,7 @@ class ExportSettings:
         self._mwmbuilder = None
         # set multiple times on export
         self.scaleDown = None
+        self._hadErrors = False
 
         # substitution parameters
         # self.BlockPairName # corresponds with element-name in CubeBlocks.sbc, see property below
@@ -203,6 +204,13 @@ class ExportSettings:
             self._havokfilter = tool_path('havokFilterMgr', 'Havok Filter Manager')
         return self._havokfilter
 
+    @property
+    def hadErrors(self):
+        if self._hadErrors:
+            self._hadErrors = False
+            return True
+        return False
+
     def callTool(self, cmdline, logfile=None, cwd=None, successfulExitCodes=[0], loglines=[], logtextInspector=None):
         try:
             out = subprocess.check_output(cmdline, cwd=cwd, stderr=subprocess.STDOUT)
@@ -234,6 +242,7 @@ class ExportSettings:
 
     def error(self, msg, file=None, node = None):
         self.msg('ERROR', msg, file, node)
+        self._hadErrors = True
 
     def info(self, msg, file=None, node = None):
         self.msg('INFO', msg, file, node)

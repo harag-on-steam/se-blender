@@ -4,7 +4,10 @@ import bpy
 from xml.etree import ElementTree
 from .texture_files import TextureType
 from .types import data, SEMaterialInfo, rgb
+import re
 
+
+BAD_PATH = re.compile(r"^(?:[A-Za-z]:|\.\.)?[\\/]")
 
 def se_content_dir(settings):
     se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
@@ -41,7 +44,7 @@ def _floatstr(f):
 def _material_technique(technique):
     return "ALPHA_MASKED" if "ALPHAMASK" == technique else technique
 
-def material_xml(settings, mat):
+def material_xml(settings, mat, file=None, node=None):
     d = data(mat)
     e = ElementTree.Element("Material", Name=mat.name)
     m = SEMaterialInfo(mat)
@@ -75,7 +78,12 @@ def material_xml(settings, mat):
     for texType in TextureType:
         filepath = m.images.get(texType, None)
         if not filepath is None:
-            param(texType.name + "Texture", derive_texture_path(settings, filepath))
+            derivedPath = derive_texture_path(settings, filepath)
+            if (BAD_PATH.search(derivedPath)):
+                settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
+                               "Consult the documentation on texture-paths."
+                               % (texType.name, mat.name, derivedPath), file=file, node=node)
+            param(texType.name + "Texture", derivedPath)
         else:
             e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
