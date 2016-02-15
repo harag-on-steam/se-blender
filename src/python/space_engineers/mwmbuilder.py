@@ -90,7 +90,11 @@ def lod_xml(settings, lodMwmFile: str, lodDistance: int, renderQualities:iter=No
     e.attrib = attrib
 
     em = ElementTree.SubElement(e, "Model")
-    em.text = settings.template(settings.names.modelpath, modelfile=os.path.basename(lodMwmFile))
+    try:
+        filePath = os.path.relpath(os.path.join(settings.outputDir, lodMwmFile), settings.baseDir)
+    except ValueError:
+        filePath = settings.template(settings.names.modelpath, modelfile=os.path.basename(lodMwmFile))
+    em.text = filePath
     return e
 
 def mwmbuilder_xml(settings, material_elements, lod_elements):
