@@ -2,7 +2,7 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "Harag",
-	"version": (0, 6, 5),
+	"version": (0, 6, 6),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
@@ -141,7 +141,7 @@ def unregister():
     unregister_class(types.DATA_PT_spceng_scene)
     unregister_class(types.NODE_PT_spceng_nodes_mat)
     unregister_class(types.NODE_PT_spceng_nodes)
-    
+
     del bpy.types.Material.space_engineers
     del bpy.types.Object.space_engineers
     del bpy.types.Object.space_engineers_mirroring
