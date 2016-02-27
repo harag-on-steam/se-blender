@@ -438,6 +438,10 @@ class SEObjectProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     file = bpy.props.StringProperty(name="Link to File", 
         description="Links this empty to another model file. Only specify the base name, do not include the .mwm extension.")
+    # TODO SE supports referencing multiple highlight objects per empty. Which UI widget supports that in Blender?
+    highlight_objects = bpy.props.StringProperty(name="Highlight Mesh",
+        description="Link to a mesh-object that gets highlighted instead of this interaction handle "
+                    "when the player points at the handle")
     scaleDown = bpy.props.BoolProperty(name="Scale Down", default=False,
         description="Should the empty be scaled down when exporting a small block from a large block model?")
 
@@ -472,6 +476,10 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
         row.prop(context.object, "space_engineers_mirroring", icon="MOD_MIRROR" if not isMirror else 'NONE')
 
         isVolumetric = ob.empty_draw_type == 'CUBE' and ob.empty_draw_size == 0.5
+
+        row = layout.row()
+        row.enabled = isVolumetric
+        row.prop_search(d, "highlight_objects", context.scene, "objects", icon="FACESEL")
 
         row = layout.row()
         row.enabled = not isVolumetric

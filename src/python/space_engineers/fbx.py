@@ -32,7 +32,8 @@ def fbx_template_def_model(scene, settings, override_defaults=None, nbr_users=0)
         
         # SE properties
         (b"file", ("", "p_string", False)),
-        
+        (b"highlight", ("", "p_string", False)),
+
         # Havok properties last to avoid including unrelated properties in the conversion to .hkt
         (b"hkTypeRigidBody", ("", "p_string", False)),
         (b"mass", (-1.0, "p_double", False)),
@@ -141,6 +142,9 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
         se = types.data(ob_obj.bdata)
         if se.file:
             _fbx.elem_props_template_set(tmpl, props, "p_string", b"file", se.file)
+        if se.highlight_objects:
+            # TODO SE supports mutliple highlight shapes via <objectname1>;<objectname2>;...
+            _fbx.elem_props_template_set(tmpl, props, "p_string", b"highlight", se.highlight_objects)
 
     if obj_type == b"Mesh" and ob_obj.bdata.rigid_body:
         rbo = ob_obj.bdata.rigid_body
