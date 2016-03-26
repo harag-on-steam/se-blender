@@ -6,12 +6,15 @@ from os.path import join
 from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
+from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
 from .mirroring import mirroringAxisFromObjectName
 from .texture_files import TextureType
 from .types import sceneData, data, SEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
+
 
 COLOR_OBJECTS_SKT  = (.50, .65, .80, 1)
 COLOR_OBJECTS_WND  = (.45, .54, .61)
@@ -23,7 +26,10 @@ COLOR_MWM_SKT      = (  1, .70, .30, 1)
 COLOR_MWM_WND      = (.70, .56, .42)
 COLOR_BLOCKDEF_WND = (  1, .98, .52)
 
-OBJECT_TYPES = {'EMPTY', 'MESH'}
+DEFAULT_OBJECT_TYPES = {'EMPTY', 'MESH'}
+OTHER = 'OTHER'
+OTHER_TYPES = {'OTHER'}
+MESH_LIKE_TYPES = {'CURVE', 'SURFACE', 'FONT', 'META'}
 
 ACCEPTABLE_OUTCOME = {'SUCCESS', 'PROBLEMS'}
 
@@ -369,7 +375,11 @@ class ExportableObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     type = 'CUSTOM'
 
     def getObjects(self, socket: bpy.types.NodeSocket=None):
-        return (o for o in super().getObjects(socket) if o.type in OBJECT_TYPES)
+        object_types = getattr(self.node, 'object_types', DEFAULT_OBJECT_TYPES)
+        if OTHER in object_types:
+            object_types = (object_types - OTHER_TYPES) | MESH_LIKE_TYPES
+
+        return (o for o in super().getObjects(socket) if o.type in object_types)
 
 class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     '''selects only objects that have a 'MountPoint' material'''
@@ -465,10 +475,270 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         return settings.cacheValue(hktfile, 'SUCCESS')
 
 
+IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='Z', axis_up='Y') # SE; -Z, Y
+
+# as defined by io_scene_fbx/__init__.py/ExportFBX, can't reuse because the class is a bpy.types.Operator
+class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
+    version = EnumProperty(
+        items=(('BIN7400', "FBX 7.4 binary", "Modern 7.4 binary version"),
+               ('ASCII6100', "FBX 6.1 ASCII",
+                "Legacy 6.1 ascii version - WARNING: Deprecated and no more maintained"),
+               ),
+        name="Version",
+        description="Choose which version of the exporter to use",
+        default='BIN7400' # SE
+    )
+
+    # 7.4 only
+    ui_tab = EnumProperty(
+        items=(('MAIN', "Main", "Main basic settings"),
+               ('GEOMETRY', "Geometries", "Geometry-related settings"),
+               ('ARMATURE', "Armatures", "Armature-related settings"),
+               ('ANIMATION', "Animation", "Animation-related settings"),
+               ),
+        options={'SKIP_SAVE'}, # SE
+        name="ui_tab",
+        description="Export options categories",
+    )
+
+    use_selection = BoolProperty(
+        name="Selected Objects",
+        description="Export selected objects on visible layers",
+        default=False,
+    )
+
+    global_scale = FloatProperty(
+        name="Scale",
+        description="Scale all data (Some importers do not support scaled armatures!)",
+        min=0.001, max=1000.0,
+        soft_min=0.01, soft_max=1000.0,
+        default=1.0,
+    )
+    # 7.4 only
+    apply_unit_scale = BoolProperty(
+        name="Apply Unit",
+        description="Scale all data according to current Blender size, to match default FBX unit "
+                    "(centimeter, some importers do not handle UnitScaleFactor properly)",
+        default=False, # SE ; True
+    )
+    # 7.4 only
+    bake_space_transform = BoolProperty(
+        name="!EXPERIMENTAL! Apply Transform",
+        description="Bake space transform into object data, avoids getting unwanted rotations to objects when "
+                    "target space is not aligned with Blender's space "
+                    "(WARNING! experimental option, use at own risks, known broken with armatures/animations)",
+        default=False,
+    )
+
+    object_types = EnumProperty(
+        name="Object Types",
+        options={'ENUM_FLAG'},
+        items=(('EMPTY', "Empty", ""), # 'OUTLINER_OB_EMPTY'
+               ('CAMERA', "Camera", ""), # 'OUTLINER_OB_CAMERA'
+               ('LAMP', "Lamp", ""), # 'OUTLINER_OB_LAMP'
+               ('ARMATURE', "Armature", "WARNING: not supported in dupli/group instances"), # 'OUTLINER_OB_ARMATURE'
+               ('MESH', "Mesh", ""), # 'OUTLINER_OB_MESH'
+               ('OTHER', "Other", "Other geometry types, like curve, metaball, etc. (converted to meshes)"), # 'MOD_REMESH'
+               ),
+        description="Which kind of object to export",
+        default={'EMPTY', 'MESH' }, # SE ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' },
+    )
+
+    use_mesh_modifiers = BoolProperty(
+        name="Apply Modifiers",
+        description="Apply modifiers to mesh objects (except Armature ones) - "
+                    "WARNING: prevents exporting shape keys",
+        default=True,
+    )
+    mesh_smooth_type = EnumProperty(
+        name="Smoothing",
+        items=(('OFF', "Normals Only", "Export only normals instead of writing edge or face smoothing data"),
+               ('FACE', "Face", "Write face smoothing"),
+               ('EDGE', "Edge", "Write edge smoothing"),
+               ),
+        description="Export smoothing information "
+                    "(prefer 'Normals Only' option if your target importer understand split normals)",
+        default='OFF',
+    )
+    use_mesh_edges = BoolProperty(
+        name="Loose Edges",
+        description="Export loose edges (as two-vertices polygons)",
+        default=False,
+    )
+    # 7.4 only
+    use_tspace = BoolProperty(
+        name="Tangent Space",
+        description="Add binormal and tangent vectors, together with normal they form the tangent space "
+                    "(will only work correctly with tris/quads only meshes!)",
+        default=False,
+    )
+    # 7.4 only
+    use_custom_props = BoolProperty(
+        name="Custom Properties",
+        description="Export custom properties",
+        default=False,
+    )
+    add_leaf_bones = BoolProperty(
+        name="Add Leaf Bones",
+        description="Append a final bone to the end of each chain to specify last bone length "
+                    "(use this when you intend to edit the armature from exported data)",
+        default=False
+    )
+    primary_bone_axis = EnumProperty(
+        name="Primary Bone Axis",
+        items=(('X', "X Axis", ""),
+               ('Y', "Y Axis", ""),
+               ('Z', "Z Axis", ""),
+               ('-X', "-X Axis", ""),
+               ('-Y', "-Y Axis", ""),
+               ('-Z', "-Z Axis", ""),
+               ),
+        default='X', # SE ; X
+    )
+    secondary_bone_axis = EnumProperty(
+        name="Secondary Bone Axis",
+        items=(('X', "X Axis", ""),
+               ('Y', "Y Axis", ""),
+               ('Z', "Z Axis", ""),
+               ('-X', "-X Axis", ""),
+               ('-Y', "-Y Axis", ""),
+               ('-Z', "-Z Axis", ""),
+               ),
+        default='Y', # SE ; X
+    )
+    use_armature_deform_only = BoolProperty(
+        name="Only Deform Bones",
+        description="Only write deforming bones (and non-deforming ones when they have deforming children)",
+        default=False,
+    )
+    armature_nodetype = EnumProperty(
+        name="Armature FBXNode Type",
+        items=(('NULL', "Null", "'Null' FBX node, similar to Blender's Empty (default)"),
+               ('ROOT', "Root", "'Root' FBX node, supposed to be the root of chains of bones..."),
+               ('LIMBNODE', "LimbNode", "'LimbNode' FBX node, a regular joint between two bones..."),
+               ),
+        description="FBX type of node (object) used to represent Blender's armatures "
+                    "(use Null one unless you experience issues with other app, other choices may no import back "
+                    "perfectly in Blender...)",
+        default='NULL',
+    )
+    # Anim - 7.4 ;
+    bake_anim = BoolProperty(
+        name="Baked Animation",
+        description="Export baked keyframe animation",
+        default=False, # SE ; True
+    )
+    bake_anim_use_all_bones = BoolProperty(
+        name="Key All Bones",
+        description="Force exporting at least one key of animation for all bones "
+                    "(needed with some target applications, like UE4)",
+        default=True,
+    )
+    bake_anim_use_nla_strips = BoolProperty(
+        name="NLA Strips",
+        description="Export each non-muted NLA strip as a separated FBX's AnimStack, if any, "
+                    "instead of global scene animation",
+        default=True,
+    )
+    bake_anim_use_all_actions = BoolProperty(
+        name="All Actions",
+        description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
+                    "(note that animated objects will get all actions compatible with them, "
+                    "others will get no animation at all)",
+        default=True,
+    )
+    bake_anim_force_startend_keying = BoolProperty(
+        name="Force Start/End Keying",
+        description="Always add a keyframe at start and end of actions for animated channels",
+        default=True,
+    )
+    bake_anim_step = FloatProperty(
+        name="Sampling Rate",
+        description="How often to evaluate animated values (in frames)",
+        min=0.01, max=100.0,
+        soft_min=0.1, soft_max=10.0,
+        default=1.0,
+    )
+    bake_anim_simplify_factor = FloatProperty(
+        name="Simplify",
+        description="How much to simplify baked values (0.0 to disable, the higher the more simplified)",
+        min=0.0, max=100.0,  # No simplification to up to 10% of current magnitude tolerance.
+        soft_min=0.0, soft_max=10.0,
+        default=1.0,  # default: min slope: 0.005, max frame step: 10.
+    )
+    # Anim - 6.1
+    use_anim = BoolProperty(
+        name="Animation",
+        description="Export keyframe animation",
+        default=False, # SE ; True
+    )
+    use_anim_action_all = BoolProperty(
+        name="All Actions",
+        description="Export all actions for armatures or just the currently selected action",
+        default=True,
+    )
+    use_default_take = BoolProperty(
+        name="Default Take",
+        description="Export currently assigned object and armature animations into a default take from the scene "
+                    "start/end frames",
+        default=True
+    )
+    use_anim_optimize = BoolProperty(
+        name="Optimize Keyframes",
+        description="Remove double keyframes",
+        default=True,
+    )
+    anim_optimize_precision = FloatProperty(
+        name="Precision",
+        description="Tolerance for comparing double keyframes (higher for greater accuracy)",
+        min=0.0, max=20.0,  # from 10^2 to 10^-18 frames precision.
+        soft_min=1.0, soft_max=16.0,
+        default=6.0,  # default: 10^-4 frames.
+    )
+    # End anim
+    path_mode = path_reference_mode
+    # 7.4 only
+    embed_textures = BoolProperty(
+        name="Embed Textures",
+        description="Embed textures in FBX binary file (only for \"Copy\" path mode!)",
+        default=False,
+    )
+    batch_mode = EnumProperty(
+        name="Batch Mode",
+        items=(('OFF', "Off", "Active scene to file"),
+               ('SCENE', "Scene", "Each scene as a file"),
+               ('GROUP', "Group", "Each group as a file"),
+               ),
+        default = 'OFF' # SE
+    )
+    use_batch_own_dir = BoolProperty(
+        name="Batch Own Dir",
+        description="Create a dir for each exported file",
+        default=True,
+    )
+    use_metadata = BoolProperty(
+        name="Use Metadata",
+        default=True,
+        options={'HIDDEN'},
+    )
+
+class MwmExportProperties(bpy.types.PropertyGroup):
+    rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=1,
+        description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
+    rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
+        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
+
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEMwmFileNode"
     bl_label = "MwmBuilder"
     bl_icon = "EXPORT"
+
+    fbx_settings = bpy.props.PointerProperty(type=FbxExportProperties)
+    mwm_settings = bpy.props.PointerProperty(type=MwmExportProperties)
+
+    @property
+    def object_types(self):
+        return self.fbx_settings.object_types
 
     def init(self, context):
         self.inputs.new(TemplateStringSocket.bl_idname, "Name")
@@ -506,6 +776,57 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         hasName = self.inputs['Name'].getText()
         # Havok is not required
         return hasObjects and hasName
+
+    def draw_buttons_ext(self, context, layout):
+        f = self.fbx_settings
+
+
+        m = self.mwm_settings
+        layout.label("MwmBuilder Settings")
+        layout.prop(m, 'rescale_factor')
+        layout.prop(m, 'rotation_y')
+
+        layout.separator()
+
+        layout.label("FBX Exporter Settings")
+        layout.prop(f, "ui_tab", expand=True)
+        if f.ui_tab == 'MAIN':
+            # layout.prop(f, "use_selection")
+            row = layout.row(align=True)
+            row.prop(f, "global_scale")
+            sub = row.row(align=True)
+            sub.prop(f, "apply_unit_scale", text="", icon='NDOF_TRANS')
+            layout.prop(f, "axis_forward")
+            layout.prop(f, "axis_up")
+
+            layout.separator()
+            layout.prop(f, "object_types", expand=True)
+            layout.prop(f, "bake_space_transform")
+            layout.prop(f, "use_custom_props")
+
+        elif f.ui_tab == 'GEOMETRY':
+            layout.prop(f, "use_mesh_modifiers")
+            layout.prop(f, "mesh_smooth_type")
+            layout.prop(f, "use_mesh_edges")
+            sub = layout.row()
+            #~ sub.enabled = f.mesh_smooth_type in {'OFF'}
+            sub.prop(f, "use_tspace")
+        elif f.ui_tab == 'ARMATURE':
+            layout.prop(f, "use_armature_deform_only")
+            layout.prop(f, "add_leaf_bones")
+            layout.prop(f, "primary_bone_axis")
+            layout.prop(f, "secondary_bone_axis")
+            layout.prop(f, "armature_nodetype")
+        elif f.ui_tab == 'ANIMATION':
+            layout.prop(f, "bake_anim")
+            col = layout.column()
+            col.enabled = f.bake_anim
+            col.prop(f, "bake_anim_use_all_bones")
+            col.prop(f, "bake_anim_use_nla_strips")
+            col.prop(f, "bake_anim_use_all_actions")
+            col.prop(f, "bake_anim_force_startend_keying")
+            col.prop(f, "bake_anim_step")
+            col.prop(f, "bake_anim_simplify_factor")
 
     def export(self, settings: ExportSettings):
         _ = settings.hadErrors # reset error tracking
@@ -557,11 +878,11 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         materials_xml = [material_xml(settings, m, mwmfile, self) for m in materials.values()]
 
         paramsfile = join(settings.outputDir, name + ".xml")
-        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml)
+        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml, self.mwm_settings.rescale_factor, self.mwm_settings.rotation_y)
         write_pretty_xml(paramsxml, paramsfile)
 
         fbxfile = join(settings.outputDir, name + ".fbx")
-        export_fbx(settings, fbxfile, objectsSource.getObjects())
+        export_fbx(settings, fbxfile, objectsSource.getObjects(), self.fbx_settings)
 
         try:
             mwmbuilder(settings, fbxfile, havokfile, paramsfile, mwmfile)
@@ -773,8 +1094,7 @@ class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
         mask = layer_bits(self.layer_mask)
         inputSocket = self.inputs["Objects"]
         objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
-        return (obj for obj in objects
-            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+        return (obj for obj in objects if (layer_bits(obj.layers) & mask) != 0)
 
 class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
     bl_idname = "SESeparateLayerObjectsNode"
@@ -820,8 +1140,7 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable)
         mask = layer_bit(socket.layer)
         inputSocket = self.inputs["Objects"]
         objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
-        return (obj for obj in objects
-            if obj.type in OBJECT_TYPES and (layer_bits(obj.layers) & mask) != 0)
+        return (obj for obj in objects if (layer_bits(obj.layers) & mask) != 0)
 
 class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEBlockDefNode"
@@ -1013,6 +1332,9 @@ categories = [
 ]
 
 registered = [
+    FbxExportProperties,
+    MwmExportProperties,
+
     BlockExportTree,
 
     MwmFileSocket,

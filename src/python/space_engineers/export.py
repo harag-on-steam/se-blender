@@ -265,52 +265,73 @@ class ExportSettings:
         except AttributeError:
             raise KeyError(key)
 
-FWD = 'Z'
-UP = 'Y'
-MATRIX_NORMAL = axis_conversion(to_forward=FWD, to_up=UP).to_4x4()
-MATRIX_SCALE_DOWN = Matrix.Scale(0.2, 4) * MATRIX_NORMAL
+# FWD = 'Z'
+# UP = 'Y'
+# MATRIX_NORMAL = axis_conversion(to_forward=FWD, to_up=UP).to_4x4()
+# MATRIX_SCALE_DOWN = Matrix.Scale(0.2, 4) * MATRIX_NORMAL
 
-def export_fbx(settings: ExportSettings, filepath, objects):
+def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None):
 
     fbxSettings = {
         # FBX operator defaults
         # some internals of the fbx exporter depend on them and will step out of line if they are not present
         'version': 'BIN7400',
-        'use_selection': False,
         'use_mesh_edges': False,
-        'use_custom_props': False,
-        'add_leaf_bones': True,
-        'primary_bone_axis': 'Y',
-        'secondary_bone_axis': 'X',
-        'use_armature_deform_only': False,
+        'use_custom_props': False, # SE / Havok properties are hacked directly into the modified fbx importer
+        # anim, BIN7400
+        'bake_anim': False, # no animation export to SE by default
         'bake_anim_use_all_bones': True,
         'bake_anim_use_nla_strips': True,
         'bake_anim_use_all_actions': True,
+        'bake_anim_force_startend_keying': True,
         'bake_anim_step': 1.0,
         'bake_anim_simplify_factor': 1.0,
-        'use_anim_action_all': True,
-        'use_default_take': True,
-        'use_anim_optimize': True,
-        'anim_optimize_precision': 6.0,
+        # anim, ASCII6100
+        'use_anim' : False, # no animation export to SE by default
+        'use_anim_action_all' : True,
+        'use_default_take' : True,
+        'use_anim_optimize' : True,
+        'anim_optimize_precision' : 6.0,
+        # referenced files stay on automatic, MwmBuilder only cares about what's written to its .xml file
         'path_mode': 'AUTO',
         'embed_textures': False,
+        # batching isn't used because the export is driven by the node tree
         'batch_mode': 'OFF',
         'use_batch_own_dir': True,
         'use_metadata': True,
-
         # important settings for SE
         'object_types': {'MESH', 'EMPTY'},
-        'use_anim': False,
-        'bake_anim': False,
-        'global_matrix': MATRIX_SCALE_DOWN if settings.scaleDown else MATRIX_NORMAL,
-        'context_objects': objects,
-        'axis_forward': FWD,
-        'axis_up': UP,
-        'bake_space_transform': True,
+        'axis_forward': 'Z',
+        'axis_up': 'Y',
+        'bake_space_transform': True, # the export to Havok needs this, it's off for the MwmFileNode
         'use_mesh_modifiers': True,
         'mesh_smooth_type': 'OFF',
-        'use_tspace': settings.isUseTangentSpace,
+        'use_tspace': settings.isUseTangentSpace, # TODO deprecate settings.isUseTangentSpace
+        # for characters
+        'global_scale': 1.0,
+        'use_armature_deform_only': False,
+        'add_leaf_bones': False,
+        'armature_nodetype': 'NULL',
+        'primary_bone_axis': 'X',
+        'secondary_bone_axis': 'Y',
     }
+
+    if fbx_settings:
+        if isinstance(fbx_settings, bpy.types.PropertyGroup):
+            fbx_settings = {p : getattr(fbx_settings, p) for p in fbx_settings.rna_type.properties.keys()}
+        fbxSettings.update(**fbx_settings)
+
+    # these cannot be overriden and are always set here
+    fbxSettings['use_selection'] = False # because of context_objects
+    fbxSettings['context_objects'] = objects
+
+    global_matrix = axis_conversion(to_forward=fbxSettings['axis_forward'], to_up=fbxSettings['axis_up']).to_4x4()
+    scale = fbxSettings['global_scale']
+    if (settings.scaleDown):
+        scale *= 0.2
+    if abs(1.0-scale) >= 0.0001:
+        global_matrix = Matrix.Scale(scale, 4) * global_matrix
+    fbxSettings['global_matrix'] = global_matrix
 
     return save_single(
         settings.operator,

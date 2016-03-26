@@ -105,7 +105,7 @@ def lod_xml(settings, lodMwmFile: str, lodDistance: int, renderQualities:iter=No
     em.text = filePath
     return e
 
-def mwmbuilder_xml(settings, material_elements, lod_elements):
+def mwmbuilder_xml(settings, material_elements, lod_elements, rescale_factor: float = 1, rotation_y: float = 0):
     d = data(settings.scene)
     e = ElementTree.Element("Model", Name=settings.blockname)
 
@@ -114,13 +114,11 @@ def mwmbuilder_xml(settings, material_elements, lod_elements):
         if value:
             se.text = value
 
-    rescalefactor = '1.0'
-    if settings.isOldMwmbuilder:
-        rescalefactor = '0.002' if settings.scaleDown else '0.01'
-
-    param("RescaleFactor", rescalefactor)
+    param("RescaleFactor", str(round(rescale_factor, 3)))
     param("RescaleToLengthInMeters", "false")
     param("Centered", "false")
+    if rotation_y:
+        param("RotationY", str(round(rotation_y, 3)))
     param("SpecularPower", _floatstr(d.block_specular_power))
     param("SpecularShininess", _floatstr(d.block_specular_shininess))
 

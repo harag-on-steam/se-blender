@@ -183,7 +183,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
         col = lay.column()
         col.prop(self, "all_scenes")
         col.prop(self, "skip_mwmbuilder")
-        col.prop(self, "use_tspace")
+        # col.prop(self, "use_tspace")
 
     def execute(self, context):
         org_mode = None
