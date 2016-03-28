@@ -2,12 +2,13 @@ from itertools import chain
 import bpy
 import re
 import shutil
-from os.path import join
+from os.path import join, dirname
 from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
+from bl_operators.presets import AddPresetBase
 from .mirroring import mirroringAxisFromObjectName
 from .texture_files import TextureType
 from .types import sceneData, data, SEMaterialInfo
@@ -638,14 +639,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         name="NLA Strips",
         description="Export each non-muted NLA strip as a separated FBX's AnimStack, if any, "
                     "instead of global scene animation",
-        default=True,
+        default=False, # SE ; True
     )
     bake_anim_use_all_actions = BoolProperty(
         name="All Actions",
         description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
                     "(note that animated objects will get all actions compatible with them, "
                     "others will get no animation at all)",
-        default=True,
+        default=False, # SE ; True
     )
     bake_anim_force_startend_keying = BoolProperty(
         name="Force Start/End Keying",
@@ -681,7 +682,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         name="Default Take",
         description="Export currently assigned object and armature animations into a default take from the scene "
                     "start/end frames",
-        default=True
+        default=True,
     )
     use_anim_optimize = BoolProperty(
         name="Optimize Keyframes",
@@ -727,6 +728,41 @@ class MwmExportProperties(bpy.types.PropertyGroup):
         description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
     rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
         description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
+
+class NODE_MT_space_engineers_mwm_presets(bpy.types.Menu):
+    bl_label = "Exporter Presets"
+    bl_description = "Load all the settings below from a saved preset"
+
+    preset_subdir = "space_engineers/mwm_exporter"
+    preset_operator = "script.execute_preset"
+
+    def draw(self, context):
+        self.path_menu(
+            bpy.utils.preset_paths(self.preset_subdir) + [join(dirname(__file__), 'presets', 'mwm_exporter')],
+            'script.execute_preset',
+            props_default=None,
+            filter_ext=lambda ext: ext.lower() == '.py')
+
+class AddPresetMwmExport(AddPresetBase, bpy.types.Operator):
+    """Add or remove a Mwm Exporter Preset"""
+    bl_idname = "node.space_engineers_mwm_preset_add"
+    bl_label = "Add Exporter Preset"
+    preset_menu = NODE_MT_space_engineers_mwm_presets.__name__
+
+    preset_defines = [
+        "node = bpy.context.active_node"
+    ]
+
+    preset_values = [
+        "node.fbx_settings",
+        "node.mwm_settings",
+    ]
+
+    preset_subdir = NODE_MT_space_engineers_mwm_presets.preset_subdir
+
+    @classmethod
+    def poll(cls, context):
+        return isinstance(getattr(context, 'active_node', None), MwmFileNode)
 
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEMwmFileNode"
@@ -778,8 +814,10 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         return hasObjects and hasName
 
     def draw_buttons_ext(self, context, layout):
-        f = self.fbx_settings
-
+        row = layout.row(align=True)
+        row.menu(NODE_MT_space_engineers_mwm_presets.__name__, text=NODE_MT_space_engineers_mwm_presets.bl_label)
+        row.operator(AddPresetMwmExport.bl_idname, text="", icon='ZOOMIN')
+        row.operator(AddPresetMwmExport.bl_idname, text="", icon='ZOOMOUT').remove_active = True
 
         m = self.mwm_settings
         layout.label("MwmBuilder Settings")
@@ -788,6 +826,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
 
         layout.separator()
 
+        f = self.fbx_settings
         layout.label("FBX Exporter Settings")
         layout.prop(f, "ui_tab", expand=True)
         if f.ui_tab == 'MAIN':
@@ -1334,6 +1373,8 @@ categories = [
 registered = [
     FbxExportProperties,
     MwmExportProperties,
+    NODE_MT_space_engineers_mwm_presets,
+    AddPresetMwmExport,
 
     BlockExportTree,
 
