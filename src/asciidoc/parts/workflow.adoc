@@ -37,7 +37,7 @@ image::blender-physics.png[width=450,float=right,link=images/blender-physics.png
 
 The second layer contains the simplified meshes that represent the block's collision shape.
 If you don't provide any collision meshes the resulting .mwm file will not contain collision data
-and SE will default to a simple collision box that encompasses the whole block.
+and SE will default to a simple collision box that encompasses the volume of the whole block.
 
 Havok, the physics engine of SE, requires some settings to do its work.
 You provide those on Blender's Physics tab by enabling `Rigid Bodies` for your collision meshes.
@@ -48,15 +48,13 @@ Whenever possible try to only approximate the shape of your block.
 Use primitive shapes like `Box` or `Cylinder`. Use `Convex Hull` only if necessary. Avoid `Mesh` collisions.
 
 IMPORTANT: Make sure you
-http://www.blender.org/manual/getting_started/basics/transformations/transform_control/reset_object_transformations.html#apply-options[apply object transformations]
+https://www.blender.org/manual/editors/3dview/transform/transform_control/reset_object_transformations.html#apply-object-transformations[apply object transformations]
 to all collision objects before export.
 As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
 If you don't the collision shapes will most probably be rotated or positioned wrong.
 
-WARNING: Keep in mind SE has a limit for the maximum number of collision shapes per block.
-
 NOTE: Blender offers a `Cone` primitive shape but Havok has no support for that.
-If you use a Cone shape it will be silently converted to a Convex Hull on export.
+If you use a Cone shape it will be silently treated as a Convex Hull on export.
 
 [#mount-points]
 ==== Mount Points

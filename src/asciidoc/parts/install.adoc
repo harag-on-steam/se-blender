@@ -3,16 +3,21 @@
 To get started first you need to download and install all the required tools.
 
 Blender::
-Get version {dl} http://www.blender.org/download/[2.72 or later] (100MB), 2.75 is current at the time of this writing.
+Get version {dl} http://www.blender.org/download/[2.75 or later] (100MB), 2.77 is current at the time of this writing.
 
 The Havok "Content Tools for Game Artists and Designers"::
 Get version {dl} https://software.intel.com/sites/havok/en/[2013.1.0]
 (https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_64Bit_PcXs.exe[64bit]
 or https://software.intel.com/sites/havok/downloads/HavokContentTools_2013-1-0_20130717_32Bit_PcXs.exe[32bit], 330MB)
-This contains the filter manager `hctStandAloneFilterManager.exe` that's used to create rigid-body physics data.
+
+IMPORTANT: The free offering of these tools has been http://www.havok.com/pcxs_redirect/[discontinued].
+Currently there’s no alternative available. Please also take a look at
+http://forums.keenswh.com/threads/havok-modding-block-collisions-is-no-longer-possible.7374937/[this forum thread] to see if the situation has changed.
+
+Havok provides the filter manager `hctStandAloneFilterManager.exe` that's used to create rigid-body physics data.
 The default install location is `C:\Program Files\Havok\HavokContentTools`
 
-WARNING: You need to get Havok 2013.1. Space Engineers is currently unable to use files created with Havok 2014.
+NOTE: Space Engineers now also seems to support Havok 2014. The addon will probably also work with that version but this hasn't been tested.
 
 The Havok FBX Importer::
 This is a {dl} https://github.com/harag-on-steam/fbximporter/releases/tag/havok2013.1-fbx2015.1[separate download] (3,5MB)

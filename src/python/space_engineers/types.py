@@ -544,10 +544,8 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
 
     def getDxToggle(self):
         if not self.id_data:
-            print("no mat")
             return None
         if not self.id_data.node_tree:
-            print("no tree")
             return None
         return firstMatching(self.id_data.node_tree.nodes, bpy.types.ShaderNodeMixShader, "ShaderToggle")
 

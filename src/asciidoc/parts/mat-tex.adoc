@@ -4,6 +4,10 @@ This is a small excursion into how SE textures a block.
 In DirectX 9 rendering mode the game uses two textures per face of a mesh.
 Both of them have four channels (RGBA).
 
+NOTE: As of 2016-03-31 the DirectX 9 renderer is only used in the legacy version of Space Engineers.
+So you only need textures for it if you intend to release a mod that still runs with that version.
+You can skip ahead to link:#directx-11-textures[DirectX 11 textures] if you don't.
+
 ==== Diffuse/Emissive
 
 The internal name of this texture is `DiffuseTexture`.
@@ -54,7 +58,7 @@ For example, in Gimp you can convert the A-channel into a layer mask and edit an
 === DirectX 11 Textures
 
 In DirectX 11 mode SE employs https://www.allegorithmic.com/pbr-guide[Physically Based Rendering (PBR)]
-to render 3D objects. In this mode it uses a different set of three or four textures.
+to render 3D objects. In this mode it uses another set of three or four textures.
 
 ==== PBR textures
 
@@ -89,7 +93,7 @@ If you want to use this texture you need to also set the technique of the materi
 image::blender-material-v3.png[width=450,float=right,link=images/blender-material-v3.png]
 
 Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
-http://www.blender.org/manual/render/blender_render/textures/mapping/uv.html[UV-mapping]
+https://www.blender.org/manual/editors/uv_image/uv_editing/overview.html[UV-mapping]
 to tell the game which _part_ of a texture to use for a face).
 
 In Blender there are several types of materials depending on the renderer you have chosen.
@@ -106,7 +110,7 @@ By doing that you get six texture-slots for the different kinds of textures SE e
 Point them each to the texture-file corresponding with its name.
 
 TIP: You won't be able to see any textures on your meshes until you set your
-http://www.blender.org/manual/getting_started/basics/navigating/introduction.html[viewport-shading] to Material.
+https://www.blender.org/manual/editors/3dview/display/shading.html[viewport-shading] to Material.
 Setting it to Rendered looks even better but requires a lamp in the scene or everything will be black.
 
 NOTE: In a previous version of the add-on the `Blender Render` and its texture-slots were used.

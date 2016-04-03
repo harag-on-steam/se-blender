@@ -594,7 +594,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='X', # SE ; X
+        default='X', # SE ; Y
     )
     secondary_bone_axis = EnumProperty(
         name="Secondary Bone Axis",
@@ -725,9 +725,9 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
 
 class MwmExportProperties(bpy.types.PropertyGroup):
     rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=1,
-        description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
+        description="Instructs MwmBuilder to rescale everything by the given factor.")
     rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
-        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
+        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character or animations seems to require a value of 180°")
 
 class NODE_MT_space_engineers_mwm_presets(bpy.types.Menu):
     bl_label = "Exporter Presets"
@@ -850,12 +850,14 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             sub = layout.row()
             #~ sub.enabled = f.mesh_smooth_type in {'OFF'}
             sub.prop(f, "use_tspace")
+
         elif f.ui_tab == 'ARMATURE':
             layout.prop(f, "use_armature_deform_only")
             layout.prop(f, "add_leaf_bones")
             layout.prop(f, "primary_bone_axis")
             layout.prop(f, "secondary_bone_axis")
             layout.prop(f, "armature_nodetype")
+
         elif f.ui_tab == 'ANIMATION':
             layout.prop(f, "bake_anim")
             col = layout.column()

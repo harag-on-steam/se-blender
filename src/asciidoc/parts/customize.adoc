@@ -78,8 +78,8 @@ image::nodes-havok.png[width=150,float=right,link=images/nodes-havok.png]
 
 === Havok Converter
 
-This kind of node produces a `.hkt` file by taking the objects from its input-socket and running them
-first through Havok's FBX Importer and after that through Havok's Standalone Filter Manager.
+This kind of node produces a `.hkt` file by taking the objects from its input-socket and running them first through
+Blender's FBX exporter, then through Havok's FBX Importer and after that through Havok's Standalone Filter Manager.
 
 NOTE: The node ignores objects that don't have `Rigid Body` enabled on their `Physics` property-tab.
 
@@ -88,10 +88,17 @@ image::nodes-mwm.png[width=150,float=right,link=images/nodes-mwm.png]
 === MwmBuilder
 
 This kind of node produces a `.mwm` file by taking the objects from its input-socket and running
-them through MwmBuilder. The node only processes mesh-objects and empties,
-other object types like curves, surfaces or metaballs are ignored.
-The `.mwm` will include the collision data of a Havok Converter node if it is connected to one.
-An MwmBuilder node can also receive the output of other MwmBuilder nodes.
+them through MwmBuilder. The node uses Blender's FBX exporter internally.
+The settings for the exporter are only available in the properties section of the node-tree's `N` side-panel.
+
+image::mwm-settings.png[width=220,float=left,link=images/mwm-settings.png]
+
+The default settings can be used as-is to export a block to SE. If you change the settings,
+you can save them as a preset. There already are presets to do character and animation exports
+and also to restore the default block settings.
+
+The node will also include the collision data of a Havok Converter node if it is connected to one.
+And lastly a MwmBuilder node can receive the output of other MwmBuilder nodes.
 Those nodes will then serve as the link:#levels-of-detail[level-of-detail] models and the produced `.mwm`
 will contain references to them.
 
