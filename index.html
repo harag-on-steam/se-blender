@@ -635,7 +635,7 @@ So if you are new to 3D modelling you should probably learn how to do that first
 <dl>
 <dt class="hdlist1">Blender</dt>
 <dd>
-<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.72 or later</a> (100MB), 2.75 is current at the time of this writing.</p>
+<p>Get version <span class="icon keyseq"><i class="fa fa-download" title="download"></i></span> <a href="http://www.blender.org/download/">2.75 or later</a> (100MB), 2.77 is current at the time of this writing.</p>
 </dd>
 <dt class="hdlist1">The Havok "Content Tools for Game Artists and Designers"</dt>
 <dd>
@@ -653,24 +653,24 @@ or <a href="https://software.intel.com/sites/havok/downloads/HavokContentTools_2
 </td>
 <td class="content">
 The free offering of these tools has been <a href="http://www.havok.com/pcxs_redirect/">discontinued</a>.
-Currently there&#8217;s no alternative available.
-Please also take a look at <a href="http://forums.keenswh.com/threads/havok-modding-block-collisions-is-no-longer-possible.7374937/">this forum thread</a> to see if the situation has changed.
+Currently there’s no alternative available. Please also take a look at
+<a href="http://forums.keenswh.com/threads/havok-modding-block-collisions-is-no-longer-possible.7374937/">this forum thread</a> to see if the situation has changed.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>This contains the filter manager <code>hctStandAloneFilterManager.exe</code> that&#8217;s used to create rigid-body physics data.
+<p>Havok provides the filter manager <code>hctStandAloneFilterManager.exe</code> that&#8217;s used to create rigid-body physics data.
 The default install location is <code>C:\Program Files\Havok\HavokContentTools</code></p>
 </div>
-<div class="admonitionblock warning">
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-You need to get Havok 2013.1. Space Engineers is currently unable to use files created with Havok 2014.
+Space Engineers now also seems to support Havok 2014. The addon will probably also work with that version but this hasn&#8217;t been tested.
 </td>
 </tr>
 </table>
@@ -821,7 +821,7 @@ If it&#8217;s useful to split your block into several objects&#8201;&#8212;&#820
 <div class="paragraph">
 <p>The second layer contains the simplified meshes that represent the block&#8217;s collision shape.
 If you don&#8217;t provide any collision meshes the resulting .mwm file will not contain collision data
-and SE will default to a simple collision box that encompasses the whole block.</p>
+and SE will default to a simple collision box that encompasses the volume of the whole block.</p>
 </div>
 <div class="paragraph">
 <p>Havok, the physics engine of SE, requires some settings to do its work.
@@ -841,22 +841,10 @@ Use primitive shapes like <code>Box</code> or <code>Cylinder</code>. Use <code>C
 </td>
 <td class="content">
 Make sure you
-<a href="http://www.blender.org/manual/getting_started/basics/transformations/transform_control/reset_object_transformations.html#apply-options">apply object transformations</a>
+<a href="https://www.blender.org/manual/editors/3dview/transform/transform_control/reset_object_transformations.html#apply-object-transformations">apply object transformations</a>
 to all collision objects before export.
 As a rule of thumb the add-on never modifies your objects on its own so you have to do this yourself.
 If you don&#8217;t the collision shapes will most probably be rotated or positioned wrong.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-Keep in mind SE has a limit for the maximum number of collision shapes per block.
 </td>
 </tr>
 </table>
@@ -869,7 +857,7 @@ Keep in mind SE has a limit for the maximum number of collision shapes per block
 </td>
 <td class="content">
 Blender offers a <code>Cone</code> primitive shape but Havok has no support for that.
-If you use a Cone shape it will be silently converted to a Convex Hull on export.
+If you use a Cone shape it will be silently treated as a Convex Hull on export.
 </td>
 </tr>
 </table>
@@ -980,6 +968,20 @@ the game will not switch models at that distance.
 In DirectX 9 rendering mode the game uses two textures per face of a mesh.
 Both of them have four channels (RGBA).</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+As of 2016-03-31 the DirectX 9 renderer is only used in the legacy version of Space Engineers.
+So you only need textures for it if you intend to release a mod that still runs with that version.
+You can skip ahead to <a href="#directx-11-textures">DirectX 11 textures</a> if you don&#8217;t.
+</td>
+</tr>
+</table>
+</div>
 <div class="sect3">
 <h4 id="diffuse-emissive"><a class="anchor" href="#diffuse-emissive"></a>Diffuse/Emissive</h4>
 <div class="paragraph">
@@ -1074,7 +1076,7 @@ For example, in Gimp you can convert the A-channel into a layer mask and edit an
 <h3 id="directx-11-textures"><a class="anchor" href="#directx-11-textures"></a>DirectX 11 Textures</h3>
 <div class="paragraph">
 <p>In DirectX 11 mode SE employs <a href="https://www.allegorithmic.com/pbr-guide">Physically Based Rendering (PBR)</a>
-to render 3D objects. In this mode it uses a different set of three or four textures.</p>
+to render 3D objects. In this mode it uses another set of three or four textures.</p>
 </div>
 <div class="sect3">
 <h4 id="pbr-textures"><a class="anchor" href="#pbr-textures"></a>PBR textures</h4>
@@ -1130,7 +1132,7 @@ If you want to use this texture you need to also set the technique of the materi
 </div>
 <div class="paragraph">
 <p>Materials are what you use to tell SE which texture-files to use for the faces of your meshes (and you use
-<a href="http://www.blender.org/manual/render/blender_render/textures/mapping/uv.html">UV-mapping</a>
+<a href="https://www.blender.org/manual/editors/uv_image/uv_editing/overview.html">UV-mapping</a>
 to tell the game which <em>part</em> of a texture to use for a face).</p>
 </div>
 <div class="paragraph">
@@ -1157,7 +1159,7 @@ Point them each to the texture-file corresponding with its name.</p>
 </td>
 <td class="content">
 You won&#8217;t be able to see any textures on your meshes until you set your
-<a href="http://www.blender.org/manual/getting_started/basics/navigating/introduction.html">viewport-shading</a> to Material.
+<a href="https://www.blender.org/manual/editors/3dview/display/shading.html">viewport-shading</a> to Material.
 Setting it to Rendered looks even better but requires a lamp in the scene or everything will be black.
 </td>
 </tr>
@@ -1362,7 +1364,7 @@ To check if a rotation is valid watch the <code>Mirroring</code> property on the
 </td>
 <td class="content">
 The objects that are attached to the empties are
-<a href="http://www.blender.org/manual/modeling/objects/duplication/introduction.html?highlight=linked%20duplicates#linked-duplicates">linked duplicates</a>
+<a href="https://www.blender.org/manual/editors/3dview/transform/duplication/introduction.html#linked-duplicates">linked duplicates</a>
 of your main model. So modifying them will also change your main model and vice versa.
 </td>
 </tr>
@@ -1728,8 +1730,8 @@ The number is available for text-substitution as parameter <code>${n}</code>.</p
 <div class="sect2">
 <h3 id="havok-converter"><a class="anchor" href="#havok-converter"></a>Havok Converter</h3>
 <div class="paragraph">
-<p>This kind of node produces a <code>.hkt</code> file by taking the objects from its input-socket and running them
-first through Havok&#8217;s FBX Importer and after that through Havok&#8217;s Standalone Filter Manager.</p>
+<p>This kind of node produces a <code>.hkt</code> file by taking the objects from its input-socket and running them first through
+Blender&#8217;s FBX exporter, then through Havok&#8217;s FBX Importer and after that through Havok&#8217;s Standalone Filter Manager.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -1753,10 +1755,22 @@ The node ignores objects that don&#8217;t have <code>Rigid Body</code> enabled o
 <h3 id="mwmbuilder"><a class="anchor" href="#mwmbuilder"></a>MwmBuilder</h3>
 <div class="paragraph">
 <p>This kind of node produces a <code>.mwm</code> file by taking the objects from its input-socket and running
-them through MwmBuilder. The node only processes mesh-objects and empties,
-other object types like curves, surfaces or metaballs are ignored.
-The <code>.mwm</code> will include the collision data of a Havok Converter node if it is connected to one.
-An MwmBuilder node can also receive the output of other MwmBuilder nodes.
+them through MwmBuilder. The node uses Blender&#8217;s FBX exporter internally.
+The settings for the exporter are only available in the properties section of the node-tree&#8217;s <code>N</code> side-panel.</p>
+</div>
+<div class="imageblock" style="float: left">
+<div class="content">
+<a class="image" href="images/mwm-settings.png"><img src="./images/mwm-settings.png" alt="mwm settings" width="220"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>The default settings can be used as-is to export a block to SE. If you change the settings,
+you can save them as a preset. There already are presets to do character and animation exports
+and also to restore the default block settings.</p>
+</div>
+<div class="paragraph">
+<p>The node will also include the collision data of a Havok Converter node if it is connected to one.
+And lastly a MwmBuilder node can receive the output of other MwmBuilder nodes.
 Those nodes will then serve as the <a href="#levels-of-detail">level-of-detail</a> models and the produced <code>.mwm</code>
 will contain references to them.</p>
 </div>
@@ -1798,7 +1812,7 @@ Updating CubeBlocks.sbc will be disabled if the export-tree contains no node of 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-11-01 20:22:42 +01:00
+Last updated 2015-12-03 09:48:41 +01:00
 </div>
 </div>
 </body>
