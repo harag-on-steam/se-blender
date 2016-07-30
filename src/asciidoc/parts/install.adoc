@@ -27,13 +27,18 @@ in the sources and compile it against Havok 2013.1
 The .zip contains just one executable file. It's probably a good idea to put it into the Havok Tools directory.
 
 MwmBuilder::
-This one comes with Space Engineers and is located in the game's directory under `Tools\MwmBuilder`.
+This one comes with the http://forums.keenswh.com/threads/modding-data-moved-to-steam-sdk.7345862/[Space Engineers ModSDK] 
+and is located under `Tools\VRageEditor\Plugins\ModelBuilder`.
 
 NOTE: If you try to export and MwmBuilder fails with the error message
 `"Error loading unmanaged library from path: Assimp32.dll"`
 this is a strong indication that you are missing a software library on your system.
 You can {dl} https://www.microsoft.com/en-us/download/details.aspx?id=30679[download that] from Microsoft.
 Get the `VSU_4\vcredist_x86.exe` package.
+
+WARNING: Currently (version 1.134 - 1.146, and possibly later) MwmBuilder is unusable.
+http://forums.keenswh.com/threads/1-134-mwmbuilder-crashing.7384038[It fails] with a `System.BadImageFormatException`.
+You need to use an http://forums.keenswh.com/threads/where-did-mwm-builder-go.7383981/#post-1286976851[older version].
 
 === Installing the Add-on
 
