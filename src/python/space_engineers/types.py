@@ -54,8 +54,7 @@ def getExportNodeTreeFromContext(context):
     return tree
 
 def getBaseDir(scene):
-    # TODO make configurable
-    return bpy.path.abspath('//')
+    return bpy.path.abspath(sceneData(scene).export_basedir)
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
 
@@ -255,6 +254,8 @@ class SESceneProperties(bpy.types.PropertyGroup):
 
     export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
         description="Use the Node editor to create and change these settings.")
+    export_basedir = bpy.props.StringProperty( name="Export Basedir", default="//", subtype='DIR_PATH',
+        description="The root directory of the mod")
     export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
 
@@ -346,6 +347,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         layout.separator()
 
         col = layout.column(align=True)
+        col.prop(spceng, "export_basedir")
         col.prop(spceng, "export_path")
 
         row = layout.row(align=True)
