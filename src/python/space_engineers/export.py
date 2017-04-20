@@ -367,7 +367,8 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
             write_to_log(mwmfile+'.log', b"mwmbuilder skipped.")
         return
 
-    contentDir = join(settings.mwmDir, 'Content')
+    os.chdir(bpy.path.abspath("//"))
+    contentDir = join(settings.mwmDir, 'Models')
     os.makedirs(contentDir, exist_ok = True)
     basename = os.path.splitext(os.path.basename(mwmfile))[0]
 
@@ -379,7 +380,7 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
     copy(paramsfile, join(contentDir, basename + '.xml'))
     copy(havokfile, join(contentDir, basename + '.hkt'))
 
-    cmdline = [settings.mwmbuilder, '/s:Content', '/m:'+basename+'.fbx', '/o:.\\']
+    cmdline = [settings.mwmbuilder, '/s:Models', '/m:'+basename+'.fbx', '/o:.\\']
 
     def checkForLoggedErrors(logtext):
         if b": ERROR:" in logtext:
