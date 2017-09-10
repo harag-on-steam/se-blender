@@ -499,7 +499,8 @@ MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
     # 'ALPHAMASK' is missspelled. But it's already in use so fix it on export in .mwmbuilder._material_technique()
-    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
+    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('DECAL', 'Decal Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
@@ -616,7 +617,7 @@ class SEMaterialInfo:
         self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
-        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
+        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK' and d.technique != 'DECAL')
         self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
 
     def _imagesFromLegacyMaterial(self):
@@ -709,7 +710,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         col.alert = matInfo.warnAlphaMask
         col.prop(d, "technique")
         if matInfo.warnAlphaMask:
-            msg("The AlphamaskTexture is used.", 'ERROR', col, 'RIGHT')
+            msg("The AlphamaskTexture is used. Select AlphaMask or Decal.", 'ERROR', col, 'RIGHT')
 
         if 'GLASS' == d.technique:
             layout.separator()
