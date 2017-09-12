@@ -2,10 +2,10 @@ from collections import OrderedDict
 import os
 import bpy
 from xml.etree import ElementTree
+import xml.etree.ElementTree as ET
 from .texture_files import TextureType
 from .types import data, SEMaterialInfo, rgb
 import re
-
 
 BAD_PATH = re.compile(r"^(?:[A-Za-z]:|\.\.)?[\\/]")
 
@@ -14,6 +14,7 @@ def se_content_dir(settings):
     if not se_dir:
         return settings.baseDir # fallback, if unset
     return os.path.join(os.path.normpath(se_dir), "Content")
+
 
 def derive_texture_path(settings, filepath):
     def is_in_subpath(relpath):
@@ -77,6 +78,21 @@ def material_xml(settings, mat, file=None, node=None):
 
     for texType in TextureType:
         filepath = m.images.get(texType, None)
+        
+        if filepath is None:
+            xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.materialref)
+            if not xmlrefpath: #don't want it failing if we don't have a file assigned
+                xmlrefpath = None
+                
+            if not xmlrefpath is None:
+                texTypeS = (texType.name + "Texture")
+                xmlref = ET.parse(xmlrefpath).getroot()
+                refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
+                if not refmaterial is None:
+                    refmatpath = refmaterial.find('.//Parameter[@Name="%s"]' % texTypeS)
+                    if not refmatpath is None:
+                        filepath = refmatpath.text
+        
         if not filepath is None:
             derivedPath = derive_texture_path(settings, filepath)
             if (BAD_PATH.search(derivedPath)):
@@ -85,6 +101,7 @@ def material_xml(settings, mat, file=None, node=None):
                                % (texType.name, mat.name, derivedPath), file=file, node=node)
             param(texType.name + "Texture", derivedPath)
         else:
+            #material_reference(mat, m)
             e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
     return e
