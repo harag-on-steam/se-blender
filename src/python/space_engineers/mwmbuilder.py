@@ -2,7 +2,6 @@ from collections import OrderedDict
 import os
 import bpy
 from xml.etree import ElementTree
-import xml.etree.ElementTree as ET
 from .texture_files import TextureType
 from .types import data, SEMaterialInfo, rgb
 import re
@@ -86,7 +85,7 @@ def material_xml(settings, mat, file=None, node=None):
                 
             if not xmlrefpath is None:
                 texTypeS = (texType.name + "Texture")
-                xmlref = ET.parse(xmlrefpath).getroot()
+                xmlref = ElementTree.parse(xmlrefpath).getroot()
                 refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
                 if not refmaterial is None:
                     refmatpath = refmaterial.find('.//Parameter[@Name="%s"]' % texTypeS)
