@@ -22,4 +22,5 @@ The documentation is published to the project's http://harag-on-steam.github.io/
 * Optional removal of extensions (.001, .002, etc) from names on export. You can select whether to apply name changes to empties and or mesh objects on a per scene basis. This is handy if you have multiple scenes in a single blend file and they all use the same dummies.
 
 Download Link (Zip file for easy installation)
+
 https://github.com/khamseen/se-blender/raw/master/blender-space_engineers-0.7.0_khamedits.zip
