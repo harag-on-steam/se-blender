@@ -15,3 +15,10 @@ The most current version is available in the
 https://github.com/harag-on-steam/se-blender/releases/latest[release section] on GitHub.
 
 The documentation is published to the project's http://harag-on-steam.github.io/se-blender/[Github pages].
+
+= What's different in this branch?
+
+* Added option for linking to an XML file containing your material names and the correct texture paths for those materials. Just leave the nodes blank in Blender and it'll automatically use the paths from your XML. 
+* Optional removal of extensions (.001, .002, etc) from names on export. You can select whether to apply name changes to empties and or mesh objects on a per scene basis. This is handy if you have multiple scenes in a single blend file and they all use the same dummies.
+
+[Download Link](https://github.com/khamseen/se-blender/raw/master/blender-space_engineers-0.7.0_khamedits.zip "Zip file for easy install")
