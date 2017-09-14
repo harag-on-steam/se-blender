@@ -93,6 +93,21 @@ class Names:
 
 _RE_BLOCK_NAME = re.compile(r"^(.+)\.(Large|Small|\d+)$", re.IGNORECASE)
 
+def removeextensions(self, scene):
+    d = self.sceneData
+    if d and d.reg_empty_names:
+        #Check dummies don't have .001 etc after their name or they'll break
+        for ob in scene.objects:
+            if ob.type == "EMPTY":
+                if re.search('\....$',ob.name):
+                    ob.name = re.sub('\....$', '',ob.name)
+    if d and d.reg_mesh_names:
+        #Check meshes don't have .001 etc after their name
+        for ob in scene.objects:
+            if ob.type == "MESH":
+                if re.search('\....$',ob.name):
+                    ob.name = re.sub('\....$', '',ob.name)
+
 def func():
     pass
 _FUNCTION_TYPE = type(func)
@@ -124,6 +139,7 @@ class ExportSettings:
         # set multiple times on export
         self.scaleDown = None
         self._hadErrors = False
+        _removeextensioncheck = removeextensions(self, scene)
 
         # substitution parameters
         # self.BlockPairName # corresponds with element-name in CubeBlocks.sbc, see property below
