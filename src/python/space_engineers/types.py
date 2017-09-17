@@ -271,12 +271,6 @@ class SESceneProperties(bpy.types.PropertyGroup):
 
     mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
         description="The block that the game should switch to if this block is mirrored")
-        
-    reg_empty_names = bpy.props.BoolProperty( default=False, name="Filter Empty Names",
-        description="This will remove .001 etc from the name of any empties for created FBX")
-        
-    reg_mesh_names = bpy.props.BoolProperty( default=False, name="Filter Mesh Names",
-        description="This will remove .001 etc from the name of any mesh objects for created FBX")
 
     # too bad https://developer.blender.org/D113 never made it into Blender
     def getExportNodeTree(self):
@@ -370,13 +364,6 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
             row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
 
-        layout.separator()
-        
-        row = layout.row()
-        row.alignment = 'CENTER'
-        row.prop(spceng, 'reg_empty_names')
-        row.prop(spceng, 'reg_mesh_names')
-        
         layout.separator()
 
         col = layout.column(align=True)
