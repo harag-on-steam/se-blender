@@ -19,7 +19,6 @@ The documentation is published to the project's http://harag-on-steam.github.io/
 = What's different in this branch?
 
 * Added option for linking to an XML file containing your material names and the correct texture paths for those materials. Just leave the nodes blank in Blender and it'll automatically use the paths from your XML. 
-* Optional removal of extensions (.001, .002, etc) from names on export. You can select whether to apply name changes to empties and or mesh objects on a per scene basis. This is handy if you have multiple scenes in a single blend file and they all use the same dummies.
 
 Download Link (Zip file for easy installation)
 
