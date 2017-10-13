@@ -40,7 +40,7 @@ if not reload('versions'): from . import versions
 
 del modules
 
-version = versions.Version(version=bl_info['version'], prerelease=False, qualifier=None)
+version = versions.Version(version=bl_info['version'], prerelease=True, qualifier="alpha.1")
 
 # register data & UI classes
 
