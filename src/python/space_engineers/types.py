@@ -92,7 +92,12 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
     mwmbuilder = bpy.props.StringProperty(
         name="MWM Builder",
         subtype='FILE_PATH',
-        description='Locate MwmBuilder.exe. Probably in <Game Directory>\\Tools\\MwmBuilder\\'
+        description='Locate MwmBuilder.exe. Probably in <Game Directory>\\Tools\\MwmBuilder\\',
+    )
+    materialref = bpy.props.StringProperty(
+        name="Material Reference XML",
+        subtype='FILE_PATH',
+        description='Link to an external material reference XML file.'
     )
     fix_dir_bug = bpy.props.BoolProperty(
         name="workaround for output-directory bug",
@@ -134,13 +139,19 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.alert = not check_path(self.mwmbuilder, expectedBaseName='MwmBuilder.exe')
         col.prop(self, 'mwmbuilder')
         col.alert = False
+        
 
-        # row = col.row()
-        # row.alignment = 'RIGHT'
-        # row.prop(self, 'fix_dir_bug')
+        col = layout.column()
+        col.label(text="Extras", icon="MATERIAL")
+        #col.alert = not check_path(self.materialref, expectedBaseName='*.xml')
+        col.prop(self, 'materialref')
+        col.alert=False
+        #row = col.row()
+        #row.alignment = 'RIGHT'
+        #row.prop(self, 'materialref')
         #
-        # op = row.operator('wm.url_open', icon="URL", text="more details")
-        # op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
+        #op = row.operator('wm.url_open', icon="URL", text="more details")
+        #op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")
@@ -499,7 +510,8 @@ MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
     # 'ALPHAMASK' is missspelled. But it's already in use so fix it on export in .mwmbuilder._material_technique()
-    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
+    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('DECAL', 'Decal Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
@@ -616,7 +628,7 @@ class SEMaterialInfo:
         self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
-        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
+        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK' and d.technique != 'DECAL')
         self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
 
     def _imagesFromLegacyMaterial(self):
@@ -709,7 +721,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         col.alert = matInfo.warnAlphaMask
         col.prop(d, "technique")
         if matInfo.warnAlphaMask:
-            msg("The AlphamaskTexture is used.", 'ERROR', col, 'RIGHT')
+            msg("The AlphamaskTexture is used. Select AlphaMask or Decal.", 'ERROR', col, 'RIGHT')
 
         if 'GLASS' == d.technique:
             layout.separator()

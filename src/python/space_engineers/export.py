@@ -281,8 +281,8 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
         # anim, BIN7400
         'bake_anim': False, # no animation export to SE by default
         'bake_anim_use_all_bones': True,
-        'bake_anim_use_nla_strips': False,
-        'bake_anim_use_all_actions': False,
+        'bake_anim_use_nla_strips': True,
+        'bake_anim_use_all_actions': True,
         'bake_anim_force_startend_keying': True,
         'bake_anim_step': 1.0,
         'bake_anim_simplify_factor': 1.0,
@@ -308,7 +308,7 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
         'mesh_smooth_type': 'OFF',
         'use_tspace': settings.isUseTangentSpace, # TODO deprecate settings.isUseTangentSpace
         # for characters
-        'global_scale': 1.0,
+        'global_scale': 0.098, # Resizes Havok collision mesh in .hkt (fixed for Blender 2.79) Default=1.0 for 2.78c
         'use_armature_deform_only': False,
         'add_leaf_bones': False,
         'armature_nodetype': 'NULL',
@@ -329,7 +329,7 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
     scale = fbxSettings['global_scale']
     if (settings.scaleDown):
         scale *= 0.2
-    if abs(1.0-scale) >= 0.0001:
+    if abs(1.0-scale) >= 0.000001:
         global_matrix = Matrix.Scale(scale, 4) * global_matrix
     fbxSettings['global_matrix'] = global_matrix
 
