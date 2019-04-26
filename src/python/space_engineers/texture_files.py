@@ -5,13 +5,8 @@ import os
 import re
 import bpy
 
-_RE_DIFFUSE = re.compile(r"_[dm]e\.dds$", re.IGNORECASE)
-_RE_NORMAL = re.compile(r"_ns\.dds$", re.IGNORECASE)
-
 _RE_TEXTURE_TYPE = re.compile(
-    r"(?P<de>Diffuse_?(?P<me1>Masked_?)?(?:Emissiv(?:e|ity)?)?|DE|(?P<me2>ME))|"
     r"(?P<ng>Normal_?Gloss(?:iness)?|NG)|" # needs to be before "Normal" due to non-optional suffix "Gloss"
-    r"(?P<ns>Normal_?(?:Specular(?:ity)?)?|NS)|"
     r"(?P<cm>(?:(?:Base_?)?Color|Albedo)_?Metal(?:ness|ic)?|CM)|"
     r"(?P<add>Add(?:_?Maps?|itional)?)|"
     r"(?P<alphamask>Alpha(?:Mask)?)",
@@ -29,8 +24,6 @@ _RE_TEXTURE_FILENAME = re.compile(
 
 class TextureType(Enum):
     # NameInParameterXml = 'file-suffix'
-    Diffuse = 'de'
-    Normal = 'ns'
     ColorMetal = 'cm'
     NormalGloss = 'ng'
     AddMaps = 'add'

@@ -4,8 +4,8 @@ import bpy
 from xml.etree import ElementTree
 from .texture_files import TextureType
 from .types import data, SEMaterialInfo, rgb
+from pathlib import Path
 import re
-
 
 BAD_PATH = re.compile(r"^(?:[A-Za-z]:|\.\.)?[\\/]")
 
@@ -14,6 +14,7 @@ def se_content_dir(settings):
     if not se_dir:
         return settings.baseDir # fallback, if unset
     return os.path.join(os.path.normpath(se_dir), "Content")
+
 
 def derive_texture_path(settings, filepath):
     def is_in_subpath(relpath):
@@ -46,48 +47,121 @@ def _material_technique(technique):
 
 def material_xml(settings, mat, file=None, node=None):
     d = data(mat)
-    e = ElementTree.Element("Material", Name=mat.name)
     m = SEMaterialInfo(mat)
+    technique_param = _material_technique(d.technique)
 
     def param(name, value):
         se = ElementTree.SubElement(e, 'Parameter', Name=name)
         if value:
             se.text = value
+    
+    if technique_param != "AUTO" or m.images.get("ColorMetal", None) or m.images.get("NormalGloss", None) or m.images.get("AddMaps", None) or m.images.get("Alphamask", None):
+        e = ElementTree.Element("Material", Name=mat.name)
+        
+        # read Technique from materials.xml if there
+        if technique_param == "AUTO":
+            technique_param = "MESH"
+            
+            for xmlreffile in settings.matreffiles:
+                # if not TextureType.ColorMetal in m.images:
+                if not xmlreffile: #don't want it failing if we don't have a file assigned
+                    xmlreffile = None
 
-    param("Technique", _material_technique(d.technique))
-    param("SpecularIntensity", _floatstr(m.specularIntensity))
-    param("SpecularPower", _floatstr(m.specularPower))
+                if not xmlreffile is None:
+                    texTechnique = ("Technique")
+                    xmlref = ElementTree.parse(xmlreffile).getroot()
+                    refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
+                    if not refmaterial is None:
+                        refmattechnique = refmaterial.find('.//Parameter[@Name="%s"]' % texTechnique)
+                        if not refmattechnique is None:
+                            technique_param = refmattechnique.text
+                            break
 
-    if 'GLASS' == d.technique:
-        param("DiffuseColorX", '255')
-        param("DiffuseColorY", '255')
-        param("DiffuseColorZ", '255')
-        param("GlassMaterialCCW", d.glass_material_ccw)
-        param("GlassMaterialCW", d.glass_material_cw)
-        param("GlassSmooth", str(d.glass_smooth))
-    else:
-        r, g, b = rgb(m.diffuseColor)
-        param("DiffuseColorX", str(int(255 * r)))
-        param("DiffuseColorY", str(int(255 * g)))
-        param("DiffuseColorZ", str(int(255 * b)))
+        param("Technique", technique_param)
+        
+        cmpath = None
+        for texType in TextureType:
+            filepath = m.images.get(texType, None)
+            if texType.name == 'ColorMetal' and not filepath is None:
+                cmpath = filepath[:-6]
+            
+            checked = None
+            if texType.name == 'ColorMetal':
+                checked = 1
+            elif texType.name == 'NormalGloss' and d.usetextureng:
+                checked = 1
+            elif texType.name == 'AddMaps' and d.usetextureadd:
+                checked = 1
+            elif texType.name == 'Alphamask' and d.usetexturealpha:
+                checked = 1 
+            
+            if filepath is None:
+                for xmlreffile in settings.matreffiles: 
+                    if not xmlreffile:#don't want it failing if we don't have a file assigned
+                            xmlreffile = None
+                        
+                        
+                    if not xmlreffile is None:
+                        texTypeS = (texType.name + "Texture")
+                        xmlref = ElementTree.parse(xmlreffile).getroot()
+                        refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
+                        if not refmaterial is None:
+                            refmatpath = refmaterial.find('.//Parameter[@Name="%s"]' % texTypeS)
+                            if not refmatpath is None:
+                                filepath = refmatpath.text
+                        else:
+                            if not texType.name == 'ColorMetal' and not cmpath is None:
+                                textfilepath = None
+                                if texType.name == 'NormalGloss':
+                                    textfilepath =  (cmpath + "ng.dds")
+                                if texType.name == 'AddMaps':
+                                    textfilepath =  (cmpath + "add.dds")
+                                if texType.name == 'Alphamask':
+                                    if not technique_param == 'GLASS' and not technique_param == 'MESH':
+                                        textfilepath =  (cmpath + "alphamask.dds")
+                                    else:
+                                        textfilepath = None
+                                
+                                if not textfilepath is None:
+                                    exists = Path(textfilepath)
+                                    if exists.is_file():
+                                        filepath = textfilepath
+                                        break
+                                    else:
+                                        filepath = None
+                                else:
+                                    filepath = None
+                
+            if not filepath is None and not 'GLASS' == technique_param:
+                derivedPath = derive_texture_path(settings, filepath)
+                if (BAD_PATH.search(derivedPath)):
+                    settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
+                                   "Consult the documentation on texture-paths."
+                                   % (texType.name, mat.name, derivedPath), file=file, node=node)
+                if  'MESH' == technique_param and 'Alphamask' == texType.name:
+                    e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
+                elif checked == 1:
+                    param(texType.name + "Texture", derivedPath)
+                else:
+                    e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
+            else:
+                #material_reference(mat, m)
+                e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
-    # only for legacy materials
-    if m.couldDefaultNormalTexture and not TextureType.Normal in m.images:
-        m.images[TextureType.Normal] = ''
+        return e
+    
 
-    for texType in TextureType:
-        filepath = m.images.get(texType, None)
-        if not filepath is None:
-            derivedPath = derive_texture_path(settings, filepath)
-            if (BAD_PATH.search(derivedPath)):
-                settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
-                               "Consult the documentation on texture-paths."
-                               % (texType.name, mat.name, derivedPath), file=file, node=node)
-            param(texType.name + "Texture", derivedPath)
-        else:
-            e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
+def materialref_xml(settings, matref, file=None, node=None):
+    d = data(matref)
+    m = SEMaterialInfo(matref)
+    technique_param = _material_technique(d.technique)
 
-    return e
+    #e = ElementTree.Comment("test")
+    
+    if technique_param == "AUTO" and not m.images.get("ColorMetal", None) and not m.images.get("NormalGloss", None) and not m.images.get("AddMaps", None) and not m.images.get("Alphamask", None):
+        e = ElementTree.Element("MaterialRef", Name=matref.name)
+        
+        return e
 
 def lod_xml(settings, lodMwmFile: str, lodDistance: int, renderQualities:iter=None):
     e = ElementTree.Element("LOD")
@@ -105,7 +179,7 @@ def lod_xml(settings, lodMwmFile: str, lodDistance: int, renderQualities:iter=No
     em.text = filePath
     return e
 
-def mwmbuilder_xml(settings, material_elements, lod_elements, rescale_factor: float = 1, rotation_y: float = 0):
+def mwmbuilder_xml(settings, material_elements, materialref_elements, lod_elements, rescale_factor: float = 1, rotation_y: float = 0):
     d = data(settings.scene)
     e = ElementTree.Element("Model", Name=settings.blockname)
 
@@ -119,11 +193,14 @@ def mwmbuilder_xml(settings, material_elements, lod_elements, rescale_factor: fl
     param("Centered", "false")
     if rotation_y:
         param("RotationY", str(round(rotation_y, 3)))
-    param("SpecularPower", _floatstr(d.block_specular_power))
-    param("SpecularShininess", _floatstr(d.block_specular_shininess))
 
     for mat in material_elements:
-        e.append(mat)
+        if not mat is None:
+            e.append(mat)
+    
+    for matref in materialref_elements:
+        if not matref is None:
+            e.append(matref)
 
     for lod in lod_elements:
         e.append(lod)

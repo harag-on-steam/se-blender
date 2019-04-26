@@ -2,19 +2,18 @@ from itertools import chain
 import bpy
 import re
 import shutil
-from os.path import join, dirname
-from os import makedirs
+from os.path import join, abspath
+from os import makedirs, listdir
 from subprocess import CalledProcessError
 from string import Template
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
-from bl_operators.presets import AddPresetBase
 from .mirroring import mirroringAxisFromObjectName
 from .texture_files import TextureType
 from .types import sceneData, data, SEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
-from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
+from .mwmbuilder import material_xml, materialref_xml, mwmbuilder_xml, lod_xml
 
 
 COLOR_OBJECTS_SKT  = (.50, .65, .80, 1)
@@ -513,7 +512,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         description="Scale all data (Some importers do not support scaled armatures!)",
         min=0.001, max=1000.0,
         soft_min=0.01, soft_max=1000.0,
-        default=1.0,
+        default=1,
     )
     # 7.4 only
     apply_unit_scale = BoolProperty(
@@ -594,7 +593,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='X', # SE ; Y
+        default='X', # SE ; X
     )
     secondary_bone_axis = EnumProperty(
         name="Secondary Bone Axis",
@@ -639,14 +638,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         name="NLA Strips",
         description="Export each non-muted NLA strip as a separated FBX's AnimStack, if any, "
                     "instead of global scene animation",
-        default=False, # SE ; True
+        default=True,
     )
     bake_anim_use_all_actions = BoolProperty(
         name="All Actions",
         description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
                     "(note that animated objects will get all actions compatible with them, "
                     "others will get no animation at all)",
-        default=False, # SE ; True
+        default=True,
     )
     bake_anim_force_startend_keying = BoolProperty(
         name="Force Start/End Keying",
@@ -682,7 +681,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         name="Default Take",
         description="Export currently assigned object and armature animations into a default take from the scene "
                     "start/end frames",
-        default=True,
+        default=True
     )
     use_anim_optimize = BoolProperty(
         name="Optimize Keyframes",
@@ -724,45 +723,10 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     )
 
 class MwmExportProperties(bpy.types.PropertyGroup):
-    rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=1,
-        description="Instructs MwmBuilder to rescale everything by the given factor.")
+    rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=0.01,
+        description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
     rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
-        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character or animations seems to require a value of 180°")
-
-class NODE_MT_space_engineers_mwm_presets(bpy.types.Menu):
-    bl_label = "Exporter Presets"
-    bl_description = "Load all the settings below from a saved preset"
-
-    preset_subdir = "space_engineers/mwm_exporter"
-    preset_operator = "script.execute_preset"
-
-    def draw(self, context):
-        self.path_menu(
-            bpy.utils.preset_paths(self.preset_subdir) + [join(dirname(__file__), 'presets', 'mwm_exporter')],
-            'script.execute_preset',
-            props_default=None,
-            filter_ext=lambda ext: ext.lower() == '.py')
-
-class AddPresetMwmExport(AddPresetBase, bpy.types.Operator):
-    """Add or remove a Mwm Exporter Preset"""
-    bl_idname = "node.space_engineers_mwm_preset_add"
-    bl_label = "Add Exporter Preset"
-    preset_menu = NODE_MT_space_engineers_mwm_presets.__name__
-
-    preset_defines = [
-        "node = bpy.context.active_node"
-    ]
-
-    preset_values = [
-        "node.fbx_settings",
-        "node.mwm_settings",
-    ]
-
-    preset_subdir = NODE_MT_space_engineers_mwm_presets.preset_subdir
-
-    @classmethod
-    def poll(cls, context):
-        return isinstance(getattr(context, 'active_node', None), MwmFileNode)
+        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
 
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEMwmFileNode"
@@ -814,10 +778,8 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         return hasObjects and hasName
 
     def draw_buttons_ext(self, context, layout):
-        row = layout.row(align=True)
-        row.menu(NODE_MT_space_engineers_mwm_presets.__name__, text=NODE_MT_space_engineers_mwm_presets.bl_label)
-        row.operator(AddPresetMwmExport.bl_idname, text="", icon='ZOOMIN')
-        row.operator(AddPresetMwmExport.bl_idname, text="", icon='ZOOMOUT').remove_active = True
+        f = self.fbx_settings
+
 
         m = self.mwm_settings
         layout.label("MwmBuilder Settings")
@@ -826,7 +788,6 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
 
         layout.separator()
 
-        f = self.fbx_settings
         layout.label("FBX Exporter Settings")
         layout.prop(f, "ui_tab", expand=True)
         if f.ui_tab == 'MAIN':
@@ -850,14 +811,12 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             sub = layout.row()
             #~ sub.enabled = f.mesh_smooth_type in {'OFF'}
             sub.prop(f, "use_tspace")
-
         elif f.ui_tab == 'ARMATURE':
             layout.prop(f, "use_armature_deform_only")
             layout.prop(f, "add_leaf_bones")
             layout.prop(f, "primary_bone_axis")
             layout.prop(f, "secondary_bone_axis")
             layout.prop(f, "armature_nodetype")
-
         elif f.ui_tab == 'ANIMATION':
             layout.prop(f, "bake_anim")
             col = layout.column()
@@ -909,6 +868,15 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
         else:
             settings.info("no collision data included", file=mwmfile, node=self)
 
+        xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.materialref)
+        #direntries = [bpy.path.abspath(xmlrefpath) for xmlrefpath in listdir()]
+        settings.matreffiles = []
+        for file in listdir(xmlrefpath):
+            if '.xml' in file:
+                settings.matreffiles.append(join(xmlrefpath + file))
+            #print(settings.matreffiles)
+        
+
         materials = {}
         for o in objectsSource.getObjects():
             for ms in o.material_slots:
@@ -917,9 +885,16 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             if isinstance(o.data, bpy.types.Mesh) and len(o.data.uv_layers) == 0:
                 settings.error("Mesh-object '%s' has no UV-map. This will crash SE's DirectX 11 renderer." % o.name, file=mwmfile, node=self)
         materials_xml = [material_xml(settings, m, mwmfile, self) for m in materials.values()]
+        
+        materials = {}
+        for o in objectsSource.getObjects():
+            for ms in o.material_slots:
+                if not ms is None and not ms.material is None:
+                    materials[ms.material.name] = ms.material        
+        materialsref_xml = [materialref_xml(settings, m, mwmfile, self) for m in materials.values()]
 
         paramsfile = join(settings.outputDir, name + ".xml")
-        paramsxml = mwmbuilder_xml(settings, materials_xml, lods_xml, self.mwm_settings.rescale_factor, self.mwm_settings.rotation_y)
+        paramsxml = mwmbuilder_xml(settings, materials_xml, materialsref_xml, lods_xml, self.mwm_settings.rescale_factor, self.mwm_settings.rotation_y)
         write_pretty_xml(paramsxml, paramsfile)
 
         fbxfile = join(settings.outputDir, name + ".fbx")
@@ -1375,8 +1350,6 @@ categories = [
 registered = [
     FbxExportProperties,
     MwmExportProperties,
-    NODE_MT_space_engineers_mwm_presets,
-    AddPresetMwmExport,
 
     BlockExportTree,
 

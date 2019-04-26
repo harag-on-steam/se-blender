@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
-	"author": "Harag",
-	"version": (0, 7, 0),
+	"author": "V0.8+ by Balmung - Original by Harag (up to 0.7.0)",
+	"version": (0, 9, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
@@ -40,7 +40,7 @@ if not reload('versions'): from . import versions
 
 del modules
 
-version = versions.Version(version=bl_info['version'], prerelease=False, qualifier=None)
+version = versions.Version(version=bl_info['version'], prerelease=True, qualifier="alpha.1")
 
 # register data & UI classes
 

@@ -3,12 +3,13 @@ import re
 import bpy
 import os
 import requests
+import winreg
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
 from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11ShaderGroup, getDx11Shader, \
-    getDx11ShaderGroup, getDx9ShaderGroup
+    getDx11ShaderGroup
 from .utils import data
-from .texture_files import TextureType, textureFileNameFromPath, _RE_DIFFUSE, \
+from .texture_files import TextureType, textureFileNameFromPath,  \
     matchingFileNamesFromFilePath, imageFromFilePath, imageNodes
 from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path, scene
@@ -83,33 +84,57 @@ def version_icon(v: Version) -> str:
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
+    
 
     seDir = bpy.props.StringProperty(
         name="Game Directory",
         subtype='DIR_PATH',
-        description='The base directory of the game. Probably <Steam>\\SteamApps\\Common\\Space Engineers',
+        description='The base directory of the game.\nProbably <Steam>\\SteamApps\\Common\\Space Engineers'
+    )
+    mwmbuilderactual = bpy.props.StringProperty(
+        name="Actual MWM Builder",
+        subtype='FILE_PATH',
+        description='Locate MwmBuilder.exe.\nProbably in <Game Directory>\\Tools\\MwmBuilder\\'
     )
     mwmbuilder = bpy.props.StringProperty(
-        name="MWM Builder",
+        name="Old MWM Builder",
         subtype='FILE_PATH',
-        description='Locate MwmBuilder.exe. Probably in <Game Directory>\\Tools\\MwmBuilder\\'
+        description='Locate old Version of MwmBuilder.exe (Extra Download)'
     )
+    
+    materialref = bpy.props.StringProperty(
+        name="SE Mod SDK Materials Folder",
+        subtype='DIR_PATH',
+        description='Link to the external material reference folder (SE ModSDK "OriginalContent\\Materials").'
+    )
+    
     fix_dir_bug = bpy.props.BoolProperty(
         name="workaround for output-directory bug",
         description="Without the /o option mwmbuilder has been crashing since game version 01.059. "
                     "The option itself has a bug that outputs files in the wrong directory. "
-                    "Only enable this for the broken version of mwmbuilder.",
+                    "Only enable this for the broken version of mwmbuilder."
     )
 
     havokFbxImporter = bpy.props.StringProperty(
         name="FBX Importer",
         subtype='FILE_PATH',
-        description='Locate FBXImporter.exe',
+        description='Locate FBXImporter.exe (Extra Download)'
     )
     havokFilterMgr = bpy.props.StringProperty(
         name="Standalone Filter Manager",
         subtype='FILE_PATH',
-        description='Locate hctStandAloneFilterManager.exe. Probably in C:\\Program Files\\Havok\\HavokContentTools\\',
+        description='Locate hctStandAloneFilterManager.exe.\nProbably in C:\\Program Files\\Havok\\HavokContentTools\\'
+    )
+    node_advanced_expanded = bpy.props.BoolProperty(
+        name="Description",
+        description="Description",
+        default=False
+    )
+    mwmbuildercmdarg = bpy.props.StringProperty(
+        name="MWMBuilder Extra Cmdline Arguments",
+        description="Read the MWMBuilder Description.\n"
+                    "/s, /o, /m are already used, some may not work.\nUse it on your own Risk.\n"
+                    "Standard is empty"
     )
 
     def versions_enum(self, context):
@@ -125,22 +150,68 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/SpaceEngineers.exe')
         col.prop(self, 'seDir')
 
-        if not self.mwmbuilder and self.seDir:
+        if not self.mwmbuilderactual and self.seDir:
             seDir = os.path.normpath(bpy.path.abspath(self.seDir))
             possibleMwmBuilder = os.path.join(seDir, 'Tools', 'MwmBuilder', 'MwmBuilder.exe')
             if (check_path(possibleMwmBuilder)):
-                self.mwmbuilder = possibleMwmBuilder
+                self.mwmbuilderactual = possibleMwmBuilder
 
-        col.alert = not check_path(self.mwmbuilder, expectedBaseName='MwmBuilder.exe')
-        col.prop(self, 'mwmbuilder')
+        col.alert = not check_path(self.mwmbuilderactual, expectedBaseName='MwmBuilder.exe')
+        col.prop(self, 'mwmbuilderactual')
         col.alert = False
+        
+        col.prop(self,'mwmbuilder')
+                
+        col = layout.split()
+        col.split(0.333)
+        raw = col.split()
+        keyval = None
+        
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\\Valve\\Steam\\Apps\\326880") as key:
+            keyval = winreg.QueryValueEx(key, 'Installed')
+                
+        
+        if not keyval[0] == 1 and not os.path.isfile(self.materialref+'\materials.xml'):
+            raw.enabled = True
+            op = raw.operator('steam.url_open', icon="EXTERNAL_DATA", text="Install SE Mod SDK")
+        else:
+            raw.enabled = False
+            op = raw.operator('steam.url_open', icon="FILE_TICK", text="SE Mod SDK is installed")
+            
+        op.url = 'steam://install/326880'
 
-        # row = col.row()
-        # row.alignment = 'RIGHT'
-        # row.prop(self, 'fix_dir_bug')
+        col = col.split()
+        col.enabled = True
+        
+        op = col.operator('steam.url_open', icon="GAME", text="Open Steam Tool Tab")
+        op.url = 'steam://open/tools'
+        
+        col = layout.column()
+        col.label(text="Material library", icon="MATERIAL")
+        
+        col = layout.column()
+        col.alert = not os.path.isfile(self.materialref+'\materials.xml')
+        col.prop(self, 'materialref')
+        col.alert=False  
+        col = layout.split(0.332)
+        col.label(text="Needed for MWMBuilder:",icon="NONE")
+        raw = col.split()
+        raw.enabled = False
+        if os.path.isfile(self.materialref+'\materials.xml') and not os.path.isdir("C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"):
+            raw.enabled = True
+            
+        if not os.path.isdir("C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"):
+            raw.alert=True
+            raw.operator('settings.createcmatfolder', text = '  Create "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder  ' , icon = 'ERROR')
+        else:
+            raw.operator('settings.createcmatfolder', text = '  Found: "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"  ' , icon = 'FILE_TICK')
+                
+        col.alert=False  
+        
+        #row = col.row()
+        #row.alignment = 'RIGHT'
+        #row.prop(self, 'materialref')
         #
-        # op = row.operator('wm.url_open', icon="URL", text="more details")
-        # op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")
@@ -149,8 +220,17 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         col.alert = not check_path(self.havokFilterMgr, expectedBaseName='hctStandAloneFilterManager.exe')
         col.prop(self, 'havokFilterMgr')
         col.alert = False
-
-        layout.separator()
+        
+        box = layout.row()
+        box.prop(
+            self, "node_advanced_expanded", text="Advanced Options",
+            icon='DISCLOSURE_TRI_DOWN' if self.node_advanced_expanded
+            else 'DISCLOSURE_TRI_RIGHT')
+        
+        if self.node_advanced_expanded:
+            col = layout.row()
+            col.prop(self, 'mwmbuildercmdarg')
+         
 
         split = layout.split(percentage=0.42)
 
@@ -258,6 +338,9 @@ class SESceneProperties(bpy.types.PropertyGroup):
     export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
 
+    useactualmwmbuilder = bpy.props.BoolProperty(default=True, name="Use actual MWMBuilder",
+        description="If unchecked it use the older Version of MWMBuilder")
+
     mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
         description="The block that the game should switch to if this block is mirrored")
 
@@ -354,7 +437,10 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
             row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
 
         layout.separator()
-
+        
+        row = layout.row()
+        row.prop(spceng,"useactualmwmbuilder")
+        
         col = layout.column(align=True)
         op = col.operator("export_scene.space_engineers_block", text="Export scene as block", icon="EXPORT", )
         op.settings_name = spceng.export_nodes
@@ -499,7 +585,12 @@ MATERIAL_TECHNIQUES = [
     ('MESH', 'Normal Material', 'Normal, opaque material'),
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
     # 'ALPHAMASK' is missspelled. But it's already in use so fix it on export in .mwmbuilder._material_technique()
-    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
+    ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('DECAL', 'Decal Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('DECAL_CUTOUT', 'Decal Cutout Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('DECAL_NOPREMULT', 'Decal NoPremult Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('ALPHA_MASKED_SINGLE_SIDED', 'Alpha-Mask Single Sided Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ( 'AUTO', 'Auto Technique', 'Use the Technique from materials.xml material, if not found it will be MESH (= Normal Material)')
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
@@ -515,67 +606,14 @@ DX11_TEXTURE_ENUM = [
     _texEnum(TextureType.Alphamask,   4, 'MATCAP_24'),
 ]
 
-DX9_TEXTURE_SET = {TextureType.Diffuse, TextureType.Normal}
-DX9_TEXTURE_ENUM = [
-    _texEnum(TextureType.Normal,      1, 'MATCAP_04'),
-    _texEnum(TextureType.NormalGloss, 2, 'MATCAP_23'),
-]
-
 class SEMaterialProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
-
+            
     nodes_version = bpy.props.IntProperty(default=0, options = {'SKIP_SAVE'})
-    technique = bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='MESH', name="Technique")
-
-    # the material might be a node material and have no diffuse color, so define our own
-    diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
-    specular_power = bpy.props.FloatProperty( min=0.0, name="Specular Power", description="per material specular power", )
-    specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )
-
-    glass_material_ccw = bpy.props.StringProperty(
-        name="Outward Facing Material", 
-        description="The material used on the side of the polygon that is facing away from the block center. Defined in TransparentMaterials.sbc",
-    )
-    glass_material_cw = bpy.props.StringProperty(
-        name="Inward Facing Material", 
-        description="The material used on the side of the polygon that is facing towards the block center. Defined in TransparentMaterials.sbc",
-    )
-    glass_smooth = bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
-
-    def getDxToggle(self):
-        if not self.id_data:
-            return None
-        if not self.id_data.node_tree:
-            return None
-        return firstMatching(self.id_data.node_tree.nodes, bpy.types.ShaderNodeMixShader, "ShaderToggle")
-
-    def getDx9(self):
-        toggle = self.getDxToggle()
-        return True if toggle and 1.0 == toggle.inputs[0].default_value else False
-
-    def setDx9(self, value):
-        toggle = self.getDxToggle()
-        if toggle:
-            toggle.inputs[0].default_value = 1.0 if value else 0.0
-
-    display_dx9 = bpy.props.BoolProperty(
-        default=True, get=getDx9, set=setDx9,
-        description="Should the material display DirectX9 textures?"
-    )
-
-    def getDx11(self):
-        toggle = self.getDxToggle()
-        return True if toggle and 0.0 == toggle.inputs[0].default_value else False
-
-    def setDx11(self, value):
-        self.setDx9(not value)
-
-    display_dx11 = bpy.props.BoolProperty(
-        default=True, get=getDx11, set=setDx11,
-        description="Should the material display DirectX11 textures?"
-    )
-
-    # texture paths are derived from the material textures
+    technique = bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='AUTO', name="Technique")
+    usetextureng = bpy.props.BoolProperty(name='', description='If unchecked no NormalGloss Texture is saved in the XML for MWMBuilder', default = True)
+    usetextureadd = bpy.props.BoolProperty(name='', description='If unchecked no AddMap Texture is saved in the XML for MWMBuilder', default = True)
+    usetexturealpha = bpy.props.BoolProperty(name='', description='If unchecked no Alphamask Texture is saved in the XML for MWMBuilder', default = True)
 
 class SEMaterialInfo:
     def __init__(self, material: bpy.types.Material):
@@ -587,18 +625,12 @@ class SEMaterialInfo:
             self.textureNodes = imageNodes(nodes)
             self.altTextureNodes = imageNodes(nodes, alt=True)
             self.dx11Shader = getDx11ShaderGroup(tree)
-            self.dx9Shader = getDx9ShaderGroup(tree)
-            self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
-            self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
-            self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
+            self.isnodemat = True
         else:
             self.textureNodes = {}
             self.altTextureNodes = {}
             self.dx11Shader = None
-            self.dx9Shader = None
-            self.diffuseColorNode = None
-            self.specularIntensityNode = None
-            self.specularPowerNode = None
+            self.isnodemat = False
 
         self.images = {t : n.image.filepath for t, n in self.textureNodes.items() if n.image and n.image.filepath}
         self.couldDefaultNormalTexture = False
@@ -611,12 +643,9 @@ class SEMaterialInfo:
             return n.outputs[0].default_value
 
         d = data(self.material)
-        self.diffuseColor = tuple(c for c in val(self.diffuseColorNode)) if self.diffuseColorNode else d.diffuse_color
-        self.specularIntensity = val(self.specularIntensityNode) if self.specularIntensityNode else d.specular_intensity
-        self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
-        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
+        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK' and d.technique != 'DECAL' and d.technique != 'DECAL_CUTOUT' and d.technique != 'DECAL_NOPREMULT' and d.technique != 'ALPHA_MASKED_SINGLE_SIDED')
         self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
 
     def _imagesFromLegacyMaterial(self):
@@ -624,15 +653,7 @@ class SEMaterialInfo:
             # getattr() because sometimes bpy.types.Texture has no attribute image (Blender bug?)
             if slot and getattr(slot, 'texture', None) and getattr(slot.texture, 'image', None):
                 image = slot.texture.image
-                filename = textureFileNameFromPath(image.filepath)
-                if filename:
-                    if slot.use_map_color_diffuse or filename.textureType == TextureType.Diffuse:
-                        self.images[TextureType.Diffuse] = image.filepath
-                        self.couldDefaultNormalTexture = bool(_RE_DIFFUSE.search(image.filepath))
-                    if slot.use_map_normal or filename.textureType == TextureType.Normal:
-                        self.images[TextureType.Normal] = image.filepath
-        if TextureType.Normal in self.images:
-            self.couldDefaultNormalTexture = False
+                filename = ''
 
 
 def rgba(color: tuple, alpha=1.0):
@@ -658,13 +679,10 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     createMaterialNodeTree(material.node_tree)
     matInfo = SEMaterialInfo(material)
 
-    matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
-    matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
-    matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
-
     imagesToSet = {k : imageFromFilePath(v) for k, v in matInfoBefore.images.items()}
 
-    for texType in [TextureType.ColorMetal, TextureType.Diffuse]:
+    # for texType in [TextureType.ColorMetal, TextureType.Diffuse]:
+    for texType in [TextureType.ColorMetal]:
         if texType in matInfoBefore.images:
             for mTexType, mTexFileName in matchingFileNamesFromFilePath(matInfoBefore.images[texType]).items():
                 if not mTexType in imagesToSet:
@@ -675,6 +693,15 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
             node.image = imagesToSet[texType]
 
     material.use_nodes = True
+    
+# def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
+
+    # def draw(self, context):
+        # self.layout.label(message)
+
+    # bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+    
+    # # ShowMessageBox("This is a message", "This is a custom title", 'ERROR')
 
 
 class DATA_PT_spceng_material(bpy.types.Panel):
@@ -682,7 +709,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context = "material"
     bl_label = "Space Engineers"
-
+    
     @classmethod
     def poll(cls, context):
         return (context.material and data(context.material))
@@ -703,74 +730,45 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             msg("The render engine should be 'Cycles Render'.")
             layout.separator()
 
-        splitPercent = 0.25
+        splitPercent = 0.20
 
         col = layout.column()
-        col.alert = matInfo.warnAlphaMask
         col.prop(d, "technique")
-        if matInfo.warnAlphaMask:
-            msg("The AlphamaskTexture is used.", 'ERROR', col, 'RIGHT')
+        
+                
 
-        if 'GLASS' == d.technique:
-            layout.separator()
-            layout.prop(d, "glass_smooth")
+        if not 'GLASS' == d.technique:
+            def image(texType: TextureType):
+                if texType in matInfo.textureNodes:
+                    split = layout.split(splitPercent)
+                    split.label(texType.name)
+                    split = split.row()
+                    split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
+                    if texType.name == "NormalGloss":
+                        split = split.row()
+                        split.prop(d, 'usetextureng')
+                    elif texType.name == "AddMaps":
+                        split = split.row()
+                        split.prop(d, 'usetextureadd')
+                    elif texType.name == "Alphamask":
+                        split = split.row()
+                        split.prop(d, 'usetexturealpha')
 
-            col = layout.column()
-            col.prop(d, "glass_material_ccw", icon='LIBRARY_DATA_DIRECT', text="Outwards")
-            col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
-
-        layout.separator()
-        if not matInfo.isOldMaterial:
-            row = layout.row(align=True)
-            row.prop(d, "display_dx9", text='', icon="IMAGE_COL")
-            row.label('DirectX 9')
-
-        if d.technique != 'GLASS':
-            split = layout.split(splitPercent)
-            split.label("Diffuse Color")
-            if matInfo.diffuseColorNode:
-                split.prop(matInfo.diffuseColorNode.outputs[0], "default_value", text="")
-            else:
-                split.column().prop(d, "diffuse_color", text="")
-            split.column()
-
-        split = layout.split(splitPercent)
-        split.label("Specular")
-        split = split.split()
-        if matInfo.specularIntensityNode:
-            split.column().prop(matInfo.specularIntensityNode.outputs[0], "default_value", text="Intensity")
-        else:
-            split.column().prop(d, "specular_intensity", text="Intensity")
-        if matInfo.specularPowerNode:
-            split.column().prop(matInfo.specularPowerNode.outputs[0], "default_value", text="Power")
-        else:
-            split.column().prop(d, "specular_power", text="Power")
-
-        def image(texType: TextureType):
-            if texType in matInfo.textureNodes:
-                split = layout.split(splitPercent)
-                split.label(texType.name)
-                split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
-
-        if matInfo.isOldMaterial:
-            layout.separator()
-            layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
-        else:
-            layout.separator()
-            image(TextureType.Diffuse)
-            image(TextureType.Normal)
-
-            layout.separator()
-            row = layout.row(align=True)
-            row.prop(d, "display_dx11", text='', icon="IMAGE_COL")
-            row.label('DirectX 11')
-            image(TextureType.ColorMetal)
-            image(TextureType.NormalGloss)
-            image(TextureType.AddMaps)
-            image(TextureType.Alphamask)
-            if matInfo.shouldUseNodes:
+            if matInfo.isOldMaterial:
                 layout.separator()
-                layout.operator("cycles.use_shading_nodes", icon="NODETREE")
+                layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
+            else:
+                layout.separator()
+                layout.label('Texture Files (DirectX 11):')
+                image(TextureType.ColorMetal)
+                layout.separator()
+                image(TextureType.NormalGloss)
+                image(TextureType.AddMaps)
+                if not 'MESH' == d.technique and not 'AUTO' == d.technique:
+                    image(TextureType.Alphamask)
+                if matInfo.shouldUseNodes:
+                    layout.separator()
+                    layout.operator("cycles.use_shading_nodes", icon="NODETREE")
 
 @bpy.app.handlers.persistent
 def syncTextureNodes(dummy):

@@ -116,11 +116,13 @@ class ExportSettings:
         self.isFixDirBug = prefs().fix_dir_bug
         self.names = Names()
         self.isUseTangentSpace = False
+        self.useactualmwmbuilder = self.sceneData.useactualmwmbuilder
         # set on first access, see properties below
         self._isOldMwmbuilder = None
         self._fbximporter = None
         self._havokfilter = None
         self._mwmbuilder = None
+        self._mwmbuilderactual = None
         # set multiple times on export
         self.scaleDown = None
         self._hadErrors = False
@@ -197,6 +199,12 @@ class ExportSettings:
         if self._mwmbuilder == None:
             self._mwmbuilder = tool_path('mwmbuilder', 'mwmbuilder')
         return self._mwmbuilder
+        
+    @property
+    def mwmbuilderactual(self):
+        if self._mwmbuilderactual == None:
+            self._mwmbuilderactual = tool_path('mwmbuilderactual', 'mwmbuilderactual')
+        return self._mwmbuilderactual
 
     @property
     def havokfilter(self):
@@ -272,49 +280,94 @@ class ExportSettings:
 
 def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None):
 
-    fbxSettings = {
-        # FBX operator defaults
-        # some internals of the fbx exporter depend on them and will step out of line if they are not present
-        'version': 'BIN7400',
-        'use_mesh_edges': False,
-        'use_custom_props': False, # SE / Havok properties are hacked directly into the modified fbx importer
-        # anim, BIN7400
-        'bake_anim': False, # no animation export to SE by default
-        'bake_anim_use_all_bones': True,
-        'bake_anim_use_nla_strips': False,
-        'bake_anim_use_all_actions': False,
-        'bake_anim_force_startend_keying': True,
-        'bake_anim_step': 1.0,
-        'bake_anim_simplify_factor': 1.0,
-        # anim, ASCII6100
-        'use_anim' : False, # no animation export to SE by default
-        'use_anim_action_all' : True,
-        'use_default_take' : True,
-        'use_anim_optimize' : True,
-        'anim_optimize_precision' : 6.0,
-        # referenced files stay on automatic, MwmBuilder only cares about what's written to its .xml file
-        'path_mode': 'AUTO',
-        'embed_textures': False,
-        # batching isn't used because the export is driven by the node tree
-        'batch_mode': 'OFF',
-        'use_batch_own_dir': True,
-        'use_metadata': True,
-        # important settings for SE
-        'object_types': {'MESH', 'EMPTY'},
-        'axis_forward': 'Z',
-        'axis_up': 'Y',
-        'bake_space_transform': True, # the export to Havok needs this, it's off for the MwmFileNode
-        'use_mesh_modifiers': True,
-        'mesh_smooth_type': 'OFF',
-        'use_tspace': settings.isUseTangentSpace, # TODO deprecate settings.isUseTangentSpace
-        # for characters
-        'global_scale': 1.0,
-        'use_armature_deform_only': False,
-        'add_leaf_bones': False,
-        'armature_nodetype': 'NULL',
-        'primary_bone_axis': 'X',
-        'secondary_bone_axis': 'Y',
-    }
+    if (2, 79, 0) < bpy.app.version:
+        fbxSettings = {
+            # FBX operator defaults
+            # some internals of the fbx exporter depend on them and will step out of line if they are not present
+            'version': 'BIN7400',
+            'use_mesh_edges': False,
+            'use_custom_props': False, # SE / Havok properties are hacked directly into the modified fbx importer
+            # anim, BIN7400
+            'bake_anim': False, # no animation export to SE by default
+            'bake_anim_use_all_bones': True,
+            'bake_anim_use_nla_strips': True,
+            'bake_anim_use_all_actions': True,
+            'bake_anim_force_startend_keying': True,
+            'bake_anim_step': 1.0,
+            'bake_anim_simplify_factor': 1.0,
+            # anim, ASCII6100
+            'use_anim' : False, # no animation export to SE by default
+            'use_anim_action_all' : True,
+            'use_default_take' : True,
+            'use_anim_optimize' : True,
+            'anim_optimize_precision' : 6.0,
+            # referenced files stay on automatic, MwmBuilder only cares about what's written to its .xml file
+            'path_mode': 'AUTO',
+            'embed_textures': False,
+            # batching isn't used because the export is driven by the node tree
+            'batch_mode': 'OFF',
+            'use_batch_own_dir': True,
+            'use_metadata': True,
+            # important settings for SE
+            'object_types': {'MESH', 'EMPTY'},
+            'axis_forward': 'Z',
+            'axis_up': 'Y',
+            'bake_space_transform': True, # the export to Havok needs this, it's off for the MwmFileNode
+            'use_mesh_modifiers': True,
+            'mesh_smooth_type': 'OFF',
+            'use_tspace': settings.isUseTangentSpace, # TODO deprecate settings.isUseTangentSpace
+            # for characters
+            'global_scale': 1.0, # Resizes Havok collision mesh in .hkt (fixed for Blender 2.79) Default=1.0 for 2.78c
+            'use_armature_deform_only': False,
+            'add_leaf_bones': False,
+            'armature_nodetype': 'NULL',
+            'primary_bone_axis': 'X',
+            'secondary_bone_axis': 'Y',
+        }
+    else:
+        fbxSettings = {
+            # FBX operator defaults
+            # some internals of the fbx exporter depend on them and will step out of line if they are not present
+            'version': 'BIN7400',
+            'use_mesh_edges': False,
+            'use_custom_props': False, # SE / Havok properties are hacked directly into the modified fbx importer
+            # anim, BIN7400
+            'bake_anim': False, # no animation export to SE by default
+            'bake_anim_use_all_bones': True,
+            'bake_anim_use_nla_strips': True,
+            'bake_anim_use_all_actions': True,
+            'bake_anim_force_startend_keying': True,
+            'bake_anim_step': 1.0,
+            'bake_anim_simplify_factor': 1.0,
+            # anim, ASCII6100
+            'use_anim' : False, # no animation export to SE by default
+            'use_anim_action_all' : True,
+            'use_default_take' : True,
+            'use_anim_optimize' : True,
+            'anim_optimize_precision' : 6.0,
+            # referenced files stay on automatic, MwmBuilder only cares about what's written to its .xml file
+            'path_mode': 'AUTO',
+            'embed_textures': False,
+            # batching isn't used because the export is driven by the node tree
+            'batch_mode': 'OFF',
+            'use_batch_own_dir': True,
+            'use_metadata': True,
+            # important settings for SE
+            'object_types': {'MESH', 'EMPTY'},
+            'axis_forward': 'Z',
+            'axis_up': 'Y',
+            'bake_space_transform': True, # the export to Havok needs this, it's off for the MwmFileNode
+            'use_mesh_modifiers': True,
+            'mesh_smooth_type': 'OFF',
+            'use_tspace': settings.isUseTangentSpace, # TODO deprecate settings.isUseTangentSpace
+            # for characters
+            'global_scale': 0.1, # Resizes Havok collision mesh in .hkt (fixed for Blender 2.79) Default=1.0 for 2.78c
+            'use_armature_deform_only': False,
+            'add_leaf_bones': False,
+            'armature_nodetype': 'NULL',
+            'primary_bone_axis': 'X',
+            'secondary_bone_axis': 'Y',
+        }
 
     if fbx_settings:
         if isinstance(fbx_settings, bpy.types.PropertyGroup):
@@ -329,7 +382,7 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
     scale = fbxSettings['global_scale']
     if (settings.scaleDown):
         scale *= 0.2
-    if abs(1.0-scale) >= 0.0001:
+    if abs(1.0-scale) >= 0.000001:
         global_matrix = Matrix.Scale(scale, 4) * global_matrix
     fbxSettings['global_matrix'] = global_matrix
 
@@ -367,7 +420,10 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
             write_to_log(mwmfile+'.log', b"mwmbuilder skipped.")
         return
 
-    contentDir = join(settings.mwmDir, 'Content')
+    mwmargs = bpy.context.user_preferences.addons[__package__].preferences.mwmbuildercmdarg.strip()
+    extracmds = mwmargs.split(" ")
+    
+    contentDir = join(settings.mwmDir, 'Sources')
     os.makedirs(contentDir, exist_ok = True)
     basename = os.path.splitext(os.path.basename(mwmfile))[0]
 
@@ -379,7 +435,15 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
     copy(paramsfile, join(contentDir, basename + '.xml'))
     copy(havokfile, join(contentDir, basename + '.hkt'))
 
-    cmdline = [settings.mwmbuilder, '/s:Content', '/m:'+basename+'.fbx', '/o:.\\']
+    if settings.useactualmwmbuilder:
+        cmdline = [settings.mwmbuilderactual, '/s:Sources', '/m:'+basename+'.fbx', '/o:.\\']
+    else:
+        cmdline = [settings.mwmbuilder, '/s:Sources', '/m:'+basename+'.fbx', '/o:.\\']
+
+    if extracmds:
+        for cmd in extracmds:
+            if not cmd.strip() == "" and not cmd == " ":
+                cmdline.append(cmd)
 
     def checkForLoggedErrors(logtext):
         if b": ERROR:" in logtext:

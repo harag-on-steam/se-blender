@@ -16,6 +16,38 @@ from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, 
 from .utils import layers, layer_bits, layer_bit, PinnedScene, PinnedSettings
 from .default_nodes import createDefaultTree
 
+
+class SteamOpen(bpy.types.Operator):
+    "Using Steam"
+    bl_idname = "steam.url_open"
+    bl_label = ""
+
+    url = bpy.props.StringProperty(
+            name="URL",
+            description="Steam Link to open",
+            )
+
+    def execute(self, context):
+        import webbrowser
+        webbrowser.open(self.url)
+        return {'FINISHED'}
+
+
+class CreateCMatFolders(bpy.types.Operator):
+    bl_idname = 'settings.createcmatfolder'
+    bl_label = 'Create "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder'
+    bl_description = 'Create on click a "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder. The MWMBuilder search here for the material library XML files, without it it can\'t find it and materials didn\'t work'
+    
+    def invoke(self, context, event):    
+        
+        if not os.path.isdir("C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"):
+            os.makedirs("C:\KeenSWH\Sandbox\MediaBuild\MEContent", exist_ok = True)
+            cmd = 'mklink /J "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" "' + bpy.path.abspath(bpy.context.user_preferences.addons["space_engineers"].preferences.materialref)+'"'
+            os.system(cmd)
+            print('run command: '+cmd)
+        
+        return {'FINISHED'}
+
 # mapping (scene.block_size) -> (block_size_name, apply_scale_down)
 SIZES = {
     'LARGE' : [('Large', False)],
@@ -547,6 +579,8 @@ class SetupMaterial(bpy.types.Operator):
         return {'FINISHED'}
 
 registered = [
+    SteamOpen,
+    CreateCMatFolders,
     AddDefaultExportNodes,
     AddMirroringEmpties,
     ConfigureEmptyAsVolumeHandle,
