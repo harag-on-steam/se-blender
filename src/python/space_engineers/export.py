@@ -280,7 +280,7 @@ class ExportSettings:
 
 def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None):
 
-    if (2, 79, 0) < bpy.app.version:
+    if bpy.app.version <= (2, 78, 0):
         fbxSettings = {
             # FBX operator defaults
             # some internals of the fbx exporter depend on them and will step out of line if they are not present
@@ -382,8 +382,13 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
     scale = fbxSettings['global_scale']
     if (settings.scaleDown):
         scale *= 0.2
-    if abs(1.0-scale) >= 0.000001:
-        global_matrix = Matrix.Scale(scale, 4) * global_matrix
+    
+    if bpy.app.version <= (2, 78, 0):
+        if abs(1.0-scale) >= 0.0001:
+            global_matrix = Matrix.Scale(scale, 4) * global_matrix
+    else:
+        if abs(1.0-scale) >= 0.000001:
+            global_matrix = Matrix.Scale(scale, 4) * global_matrix
     fbxSettings['global_matrix'] = global_matrix
 
     return save_single(

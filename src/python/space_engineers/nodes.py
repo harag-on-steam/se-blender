@@ -2,7 +2,7 @@ from itertools import chain
 import bpy
 import re
 import shutil
-from os.path import join, abspath
+from os.path import join
 from os import makedirs, listdir
 from subprocess import CalledProcessError
 from string import Template
@@ -498,13 +498,13 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         options={'SKIP_SAVE'}, # SE
         name="ui_tab",
-        description="Export options categories",
+        description="Export options categories"
     )
 
     use_selection = BoolProperty(
         name="Selected Objects",
         description="Export selected objects on visible layers",
-        default=False,
+        default=False
     )
 
     global_scale = FloatProperty(
@@ -512,14 +512,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         description="Scale all data (Some importers do not support scaled armatures!)",
         min=0.001, max=1000.0,
         soft_min=0.01, soft_max=1000.0,
-        default=1,
+        default=1.0
     )
     # 7.4 only
     apply_unit_scale = BoolProperty(
         name="Apply Unit",
         description="Scale all data according to current Blender size, to match default FBX unit "
                     "(centimeter, some importers do not handle UnitScaleFactor properly)",
-        default=False, # SE ; True
+        default=False # SE ; True
     )
     # 7.4 only
     bake_space_transform = BoolProperty(
@@ -527,7 +527,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         description="Bake space transform into object data, avoids getting unwanted rotations to objects when "
                     "target space is not aligned with Blender's space "
                     "(WARNING! experimental option, use at own risks, known broken with armatures/animations)",
-        default=False,
+        default=False
     )
 
     object_types = EnumProperty(
@@ -541,14 +541,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('OTHER', "Other", "Other geometry types, like curve, metaball, etc. (converted to meshes)"), # 'MOD_REMESH'
                ),
         description="Which kind of object to export",
-        default={'EMPTY', 'MESH' }, # SE ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' },
+        default={'EMPTY', 'MESH' } # SE ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' }
     )
 
     use_mesh_modifiers = BoolProperty(
         name="Apply Modifiers",
         description="Apply modifiers to mesh objects (except Armature ones) - "
                     "WARNING: prevents exporting shape keys",
-        default=True,
+        default=True
     )
     mesh_smooth_type = EnumProperty(
         name="Smoothing",
@@ -558,25 +558,25 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         description="Export smoothing information "
                     "(prefer 'Normals Only' option if your target importer understand split normals)",
-        default='OFF',
+        default='OFF'
     )
     use_mesh_edges = BoolProperty(
         name="Loose Edges",
         description="Export loose edges (as two-vertices polygons)",
-        default=False,
+        default=False
     )
     # 7.4 only
     use_tspace = BoolProperty(
         name="Tangent Space",
         description="Add binormal and tangent vectors, together with normal they form the tangent space "
                     "(will only work correctly with tris/quads only meshes!)",
-        default=False,
+        default=False
     )
     # 7.4 only
     use_custom_props = BoolProperty(
         name="Custom Properties",
         description="Export custom properties",
-        default=False,
+        default=False
     )
     add_leaf_bones = BoolProperty(
         name="Add Leaf Bones",
@@ -593,7 +593,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='X', # SE ; X
+        default='X' # SE ; X
     )
     secondary_bone_axis = EnumProperty(
         name="Secondary Bone Axis",
@@ -604,12 +604,12 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='Y', # SE ; X
+        default='Y' # SE ; X
     )
     use_armature_deform_only = BoolProperty(
         name="Only Deform Bones",
         description="Only write deforming bones (and non-deforming ones when they have deforming children)",
-        default=False,
+        default=False
     )
     armature_nodetype = EnumProperty(
         name="Armature FBXNode Type",
@@ -620,62 +620,62 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         description="FBX type of node (object) used to represent Blender's armatures "
                     "(use Null one unless you experience issues with other app, other choices may no import back "
                     "perfectly in Blender...)",
-        default='NULL',
+        default='NULL'
     )
     # Anim - 7.4 ;
     bake_anim = BoolProperty(
         name="Baked Animation",
         description="Export baked keyframe animation",
-        default=False, # SE ; True
+        default=False # SE ; True
     )
     bake_anim_use_all_bones = BoolProperty(
         name="Key All Bones",
         description="Force exporting at least one key of animation for all bones "
                     "(needed with some target applications, like UE4)",
-        default=True,
+        default=True
     )
     bake_anim_use_nla_strips = BoolProperty(
         name="NLA Strips",
         description="Export each non-muted NLA strip as a separated FBX's AnimStack, if any, "
                     "instead of global scene animation",
-        default=True,
+        default=True
     )
     bake_anim_use_all_actions = BoolProperty(
         name="All Actions",
         description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
                     "(note that animated objects will get all actions compatible with them, "
                     "others will get no animation at all)",
-        default=True,
+        default=True
     )
     bake_anim_force_startend_keying = BoolProperty(
         name="Force Start/End Keying",
         description="Always add a keyframe at start and end of actions for animated channels",
-        default=True,
+        default=True
     )
     bake_anim_step = FloatProperty(
         name="Sampling Rate",
         description="How often to evaluate animated values (in frames)",
         min=0.01, max=100.0,
         soft_min=0.1, soft_max=10.0,
-        default=1.0,
+        default=1.0
     )
     bake_anim_simplify_factor = FloatProperty(
         name="Simplify",
         description="How much to simplify baked values (0.0 to disable, the higher the more simplified)",
         min=0.0, max=100.0,  # No simplification to up to 10% of current magnitude tolerance.
         soft_min=0.0, soft_max=10.0,
-        default=1.0,  # default: min slope: 0.005, max frame step: 10.
+        default=1.0  # default: min slope: 0.005, max frame step: 10.
     )
     # Anim - 6.1
     use_anim = BoolProperty(
         name="Animation",
         description="Export keyframe animation",
-        default=False, # SE ; True
+        default=False # SE ; True
     )
     use_anim_action_all = BoolProperty(
         name="All Actions",
         description="Export all actions for armatures or just the currently selected action",
-        default=True,
+        default=True
     )
     use_default_take = BoolProperty(
         name="Default Take",
@@ -686,14 +686,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     use_anim_optimize = BoolProperty(
         name="Optimize Keyframes",
         description="Remove double keyframes",
-        default=True,
+        default=True
     )
     anim_optimize_precision = FloatProperty(
         name="Precision",
         description="Tolerance for comparing double keyframes (higher for greater accuracy)",
         min=0.0, max=20.0,  # from 10^2 to 10^-18 frames precision.
         soft_min=1.0, soft_max=16.0,
-        default=6.0,  # default: 10^-4 frames.
+        default=6.0  # default: 10^-4 frames.
     )
     # End anim
     path_mode = path_reference_mode
@@ -701,7 +701,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     embed_textures = BoolProperty(
         name="Embed Textures",
         description="Embed textures in FBX binary file (only for \"Copy\" path mode!)",
-        default=False,
+        default=False
     )
     batch_mode = EnumProperty(
         name="Batch Mode",
@@ -714,19 +714,25 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     use_batch_own_dir = BoolProperty(
         name="Batch Own Dir",
         description="Create a dir for each exported file",
-        default=True,
+        default=True
     )
     use_metadata = BoolProperty(
         name="Use Metadata",
         default=True,
-        options={'HIDDEN'},
+        options={'HIDDEN'}
     )
 
 class MwmExportProperties(bpy.types.PropertyGroup):
-    rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=0.01,
-        description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
-    rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
-        description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
+    if bpy.app.version <= (2, 78, 0):
+        rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=1.0,
+            description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
+        rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
+            description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
+    else:
+        rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=0.01,
+            description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
+        rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
+            description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
 
 class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
     bl_idname = "SEMwmFileNode"
@@ -869,12 +875,10 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
             settings.info("no collision data included", file=mwmfile, node=self)
 
         xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.materialref)
-        #direntries = [bpy.path.abspath(xmlrefpath) for xmlrefpath in listdir()]
         settings.matreffiles = []
         for file in listdir(xmlrefpath):
             if '.xml' in file:
                 settings.matreffiles.append(join(xmlrefpath + file))
-            #print(settings.matreffiles)
         
 
         materials = {}

@@ -5,8 +5,8 @@ bl_info = {
 	"version": (0, 9, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
-	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
-	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
+	"wiki_url": "http://hotohori.github.io/se-blender/",
+	"tracker_url": "https://github.com/hotohori/se-blender/issues",
     "category": "Space Engineers",
 }
 
@@ -40,7 +40,7 @@ if not reload('versions'): from . import versions
 
 del modules
 
-version = versions.Version(version=bl_info['version'], prerelease=True, qualifier="alpha.1")
+version = versions.Version(version=bl_info['version'], prerelease=True, qualifier="alpha.5")
 
 # register data & UI classes
 

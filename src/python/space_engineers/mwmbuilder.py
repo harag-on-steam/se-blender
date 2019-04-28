@@ -49,34 +49,41 @@ def material_xml(settings, mat, file=None, node=None):
     d = data(mat)
     m = SEMaterialInfo(mat)
     technique_param = _material_technique(d.technique)
+    matreffound = None
 
     def param(name, value):
         se = ElementTree.SubElement(e, 'Parameter', Name=name)
         if value:
             se.text = value
-    
-    if technique_param != "AUTO" or m.images.get("ColorMetal", None) or m.images.get("NormalGloss", None) or m.images.get("AddMaps", None) or m.images.get("Alphamask", None):
-        e = ElementTree.Element("Material", Name=mat.name)
         
-        # read Technique from materials.xml if there
-        if technique_param == "AUTO":
-            technique_param = "MESH"
-            
-            for xmlreffile in settings.matreffiles:
-                # if not TextureType.ColorMetal in m.images:
-                if not xmlreffile: #don't want it failing if we don't have a file assigned
-                    xmlreffile = None
+    for xmlreffile in settings.matreffiles:
+        # if not TextureType.ColorMetal in m.images:
+        if not xmlreffile: #don't want it failing if we don't have a file assigned
+            xmlreffile = None
 
-                if not xmlreffile is None:
-                    texTechnique = ("Technique")
-                    xmlref = ElementTree.parse(xmlreffile).getroot()
-                    refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
-                    if not refmaterial is None:
-                        refmattechnique = refmaterial.find('.//Parameter[@Name="%s"]' % texTechnique)
-                        if not refmattechnique is None:
-                            technique_param = refmattechnique.text
-                            break
-
+        if not xmlreffile is None:
+            texTechnique = ("Technique")
+            xmlref = ElementTree.parse(xmlreffile).getroot()
+            refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
+            if not refmaterial is None:
+                matreffound = True
+                refmattechnique = refmaterial.find('.//Parameter[@Name="%s"]' % texTechnique)
+                if not refmattechnique is None:
+                    technique_param = refmattechnique.text
+                    break
+    
+    if technique_param != "AUTO":
+        technique_param = _material_technique(d.technique)
+    elif matreffound is None:
+        technique_param = "MESH"
+        
+    if m.images.get(TextureType.ColorMetal, None):
+        print(mat.name)
+        
+    if not matreffound == True or _material_technique(d.technique) != "AUTO" or m.images.get(TextureType.ColorMetal, None) or m.images.get(TextureType.NormalGloss, None) or m.images.get(TextureType.AddMaps, None) or m.images.get(TextureType.Alphamask, None):
+        e = ElementTree.Element("Material", Name=mat.name)
+           
+        
         param("Technique", technique_param)
         
         cmpath = None
@@ -132,21 +139,23 @@ def material_xml(settings, mat, file=None, node=None):
                                 else:
                                     filepath = None
                 
-            if not filepath is None and not 'GLASS' == technique_param:
+            if not filepath is None and not technique_param == "GLASS":
                 derivedPath = derive_texture_path(settings, filepath)
                 if (BAD_PATH.search(derivedPath)):
                     settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
                                    "Consult the documentation on texture-paths."
                                    % (texType.name, mat.name, derivedPath), file=file, node=node)
-                if  'MESH' == technique_param and 'Alphamask' == texType.name:
+                if technique_param == "MESH" and texType.name == "Alphamask":
                     e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
                 elif checked == 1:
                     param(texType.name + "Texture", derivedPath)
                 else:
                     e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
-            else:
-                #material_reference(mat, m)
-                e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
+            elif not technique_param == "GLASS":
+                if texType.name != 'Alphamask':
+                    e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
+                elif technique_param != 'MESH':
+                    e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
         return e
     
@@ -155,11 +164,36 @@ def materialref_xml(settings, matref, file=None, node=None):
     d = data(matref)
     m = SEMaterialInfo(matref)
     technique_param = _material_technique(d.technique)
-
-    #e = ElementTree.Comment("test")
+    matreffound = None
+    ismatref = True
     
-    if technique_param == "AUTO" and not m.images.get("ColorMetal", None) and not m.images.get("NormalGloss", None) and not m.images.get("AddMaps", None) and not m.images.get("Alphamask", None):
-        e = ElementTree.Element("MaterialRef", Name=matref.name)
+    if technique_param != "AUTO":
+        ismatref = None
+    if m.images.get(TextureType.ColorMetal, None):
+        ismatref = None
+    if m.images.get(TextureType.NormalGloss, None) and d.usetextureng:
+        ismatref = None
+    if m.images.get(TextureType.AddMaps, None) and d.usetextureadd:
+        ismatref = None
+    if m.images.get(TextureType.Alphamask, None) and d.usetexturealpha:
+        ismatref = None
+    
+    if not ismatref is None:
+        for xmlreffile in settings.matreffiles:
+            if not xmlreffile: #don't want it failing if we don't have a file assigned
+                xmlreffile = None
+
+            if not xmlreffile is None:
+                xmlref = ElementTree.parse(xmlreffile).getroot()
+                refmaterial = xmlref.find('.//Material[@Name="%s"]' % matref.name)
+                if not refmaterial is None:
+                    matreffound = True
+                    break
+        
+        if not matreffound is None:
+            e = ElementTree.Element("MaterialRef", Name=matref.name)
+        else:
+            e = ElementTree.Comment("material %s can't be found" % matref.name)
         
         return e
 
