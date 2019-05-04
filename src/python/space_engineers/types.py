@@ -4,6 +4,7 @@ import bpy
 import os
 import requests
 import winreg
+import hashlib as hash
 from mathutils import Vector
 from .mirroring import mirroringAxisFromObjectName
 from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11ShaderGroup, getDx11Shader, \
@@ -11,10 +12,12 @@ from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11Sha
 from .utils import data
 from .texture_files import TextureType, textureFileNameFromPath,  \
     matchingFileNamesFromFilePath, imageFromFilePath, imageNodes
-from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path, scene
+from . import addon_updater_ops
 
-PROP_GROUP = "space_engineers"
+mwmbuilderEkHashSHA256 = "b8e978d7d9d229456b59786dd68d9a52c4e8665f10d93498dec75787ac0f3859"
+
+PROP_GROUP = "space_engineers"  
 
 def data(obj):
     # avoids AttributeError
@@ -59,62 +62,49 @@ def getBaseDir(scene):
     return bpy.path.abspath('//')
 
 # -----------------------------------------  Addon Data ----------------------------------------- #
-
-
-
-versions = {
-    '_' : (
-        Version(weburl='https://github.com/harag-on-steam/se-blender/releases'),
-        ('_', '(no version-info)', "Click 'Refresh' to download version-information", 'QUESTION', 0)
-    )
-}
-
-latestRelease = None
-latestPreRelease = None
-
-def version_icon(v: Version) -> str:
-    import space_engineers as addon
-    if not v:
-        return 'NONE'
-    if v == latestRelease:
-        return 'FILE_TICK' if addon.version == v else 'ERROR' if addon.version < v else 'SPACE2'
-    if v and v.prerelease:
-        return 'FILE_TICK' if addon.version == v else 'VISIBLE_IPO_ON'
-    return 'SPACE3'
+    
+def hashsha256(file):
+    if check_path(file, expectedBaseName='MwmBuilder.exe'):
+        
+        sha = hash.sha256()
+        with open(file,'rb') as checkfile:
+            file_buffer = checkfile.read(65536)
+            while len(file_buffer) > 0:
+                sha.update(file_buffer)
+                file_buffer = checkfile.read(65536)
+        return sha.hexdigest()
+    else:
+        print("Hash check error: can't find %s." % file)
+        return "not found"
 
 class SEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
     
-
-    seDir = bpy.props.StringProperty(
-        name="Game Directory",
-        subtype='DIR_PATH',
-        description='The base directory of the game.\nProbably <Steam>\\SteamApps\\Common\\Space Engineers'
-    )
     mwmbuilderactual = bpy.props.StringProperty(
-        name="Actual MWM Builder",
+        name="",
         subtype='FILE_PATH',
-        description='Locate MwmBuilder.exe.\nProbably in <Game Directory>\\Tools\\MwmBuilder\\'
+        description='Locate actual MwmBuilder.exe.\nProbably in <Game Directory>\\Tools\\MwmBuilder\\'
     )
     mwmbuilder = bpy.props.StringProperty(
-        name="Old MWM Builder",
+        name="Old/Custom MwmBuilder",
         subtype='FILE_PATH',
-        description='Locate old Version of MwmBuilder.exe (Extra Download)'
+        description="Locate old or Custom one like Eikster's fixed Version of MwmBuilder.exe (Extra Download)"
+    )
+    mwmbuilderEkHash = bpy.props.StringProperty(
+        name="Eikester MwmBuilder SHA256 Hash",
+        default=mwmbuilderEkHashSHA256,
+        description="SHA256 Hash to detect Eikester's MwmBuilder.exe - only change for new Versions.\nEmpty field reset it to default"
+    )
+    isEkmwmbuilder = bpy.props.BoolProperty(
+        default=False
     )
     
     materialref = bpy.props.StringProperty(
-        name="SE Mod SDK Materials Folder",
+        name="",
         subtype='DIR_PATH',
         description='Link to the external material reference folder (SE ModSDK "OriginalContent\\Materials").'
     )
     
-    fix_dir_bug = bpy.props.BoolProperty(
-        name="workaround for output-directory bug",
-        description="Without the /o option mwmbuilder has been crashing since game version 01.059. "
-                    "The option itself has a bug that outputs files in the wrong directory. "
-                    "Only enable this for the broken version of mwmbuilder."
-    )
-
     havokFbxImporter = bpy.props.StringProperty(
         name="FBX Importer",
         subtype='FILE_PATH',
@@ -128,42 +118,71 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
     node_advanced_expanded = bpy.props.BoolProperty(
         name="Description",
         description="Description",
-        default=False
+        default=True,
+        options={'SKIP_SAVE'}
+    )
+    seDir = bpy.props.StringProperty(
+        name="Converted SE Textures",
+        subtype='DIR_PATH',
+        description="Location of converted SE Textures, because Blender 2.7x can't load BC7 DDS files.\nShould be the base path where the \"Content\\Textures\\\" directory lies\nPath must looks like \"SpaceEngineers\\Content\\Textures\\\""
     )
     mwmbuildercmdarg = bpy.props.StringProperty(
-        name="MWMBuilder Extra Cmdline Arguments",
-        description="Read the MWMBuilder Description.\n"
+        name="MwmBuilder Extra Cmdline Arguments",
+        description="Read the MwmBuilder Description.\n"
                     "/s, /o, /m are already used, some may not work.\nUse it on your own Risk.\n"
                     "Standard is empty"
     )
+    
+    
+    node_updater_expanded = bpy.props.BoolProperty(
+        name="Description",
+        description="Description",
+        default=True
+    )
+    
+    auto_check_update = bpy.props.BoolProperty(
+    name = "Auto-check for Update",
+    description = "If enabled, auto-check for updates using an interval",
+    default = False,
+    )
 
-    def versions_enum(self, context):
-        return [info[1] for info in versions.values()]
+    updater_intrval_months = bpy.props.IntProperty(
+        name='Months',
+        description = "Number of months between checking for updates",
+        default=0,
+        min=0
+    )
+    updater_intrval_days = bpy.props.IntProperty(
+        name='Days',
+        description = "Number of days between checking for updates",
+        default=7,
+        min=0,
+    )
+    updater_intrval_hours = bpy.props.IntProperty(
+        name='Hours',
+        description = "Number of hours between checking for updates",
+        default=0,
+        min=0,
+        max=23
+    )
+    updater_intrval_minutes = bpy.props.IntProperty(
+        name='Minutes',
+        description = "Number of minutes between checking for updates",
+        default=0,
+        min=0,
+        max=59
+    )
 
-    selected_version = bpy.props.EnumProperty(items=versions_enum, name="Versions")
+    def invoke(self, context):
+        print("Test update")
 
     def draw(self, context):
         layout = self.layout
 
-        col = layout.column()
+               
+        col = layout.split(0.45)
         col.label(text="Space Engineers", icon="GAME")
-        col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/SpaceEngineers.exe')
-        col.prop(self, 'seDir')
 
-        if not self.mwmbuilderactual and self.seDir:
-            seDir = os.path.normpath(bpy.path.abspath(self.seDir))
-            possibleMwmBuilder = os.path.join(seDir, 'Tools', 'MwmBuilder', 'MwmBuilder.exe')
-            if (check_path(possibleMwmBuilder)):
-                self.mwmbuilderactual = possibleMwmBuilder
-
-        col.alert = not check_path(self.mwmbuilderactual, expectedBaseName='MwmBuilder.exe')
-        col.prop(self, 'mwmbuilderactual')
-        col.alert = False
-        
-        col.prop(self,'mwmbuilder')
-                
-        col = layout.split()
-        col.split(0.333)
         raw = col.split()
         keyval = None
         
@@ -186,34 +205,58 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         op = col.operator('steam.url_open', icon="GAME", text="Open Steam Tool Tab")
         op.url = 'steam://open/tools'
         
-        col = layout.column()
-        col.label(text="Material library", icon="MATERIAL")
+        col = layout.row(align=True)
+        
+        row = col.split(0.347)
+        
+        row.label(text="Actual MwmBuilder")
+        row.alert = not check_path(self.mwmbuilderactual, expectedBaseName='MwmBuilder.exe')
+        row.prop(self, 'mwmbuilderactual')
+        row.alert = False
+        row = col.row()
+        row.operator('autosearch.mwmbuilder', icon="VIEWZOOM", text="")
+        
+        col = layout.row()
+        
+        col.alert = not check_path(self.mwmbuilder, expectedBaseName='MwmBuilder.exe')
+        col.prop(self,'mwmbuilder')
+        col.alert = False
+        
         
         col = layout.column()
-        col.alert = not os.path.isfile(self.materialref+'\materials.xml')
-        col.prop(self, 'materialref')
-        col.alert=False  
-        col = layout.split(0.332)
-        col.label(text="Needed for MWMBuilder:",icon="NONE")
+        col.separator()
+        col.label(text="Material library", icon="MATERIAL")
+        
+        col = layout.row(align=True)
+        
+        row = col.split(0.347)
+        
+        row.label(text="SE Mod SDK Materials Folder")
+        row.alert = not os.path.isfile(self.materialref+'\materials.xml')
+        row.prop(self, 'materialref')
+        row.alert=False
+        row = col.row()
+        row.operator('autosearch.matlibpath', icon="VIEWZOOM", text="")
+        
+        col = layout.split(0.333)
+        col.label(text="Needed for MwmBuilder:",icon="NONE")
         raw = col.split()
         raw.enabled = False
         if os.path.isfile(self.materialref+'\materials.xml') and not os.path.isdir("C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"):
             raw.enabled = True
             
         if not os.path.isdir("C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"):
+            self.isEkmwmbuilder = False
             raw.alert=True
             raw.operator('settings.createcmatfolder', text = '  Create "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder  ' , icon = 'ERROR')
         else:
+            self.isEkmwmbuilder = False
             raw.operator('settings.createcmatfolder', text = '  Found: "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials"  ' , icon = 'FILE_TICK')
                 
         col.alert=False  
         
-        #row = col.row()
-        #row.alignment = 'RIGHT'
-        #row.prop(self, 'materialref')
-        #
-
         col = layout.column()
+        col.separator()
         col.label(text="Havok Content Tools", icon="PHYSICS")
         col.alert = not check_path(self.havokFbxImporter, expectedBaseName='FBXImporter.exe')
         col.prop(self, 'havokFbxImporter')
@@ -228,69 +271,32 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
             else 'DISCLOSURE_TRI_RIGHT')
         
         if self.node_advanced_expanded:
-            col = layout.row()
-            col.prop(self, 'mwmbuildercmdarg')
-         
 
-        split = layout.split(percentage=0.42)
-
-        # ----
-        split2 = split.split(percentage=0.60, align=True)
-
-        row = split2.row(align=True)
-        versionInfo = versions[self.selected_version]
-        row.prop(self, 'selected_version', text="", icon=versionInfo[1][3])
-        row.operator('wm.space_engineers_check_version', icon="FILE_REFRESH", text="")
-
-        row = split2.row(align=True)
-        row.enabled = not '_' == versionInfo[1][0]
-        op = row.operator('wm.url_open', icon="URL", text="Show Online")
-        op.url = versionInfo[0].weburl
-
-        # ----
-        row = split.row()
-        row.alignment = 'RIGHT'
-
-        import space_engineers as addon
-        if addon.version.prerelease:
-            row.label(icon='INFO', text="You are using a pre-release.")
-
-        op = row.operator('wm.url_open', icon='URL', text="Show all versions")
-        op.url = 'https://github.com/harag-on-steam/se-blender/releases'
-
-
+            col = layout.box()
+        
+            if self.seDir.endswith("Content\\"):
+                self.seDir = self.seDir[:len(self.seDir)-8]
+            elif self.seDir.endswith("Content\\Textures\\"):
+                self.seDir = self.seDir[:len(self.seDir)-17]
+            col.alert = not check_path(self.seDir, isDirectory=True , subpathExists='Content\Textures')
+            col.prop(self, 'seDir')
+            col.alert = False
+            col.prop(self, 'mwmbuildercmdarg')            
+            if self.mwmbuilderEkHash.strip() is "":
+                self.mwmbuilderEkHash = mwmbuilderEkHashSHA256
+            col.prop(self, 'mwmbuilderEkHash')
+            
+        box = layout.row()
+        box.prop(
+            self, "node_updater_expanded", text="Updater Settings",
+            icon='DISCLOSURE_TRI_DOWN' if self.node_updater_expanded
+            else 'DISCLOSURE_TRI_RIGHT')
+        
+        if self.node_updater_expanded:
+            addon_updater_ops.update_settings_ui(self,context)
+        
 def prefs() -> SEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences
-
-class CheckVersionOnline(bpy.types.Operator):
-    bl_idname = "wm.space_engineers_check_version"
-    bl_label = "Download available versions"
-    bl_description = "Downloads the list of available versions."
-
-    def execute(self, context):
-        global versions, latestRelease, latestPreRelease
-
-        try:
-            vers, latestRelease, latestPreRelease = versionsOnGitHub("harag-on-steam", "se-blender")
-        except requests.RequestException as re:
-            self.report({'ERROR'}, str(re))
-            return {'FINISHED'}
-        except ValueError as ve:
-            self.report({'ERROR'}, str(ve))
-            return {'FINISHED'}
-
-        versions = OrderedDict(
-            (repr(v), (
-                v,
-                (repr(v), str(v), '', version_icon(v), i)
-            ))
-            for i,v in enumerate(vers))
-
-        selectedVersion = repr(latestRelease) if latestRelease else repr(any(versions)) if any(versions) else '_'
-        prefs().selected_version = selectedVersion
-
-        return {'FINISHED'}
-
 
 # -----------------------------------------  Scene Data ----------------------------------------- #
 
@@ -335,11 +341,13 @@ class SESceneProperties(bpy.types.PropertyGroup):
 
     export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
         description="Use the Node editor to create and change these settings.")
-    export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
+    export_path = bpy.props.StringProperty( name="Models Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
-
+    export_path_lods = bpy.props.StringProperty( name="LODs Subpath", default="//Models", subtype='DIR_PATH',
+        description="The directory this blocks LODs are to exported to")
+    
     useactualmwmbuilder = bpy.props.BoolProperty(default=True, name="Use actual MWMBuilder",
-        description="If unchecked it use the older Version of MWMBuilder")
+        description="If unchecked it use the older / Custom Version of MWMBuilder from the settings")
 
     mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
         description="The block that the game should switch to if this block is mirrored")
@@ -430,6 +438,14 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 
         col = layout.column(align=True)
         col.prop(spceng, "export_path")
+        
+        if bpy.context.user_preferences.addons["space_engineers"].preferences.isEkmwmbuilder:
+            col = layout.column(align=True)
+            if spceng.useactualmwmbuilder:
+                col.enabled = False
+            else:
+                col.enabled = True
+            col.prop(spceng, "export_path_lods")
 
         row = layout.row(align=True)
         row.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export Settings")
@@ -693,16 +709,6 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
             node.image = imagesToSet[texType]
 
     material.use_nodes = True
-    
-# def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
-
-    # def draw(self, context):
-        # self.layout.label(message)
-
-    # bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
-    
-    # # ShowMessageBox("This is a message", "This is a custom title", 'ERROR')
-
 
 class DATA_PT_spceng_material(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'

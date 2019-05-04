@@ -9,11 +9,11 @@ import re
 
 BAD_PATH = re.compile(r"^(?:[A-Za-z]:|\.\.)?[\\/]")
 
-def se_content_dir(settings):
-    se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
-    if not se_dir:
+def conv_se_content_dir(settings):
+    conv_se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
+    if not conv_se_dir:
         return settings.baseDir # fallback, if unset
-    return os.path.join(os.path.normpath(se_dir), "Content")
+    return os.path.join(os.path.normpath(conv_se_dir), "Content")
 
 
 def derive_texture_path(settings, filepath):
@@ -23,7 +23,7 @@ def derive_texture_path(settings, filepath):
     image_path = os.path.normpath(bpy.path.abspath(filepath))
 
     try:
-        relative_to_se = os.path.relpath(image_path, se_content_dir(settings))
+        relative_to_se = os.path.relpath(image_path, conv_se_content_dir(settings))
         if is_in_subpath(relative_to_se):
             return relative_to_se
     except ValueError:
@@ -31,6 +31,7 @@ def derive_texture_path(settings, filepath):
 
     try:
         relative_to_basedir = os.path.relpath(image_path, settings.baseDir)
+        print("relbd: "+relative_to_basedir)
         if is_in_subpath(relative_to_basedir):
             return relative_to_basedir
     except ValueError:
@@ -141,6 +142,7 @@ def material_xml(settings, mat, file=None, node=None):
                 
             if not filepath is None and not technique_param == "GLASS":
                 derivedPath = derive_texture_path(settings, filepath)
+                #print("TexPath: "+derivedPath)
                 if (BAD_PATH.search(derivedPath)):
                     settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
                                    "Consult the documentation on texture-paths."

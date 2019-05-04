@@ -2,12 +2,13 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Space Engineers",
 	"author": "V0.8+ by Balmung - Original by Harag (up to 0.7.0)",
-	"version": (0, 9, 0),
+	"version": (0, 9, 1),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
+    "warning": "\"Game Directory\" setting is changed to \"Converted SE Textures\" at \"Advanced Options\"",
 	"wiki_url": "http://hotohori.github.io/se-blender/",
-	"tracker_url": "https://github.com/hotohori/se-blender/issues",
-    "category": "Space Engineers",
+	"tracker_url": "https://github.com/Hotohori/se-blender/issues",
+    "category": "Space Engineers"
 }
 
 # properly handle Blender F8 reload
@@ -36,11 +37,9 @@ if not reload('export'): from . import export
 if not reload('nodes'): from . import nodes
 if not reload('default_nodes'): from . import nodes
 if not reload('operators'): from . import operators
-if not reload('versions'): from . import versions
+if not reload('addon_updater_ops'): from . import addon_updater_ops
 
 del modules
-
-version = versions.Version(version=bl_info['version'], prerelease=True, qualifier="alpha.5")
 
 # register data & UI classes
 
@@ -106,8 +105,9 @@ def register():
 
     types.register()
     pbr_node_group.register()
+    
+    addon_updater_ops.register(bl_info)
 
-    register_class(types.CheckVersionOnline)
     operators.register()
 
     bpy.types.INFO_MT_file_export.append(menu_func_export)
@@ -131,7 +131,6 @@ def unregister():
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
     operators.unregister()
-    unregister_class(types.CheckVersionOnline)
 
     pbr_node_group.unregister()
     types.unregister()

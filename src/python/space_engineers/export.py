@@ -24,9 +24,6 @@ class StdoutOperator():
 
 STDOUT_OPERATOR = StdoutOperator()
 
-# mwmbuilder from Space Engineers 01.051
-OLD_MWMBUILDER_MD5 = '261163f6d3743d28fede7944b2b0949a'
-
 class MissbehavingToolError(subprocess.SubprocessError):
     def __init__(self, message: str):
         self.message = message
@@ -110,13 +107,15 @@ class ExportSettings:
         self.baseDir = getBaseDir(scene)
         # temporary working directory. used as a workaround for two bugs in mwmbuilder. must be empty initially.
         self.mwmDir = mwmDir if not mwmDir is None else self.outputDir
+        self.lodsmwmDir = os.path.normpath(bpy.path.abspath(self.sceneData.export_path_lods)) if not os.path.normpath(bpy.path.abspath(self.sceneData.export_path_lods)) is None else self.mwmDir
         self.operator = STDOUT_OPERATOR
         self.isLogToolOutput = True
         self.isRunMwmbuilder = True
-        self.isFixDirBug = prefs().fix_dir_bug
         self.names = Names()
         self.isUseTangentSpace = False
         self.useactualmwmbuilder = self.sceneData.useactualmwmbuilder
+        self.isEkmwmbuilder = bpy.context.user_preferences.addons["space_engineers"].preferences.isEkmwmbuilder
+        self.materialref = bpy.context.user_preferences.addons["space_engineers"].preferences.materialref
         # set on first access, see properties below
         self._isOldMwmbuilder = None
         self._fbximporter = None
@@ -205,7 +204,7 @@ class ExportSettings:
         if self._mwmbuilderactual == None:
             self._mwmbuilderactual = tool_path('mwmbuilderactual', 'mwmbuilderactual')
         return self._mwmbuilderactual
-
+              
     @property
     def havokfilter(self):
         if self._havokfilter == None:
@@ -442,6 +441,8 @@ def mwmbuilder(settings: ExportSettings, fbxfile: str, havokfile: str, paramsfil
 
     if settings.useactualmwmbuilder:
         cmdline = [settings.mwmbuilderactual, '/s:Sources', '/m:'+basename+'.fbx', '/o:.\\']
+    elif settings.isEkmwmbuilder:
+        cmdline = [settings.mwmbuilder, '/s:Sources', '/m:'+basename+'.fbx', '/o:.\\' , '/x:'+settings.materialref , '/lod:'+settings.lodsmwmDir]
     else:
         cmdline = [settings.mwmbuilder, '/s:Sources', '/m:'+basename+'.fbx', '/o:.\\']
 

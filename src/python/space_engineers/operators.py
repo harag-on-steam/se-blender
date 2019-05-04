@@ -1,5 +1,7 @@
 from collections import OrderedDict
 import os
+import winreg
+from os.path import join
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
 import bpy
@@ -31,12 +33,91 @@ class SteamOpen(bpy.types.Operator):
         import webbrowser
         webbrowser.open(self.url)
         return {'FINISHED'}
-
+        
+class AutoSearchMwmBuilder(bpy.types.Operator):
+    "Automatic search for actual MwmBuilder at common Steam paths"
+    bl_idname = "autosearch.mwmbuilder"
+    bl_label = ""
+    
+    def invoke(self, context, event):
+        
+        SteamSEPath = "steamapps\\common\\SpaceEngineers\\Tools\\MwmBuilder\\MwmBuilder.exe"
+        SteamSESDKPath = "steamapps\\common\\SpaceEngineersModSDK\\Tools\\MwmBuilder\\MwmBuilder.exe"
+        SteamLw = ":\\SteamLibrary\\"
+        keyval = None
+        SteamPath = None
+        MwmBuilderPath = None
+        
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\\Valve\\Steam") as key:
+            keyval = winreg.QueryValueEx(key, 'SteamPath')
+            SteamPath = keyval[0].replace("/","\\")
+        
+        if not SteamPath is None:
+            if os.path.isfile(join(SteamPath,SteamSEPath)):
+                MwmBuilderPath = join(SteamPath.replace("steam","Steam"),SteamSEPath)
+                
+        if MwmBuilderPath is None:
+            for x in range(26):
+                tmppath = chr(65+x) + SteamLw + SteamSEPath
+                if os.path.isfile(tmppath):
+                    MwmBuilderPath = (tmppath)
+                    break
+                    
+        if not SteamPath is None and MwmBuilderPath is None:
+            if os.path.isfile(join(SteamPath,SteamSESDKPath)):
+                MwmBuilderPath = join(SteamPath.replace("steam","Steam"),SteamSESDKPath)
+               
+        if MwmBuilderPath is None:
+            for x in range(26):
+                tmppath = chr(65+x) + SteamLw + SteamSESDKPath
+                if os.path.isfile(tmppath):
+                    MwmBuilderPath = (tmppath)
+                    break
+                    
+        if not MwmBuilderPath is None:
+            MwmBuilderPath = MwmBuilderPath[:1].upper() + MwmBuilderPath[1:]
+            bpy.context.user_preferences.addons["space_engineers"].preferences.mwmbuilderactual = MwmBuilderPath
+            
+        return {'FINISHED'}
+        
+class AutoSearchMaterialLib(bpy.types.Operator):
+    "Automatic search for material library path at common Steam paths"
+    bl_idname = "autosearch.matlibpath"
+    bl_label = ""
+    
+    def invoke(self, context, event):
+        
+        SteamSESDKPath = "steamapps\\common\\SpaceEngineersModSDK\\OriginalContent\\Materials\\"
+        SteamLw = ":\\SteamLibrary\\"
+        keyval = None
+        SteamPath = None
+        MatLibPath = None
+        
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "SOFTWARE\\Valve\\Steam") as key:
+            keyval = winreg.QueryValueEx(key, 'SteamPath')
+            SteamPath = keyval[0].replace("/","\\")
+                    
+        if not SteamPath is None:
+            if os.path.isdir(join(SteamPath,SteamSESDKPath)):
+                MatLibPath = join(SteamPath.replace("steam","Steam"),SteamSESDKPath)
+               
+        if MatLibPath is None:
+            for x in range(26):
+                tmppath = chr(65+x) + SteamLw + SteamSESDKPath
+                if os.path.isfile(tmppath):
+                    MatLibPath = (tmppath)
+                    break
+                    
+        if not MatLibPath is None:
+            MatLibPath = MatLibPath[:1].upper() + MatLibPath[1:]
+            bpy.context.user_preferences.addons["space_engineers"].preferences.materialref = MatLibPath
+            
+        return {'FINISHED'}
 
 class CreateCMatFolders(bpy.types.Operator):
     bl_idname = 'settings.createcmatfolder'
     bl_label = 'Create "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder'
-    bl_description = 'Create on click a "C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials" Junction Folder. The MWMBuilder search here for the material library XML files, without it it can\'t find it and materials didn\'t work'
+    bl_description = "Create a \"C:\KeenSWH\Sandbox\MediaBuild\MEContent\Materials\" Junction Folder. The MwmBuilder search here for the material library XML files, without it materials didn't work. \n\nOnly Eikster's fixed Version of MwmBuilder didn't need it"
     
     def invoke(self, context, event):    
         
@@ -580,6 +661,8 @@ class SetupMaterial(bpy.types.Operator):
 
 registered = [
     SteamOpen,
+    AutoSearchMwmBuilder,
+    AutoSearchMaterialLib,
     CreateCMatFolders,
     AddDefaultExportNodes,
     AddMirroringEmpties,
