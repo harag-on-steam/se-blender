@@ -12,6 +12,6 @@ Space Engineer's own `.mwm` mesh-format. To do that
   to suite your needs.
 
 The most current version is available in the
-https://github.com/harag-on-steam/se-blender/releases/latest[release section] on GitHub.
+https://github.com/hotohori/se-blender/releases/latest[release section] on GitHub.
 
-The documentation is published to the project's http://harag-on-steam.github.io/se-blender/[Github pages].
+The documentation is published to the project's http://hotohori.github.io/se-blender/[Github pages].
