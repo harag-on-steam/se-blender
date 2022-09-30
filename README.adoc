@@ -1,3 +1,5 @@
+NOTE: This repository hasn't seen changes in a long time and both Space Engineers and especially Blender have moved on. You are better off searching for alternatives other people have made.
+
 = SE Block Tools for Blender
 
 Modelling blocks for http://www.spaceengineersgame.com/[Space Engineers] is a process that 
